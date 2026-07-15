@@ -1,0 +1,43 @@
+# Robots.txt para SOYDANI
+# Permite el rastreo de todos los motores de búsqueda
+
+User-agent: *
+Allow: /
+
+# Excluir páginas administrativas y privadas
+Disallow: /admin
+Disallow: /login
+Disallow: /api/
+Disallow: /*.json$
+
+# Excluir páginas de proceso de pago en curso
+Disallow: /checkout/processing
+Disallow: /payment-processing
+
+# Permitir específicamente páginas importantes
+Allow: /iphone
+Allow: /mac
+Allow: /ipad
+Allow: /apple-watch
+Allow: /accesorios
+Allow: /checkout
+Allow: /terms
+
+# Crawl-delay para ser amigable con los servidores
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://www.mistorepro.com/sitemap.xml
+
+# Motores de búsqueda específicos
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
