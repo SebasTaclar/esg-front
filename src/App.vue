@@ -1,93 +1,56 @@
 <template>
-  <header v-if="showUtilityBar" class="site-header">
-    <div class="utility-bar">
-      <div class="utility-left">
-        <i class="fas fa-bolt" aria-hidden="true"></i>
-        <span>Más de 20 años suministrando soluciones eléctricas e industriales</span>
-      </div>
-      <div class="utility-right">
-        <span><i class="fas fa-headset" aria-hidden="true"></i> Asesoría técnica</span>
-        <span><i class="fas fa-truck" aria-hidden="true"></i> Envíos a todo el país</span>
-        <span><i class="fas fa-phone" aria-hidden="true"></i> Línea nacional: 322 9118168</span>
-      </div>
-    </div>
-
+  <header v-if="showUtilityBar" class="site-header" :class="{ scrolled: isScrolled }">
     <nav class="header-main">
       <RouterLink class="brand-container" to="/" @click="closeMobileMenu">
-        <img class="brand-logo-image" src="/images/logof.png" alt="DISEF Comercializadora Industrial" />
+        <div class="brand-logo">
+          <img src="/images/LOGO.PNG" alt="ESG" class="brand-logo-img" />
+          <span class="brand-divider" aria-hidden="true"></span>
+          <div class="brand-text">
+            <span class="brand-text-main">ES GESTIÓN</span>
+            <span class="brand-text-sub">EMPRESARIAL</span>
+          </div>
+        </div>
       </RouterLink>
 
-      <form v-if="showHeaderSearch" class="header-search desktop-only" @submit.prevent="openSearch">
-        <button type="button" class="search-category" @click="openSearch">Todas las categorías</button>
-        <input
-          class="search-input"
-          type="search"
-          placeholder="Buscar productos, marcas o categorías..."
-          aria-label="Buscar productos"
-          readonly
-          @focus="openSearch"
-        />
-        <button type="submit" class="search-submit" aria-label="Buscar">
-          <i class="fas fa-search" aria-hidden="true"></i>
-        </button>
-      </form>
+      <div class="nav-menu desktop-only">
+        <RouterLink to="/" class="nav-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
+        <RouterLink to="/nosotros" class="nav-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
+        <div class="nav-link-dropdown" @mouseenter="showServiciosDropdown = true" @mouseleave="showServiciosDropdown = false">
+          <span class="nav-link" :class="{ active: isCurrentRoute('/servicios') }">
+            Servicios <i class="fas fa-chevron-down" aria-hidden="true"></i>
+          </span>
+          <div class="nav-dropdown" v-show="showServiciosDropdown">
+            <RouterLink to="/servicios" class="dropdown-item" @click="closeMobileMenu">Todos los servicios</RouterLink>
+            <RouterLink to="/certificaciones" class="dropdown-item" @click="closeMobileMenu">Certificaciones ISO</RouterLink>
+            <RouterLink to="/laboratorios" class="dropdown-item" @click="closeMobileMenu">Laboratorios</RouterLink>
+          </div>
+        </div>
+        <RouterLink to="/normas" class="nav-link" :class="{ active: isCurrentRoute('/normas') }" @click="closeMobileMenu">Normas</RouterLink>
+        <RouterLink to="/recursos" class="nav-link" :class="{ active: isCurrentRoute('/recursos') }" @click="closeMobileMenu">Recursos</RouterLink>
+        <RouterLink to="/contacto" class="nav-link" :class="{ active: isCurrentRoute('/contacto') }" @click="closeMobileMenu">Contacto</RouterLink>
+      </div>
 
       <div class="nav-actions desktop-only">
-        <RouterLink v-if="!isLoggedIn" class="account-chip" to="/login">
+        <a href="#portal" class="btn-portal">
+          Portal Clientes
+        </a>
+        <RouterLink v-if="!isLoggedIn" to="/login" class="btn-login">
           <i class="fas fa-user" aria-hidden="true"></i>
-          <span>
-            <small>Iniciar sesión</small>
-            <strong>Mi cuenta</strong>
-          </span>
+          Iniciar sesión
         </RouterLink>
-
-        <RouterLink v-else-if="isAdmin" class="account-chip" to="/admin/products">
+        <RouterLink v-else-if="isAdmin" to="/admin/products" class="btn-login">
           <i class="fas fa-user-shield" aria-hidden="true"></i>
-          <span>
-            <small>Panel admin</small>
-            <strong>Mi cuenta</strong>
-          </span>
+          Mi cuenta
         </RouterLink>
-
-        <button v-else type="button" class="account-chip" @click="logout">
+        <button v-else type="button" class="btn-login" @click="logout">
           <i class="fas fa-user" aria-hidden="true"></i>
-          <span>
-            <small>{{ username || 'Hola' }}</small>
-            <strong>Mi cuenta</strong>
-          </span>
-        </button>
-
-        <button type="button" class="cart-summary" @click="toggleDrawer">
-          <span class="cart-summary-icon">
-            <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-            <span v-if="totalItems > 0" class="cart-summary-badge">{{ totalItems }}</span>
-          </span>
-          <span class="cart-summary-text">
-            <small>Mi Cotización</small>
-          </span>
+          Mi cuenta
         </button>
       </div>
 
       <div class="mobile-header-controls">
-        <button
-          v-if="showHeaderSearch"
-          type="button"
-          class="search-toggle mobile-only"
-          aria-label="Abrir buscador"
-          title="Buscar"
-          @click="openSearch"
-        >
-          <svg class="search-toggle-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M10 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm8.707 17.293-4.387-4.387a9 9 0 1 0-1.414 1.414l4.387 4.387a1 1 0 0 0 1.414-1.414z"
-            />
-          </svg>
-        </button>
-
-        <button type="button" class="mobile-cart-btn" @click="toggleDrawer" aria-label="Abrir cotización">
-          <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-          <span v-if="totalItems > 0" class="mobile-cart-badge">{{ totalItems }}</span>
+        <button type="button" class="mobile-contact-btn" aria-label="Contactar">
+          <i class="fas fa-phone" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -98,45 +61,33 @@
       </button>
     </nav>
 
-    <div class="nav-strip desktop-only">
-      <div class="nav-menu">
-        <RouterLink to="/" class="nav-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
-        <RouterLink to="/productos" class="nav-link nav-link--products" :class="{ active: isCurrentRoute('/productos') }" @click="closeMobileMenu">
-          Productos <i class="fas fa-chevron-down header-caret" aria-hidden="true"></i>
-        </RouterLink>
-        <RouterLink to="/marcas" class="nav-link" :class="{ active: isCurrentRoute('/marcas') }" @click="closeMobileMenu">Marcas</RouterLink>
-        <RouterLink to="/industrias" class="nav-link" :class="{ active: isCurrentRoute('/industrias') }" @click="closeMobileMenu">Industrias</RouterLink>
-        <RouterLink to="/promociones" class="nav-link" :class="{ active: isCurrentRoute('/promociones') }" @click="closeMobileMenu">Promociones</RouterLink>
-        <RouterLink to="/nosotros" class="nav-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
-        <RouterLink to="/blog" class="nav-link" :class="{ active: isCurrentRoute('/blog') }" @click="closeMobileMenu">Blog</RouterLink>
-        <RouterLink to="/contacto" class="nav-link" :class="{ active: isCurrentRoute('/contacto') }" @click="closeMobileMenu">Contacto</RouterLink>
-      </div>
-    </div>
-
     <div class="mobile-menu" :class="{ active: isMobileMenuOpen }">
       <div class="mobile-menu-content">
         <div class="mobile-nav-links">
           <RouterLink to="/" class="mobile-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
-          <RouterLink to="/productos" class="mobile-link" :class="{ active: isCurrentRoute('/productos') }" @click="closeMobileMenu">
-            Productos <i class="fas fa-chevron-down header-caret" aria-hidden="true"></i>
-          </RouterLink>
-          <RouterLink to="/marcas" class="mobile-link" :class="{ active: isCurrentRoute('/marcas') }" @click="closeMobileMenu">Marcas</RouterLink>
-          <RouterLink to="/industrias" class="mobile-link" :class="{ active: isCurrentRoute('/industrias') }" @click="closeMobileMenu">Industrias</RouterLink>
-          <RouterLink to="/promociones" class="mobile-link" :class="{ active: isCurrentRoute('/promociones') }" @click="closeMobileMenu">Promociones</RouterLink>
           <RouterLink to="/nosotros" class="mobile-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
-          <RouterLink to="/blog" class="mobile-link" :class="{ active: isCurrentRoute('/blog') }" @click="closeMobileMenu">Blog</RouterLink>
+          <RouterLink to="/servicios" class="mobile-link" :class="{ active: isCurrentRoute('/servicios') }" @click="closeMobileMenu">Servicios</RouterLink>
+          <RouterLink to="/certificaciones" class="mobile-link" :class="{ active: isCurrentRoute('/certificaciones') }" @click="closeMobileMenu">Certificaciones</RouterLink>
+          <RouterLink to="/laboratorios" class="mobile-link" :class="{ active: isCurrentRoute('/laboratorios') }" @click="closeMobileMenu">Laboratorios</RouterLink>
+          <RouterLink to="/normas" class="mobile-link" :class="{ active: isCurrentRoute('/normas') }" @click="closeMobileMenu">Normas</RouterLink>
+          <RouterLink to="/recursos" class="mobile-link" :class="{ active: isCurrentRoute('/recursos') }" @click="closeMobileMenu">Recursos</RouterLink>
           <RouterLink to="/contacto" class="mobile-link" :class="{ active: isCurrentRoute('/contacto') }" @click="closeMobileMenu">Contacto</RouterLink>
         </div>
 
         <div class="mobile-controls">
-          <RouterLink v-if="!isLoggedIn" class="mobile-btn access-btn" to="/login" @click="closeMobileMenu">
+          <a href="#portal" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
+            Portal Clientes
+          </a>
+          <RouterLink v-if="!isLoggedIn" class="mobile-btn btn-login-mobile" to="/login" @click="closeMobileMenu">
+            <i class="fas fa-user" aria-hidden="true"></i>
             Iniciar sesión
           </RouterLink>
           <div v-if="isLoggedIn" class="mobile-user-greeting">
             <span>Hola, {{ username }}</span>
           </div>
-          <RouterLink v-if="isLoggedIn && isAdmin" class="mobile-btn admin-btn" to="/admin/products" @click="closeMobileMenu">
-            Panel admin
+          <RouterLink v-if="isLoggedIn && isAdmin" class="mobile-btn btn-login-mobile" to="/admin/products" @click="closeMobileMenu">
+            <i class="fas fa-user-shield" aria-hidden="true"></i>
+            Mi cuenta
           </RouterLink>
           <button v-if="isLoggedIn" class="mobile-btn logout-btn" @click="handleMobileLogout">
             Cerrar sesión
@@ -144,11 +95,11 @@
         </div>
       </div>
     </div>
-
-    <GlobalSearchOverlay v-model:open="isSearchOpen" />
   </header>
 
   <RouterView />
+
+  <AppFooter />
 
   <ProductQuickViewModal
     :open="quickViewOpen"
@@ -163,26 +114,24 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { authService } from '@/services/api'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import router from './router'
 import SocialFloating from '@/components/SocialFloating.vue'
 import GlobalCart from '@/components/GlobalCart.vue'
-import GlobalSearchOverlay from '@/components/GlobalSearchOverlay.vue'
 import ProductQuickViewModal from '@/components/ProductQuickViewModal.vue'
+import AppFooter from '@/components/AppFooter.vue'
 import { useProductQuickView } from '@/composables/useProductQuickView'
-import { useQuotation } from '@/composables/useQuotation'
 
 const isLoggedIn = ref(false)
 const username = ref('')
 const isMobileMenuOpen = ref(false)
-const isSearchOpen = ref(false)
+const showServiciosDropdown = ref(false)
+const isScrolled = ref(false)
 
 const { isOpen: quickViewOpen, product: quickViewProduct, close: closeQuickView } = useProductQuickView()
-const { totalItems, toggleDrawer } = useQuotation()
 
 const currentRoute = useRoute()
 const isAdmin = computed(() => authService.isAdmin())
-const showHeaderSearch = computed(() => !currentRoute.path.startsWith('/admin') && currentRoute.path !== '/login')
 const showUtilityBar = computed(() => !currentRoute.path.startsWith('/admin') && currentRoute.path !== '/login')
 
 const isCurrentRoute = (path: string): boolean => currentRoute.path === path
@@ -193,10 +142,6 @@ const toggleMobileMenu = () => {
 
 const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
-}
-
-const openSearch = () => {
-  isSearchOpen.value = true
 }
 
 const checkAuthStatus = () => {
@@ -223,11 +168,20 @@ const handleMobileLogout = () => {
 
 onMounted(() => {
   checkAuthStatus()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 watch(currentRoute, () => {
   checkAuthStatus()
 })
+
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 20
+}
 
 defineOptions({
   name: 'App'
@@ -236,301 +190,230 @@ defineOptions({
 
 <style scoped>
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 9999;
-  background: #0b0b0b;
-  color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: transparent;
+  color: #4A4A4A;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  box-shadow: none;
+  transition: background 0.35s ease, box-shadow 0.35s ease;
 }
 
-.utility-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  height: 32px;
-  padding: 0 clamp(16px, 4vw, 44px);
-  background: #0b0b0b;
-  border-bottom: 1px solid rgba(255, 193, 7, 0.18);
-  font-size: 13px;
-  letter-spacing: 0.1px;
-}
-
-.utility-left,
-.utility-right {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.utility-left {
-  color: #ffffff;
-  font-weight: 500;
-}
-
-.utility-right {
-  color: #ffffff;
-  justify-content: flex-end;
-}
-
-.utility-left i,
-.utility-right i {
-  color: #ffc107;
-  margin-right: 6px;
+.site-header.scrolled {
+  background: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  color: #4A4A4A;
 }
 
 .header-main {
-  min-height: 85px;
-  height: 85px;
-  padding: 0 clamp(16px, 4vw, 44px);
-  background: #0b0b0b;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 80px;
+  height: 80px;
+  padding: 0 clamp(16px, 4vw, 60px);
+  background: transparent;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 32px;
+  transition: background 0.35s ease;
+}
+
+.site-header.scrolled .header-main {
+  background: #FFFFFF;
 }
 
 .brand-container {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  text-decoration: none;
 }
 
-.brand-logo-image {
-  width: clamp(160px, 18vw, 220px);
-  height: 56px;
-  object-fit: contain;
-  background: transparent;
-  padding: 0;
-  box-shadow: none;
-}
-
-.header-search {
-  flex: 1;
-  max-width: 600px;
+.brand-logo {
   display: flex;
-  align-items: center;
-  margin: 0 20px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 193, 7, 0.24);
-  background: #ffffff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-}
-
-.search-category {
-  border: 0;
-  background: #f5f5f5;
-  color: #0b0b0b;
-  padding: 0 18px;
-  min-height: 50px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.search-input {
-  flex: 1;
-  min-width: 0;
-  height: 50px;
-  border: 0;
-  background: #ffffff;
-  color: #0b0b0b;
-  padding: 0 18px;
-  font-size: 14px;
-  outline: none;
-}
-
-.search-input::placeholder {
-  color: #7a7a7a;
-}
-
-.search-submit {
-  width: 56px;
-  height: 50px;
-  border: 0;
-  background: #ffc107;
-  color: #0b0b0b;
-  cursor: pointer;
-}
-
-.nav-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-left: auto;
-}
-
-.account-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: transparent;
-  color: #ffffff;
-  cursor: pointer;
-  text-align: left;
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-}
-
-.account-chip:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 193, 7, 0.35);
-  background: rgba(255, 193, 7, 0.06);
-}
-
-.account-chip i {
-  font-size: 20px;
-  color: #ffc107;
-}
-
-.account-chip span {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.05;
-}
-
-.account-chip small {
-  font-size: 11px;
-  color: #a0a0a0;
-  font-weight: 500;
-}
-
-.account-chip strong {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.cart-summary {
-  display: inline-flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 193, 7, 0.25);
-  background: transparent;
-  color: #ffffff;
-  cursor: pointer;
 }
 
-.cart-summary-icon {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+.brand-logo-img {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
 }
 
-.cart-summary-badge,
-.mobile-cart-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffc107;
-  color: #0b0b0b;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.cart-summary-text {
+.brand-text {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   line-height: 1.1;
 }
 
-.cart-summary-text small {
+.brand-divider {
+  display: block;
+  width: 2px;
+  height: 40px;
+  background: #C89B2D;
+  border-radius: 1px;
+}
+
+.brand-text-main {
+  font-size: 18px;
+  font-weight: 800;
+  color: #4A4A4A;
+  letter-spacing: 1px;
+  transition: color 0.35s ease;
+}
+
+.site-header.scrolled .brand-text-main {
+  color: #4A4A4A;
+}
+
+.brand-text-sub {
   font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.7px;
-  color: #a0a0a0;
-}
-
-.cart-summary-text strong {
-  font-size: 13px;
   font-weight: 600;
+  color: #9A9A9A;
+  letter-spacing: 2px;
+  transition: color 0.35s ease;
 }
 
-.nav-strip {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 55px;
-  background: #0b0b0b;
-  border-bottom: 1px solid #ffc107;
-  position: relative;
-  z-index: 1;
+.site-header.scrolled .brand-text-sub {
+  color: #9A9A9A;
 }
 
+/* Navigation Menu */
 .nav-menu {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 38px;
-  width: 100%;
-  height: 100%;
+  gap: 8px;
+  flex: 1;
 }
 
 .nav-link {
-  color: #ffffff;
-  text-decoration: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  position: relative;
-  height: 100%;
   display: inline-flex;
   align-items: center;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.nav-link--products {
   gap: 6px;
+  padding: 8px 16px;
+  color: #4A4A4A;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.header-caret {
-  font-size: 10px;
-  transform: translateY(1px);
+.site-header.scrolled .nav-link {
+  color: #4A4A4A;
 }
 
-.nav-link::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 8px;
-  height: 3px;
-  background: #ffc107;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.3s ease;
+.site-header.scrolled .nav-link:hover,
+.site-header.scrolled .nav-link.active {
+  color: #C89B2D;
 }
 
 .nav-link:hover,
 .nav-link.active {
-  color: #ffc107;
+  color: #C89B2D;
 }
 
-.nav-link:hover::after,
-.nav-link.active::after {
-  transform: scaleX(1);
+.nav-link i {
+  font-size: 10px;
+  transition: transform 0.25s ease;
 }
 
+/* Dropdown */
+.nav-link-dropdown {
+  position: relative;
+}
+
+.nav-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #F0F0F0;
+  padding: 8px;
+  z-index: 100;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 10px 16px;
+  color: #4A4A4A;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: rgba(200, 155, 45, 0.06);
+  color: #C89B2D;
+}
+
+/* CTA Buttons */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #4A4A4A;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.btn-portal:hover {
+  background: #3A3A3A;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(74, 74, 74, 0.3);
+}
+
+.btn-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #C89B2D;
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-login:hover {
+  background: #B8891F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(200, 155, 45, 0.3);
+}
+
+.btn-login i {
+  font-size: 13px;
+}
+
+/* Mobile Controls */
 .mobile-header-controls {
   display: none;
   align-items: center;
@@ -538,42 +421,36 @@ defineOptions({
   margin-left: auto;
 }
 
-.search-toggle {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 193, 7, 0.28);
-  background: transparent;
-  color: #ffc107;
+.mobile-contact-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid #E8E8E8;
+  background: transparent;
+  color: #C89B2D;
   cursor: pointer;
+  transition: all 0.25s ease;
 }
 
-.search-toggle.mobile-only {
-  display: none;
+.site-header.scrolled .mobile-contact-btn {
+  border-color: #E8E8E8;
+  color: #C89B2D;
 }
 
-.mobile-cart-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 193, 7, 0.28);
-  background: transparent;
-  color: #ffc107;
+.mobile-contact-btn:hover {
+  background: rgba(200, 155, 45, 0.06);
+  border-color: rgba(200, 155, 45, 0.3);
 }
 
 .hamburger-menu {
   margin-left: 10px;
   display: none;
   flex-direction: column;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   background: none;
   border: none;
   cursor: pointer;
@@ -585,15 +462,19 @@ defineOptions({
 
 .hamburger-menu span {
   display: block;
-  height: 3px;
+  height: 2px;
   width: 100%;
-  background-color: #ffffff;
-  border-radius: 3px;
+  background-color: #4A4A4A;
+  border-radius: 2px;
   transition: all 0.3s ease;
 }
 
+.site-header.scrolled .hamburger-menu span {
+  background-color: #4A4A4A;
+}
+
 .hamburger-menu.active span:nth-child(1) {
-  transform: rotate(45deg) translate(8px, 8px);
+  transform: rotate(45deg) translate(7px, 7px);
 }
 
 .hamburger-menu.active span:nth-child(2) {
@@ -601,17 +482,18 @@ defineOptions({
 }
 
 .hamburger-menu.active span:nth-child(3) {
-  transform: rotate(-45deg) translate(7px, -6px);
+  transform: rotate(-45deg) translate(6px, -5px);
 }
 
+/* Mobile Menu */
 .mobile-menu {
   display: none;
   position: fixed;
-  top: 117px;
+  top: 80px;
   left: 0;
   width: 100%;
-  height: calc(100vh - 117px);
-  background: #0b0b0b;
+  height: calc(100vh - 80px);
+  background: #FFFFFF;
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   z-index: 9998;
@@ -623,91 +505,115 @@ defineOptions({
 }
 
 .mobile-menu-content {
-  padding: 30px 20px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 24px;
 }
 
 .mobile-nav-links {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 8px;
 }
 
 .mobile-link {
-  color: #ffffff;
+  color: #4A4A4A;
   text-decoration: none;
-  padding: 15px 20px;
-  font-size: 18px;
+  padding: 14px 16px;
+  font-size: 15px;
   font-weight: 500;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  text-align: center;
+  border-radius: 10px;
+  transition: all 0.25s ease;
+  text-align: left;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid #F0F0F0;
+  font-family: 'Montserrat', sans-serif;
 }
 
 .mobile-link.active,
 .mobile-link:hover {
-  color: #ffc107;
+  color: #C89B2D;
+  border-color: rgba(200, 155, 45, 0.3);
+  background: rgba(200, 155, 45, 0.04);
 }
 
 .mobile-controls {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid #F0F0F0;
 }
 
 .mobile-btn {
-  padding: 15px 20px;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
   text-decoration: none;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   border: none;
   cursor: pointer;
   width: 100%;
-  font-family: inherit;
+  font-family: 'Montserrat', sans-serif;
 }
 
-.mobile-btn.access-btn,
-.mobile-btn.admin-btn,
-.mobile-btn.logout-btn {
+.btn-portal-mobile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #4A4A4A;
+  color: #FFFFFF;
+  border: none;
+}
+
+.btn-portal-mobile:hover {
+  background: #3A3A3A;
+}
+
+.btn-login-mobile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #C89B2D;
+  color: #FFFFFF;
+  border: none;
+}
+
+.btn-login-mobile:hover {
+  background: #B8891F;
+}
+
+.logout-btn {
   background: transparent;
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #4A4A4A;
+  border: 1px solid #E8E8E8;
+}
+
+.logout-btn:hover {
+  border-color: rgba(200, 155, 45, 0.3);
+  color: #C89B2D;
 }
 
 .mobile-user-greeting {
-  color: #e2e8f0;
+  color: #4A4A4A;
   text-align: center;
-  padding: 15px 20px;
+  padding: 14px 16px;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 15px;
   background: transparent;
-  border-radius: 12px;
+  border-radius: 10px;
+  font-family: 'Montserrat', sans-serif;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-  .utility-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 8px 16px;
-    gap: 6px;
-    height: auto;
-  }
-
-  .utility-right {
-    gap: 10px;
-  }
-
   .header-main {
-    height: 85px;
+    height: 72px;
     padding: 12px 16px;
   }
 
@@ -719,34 +625,34 @@ defineOptions({
     display: flex;
   }
 
-  .search-toggle.mobile-only {
-    display: inline-flex;
-  }
-
   .hamburger-menu {
     display: flex;
   }
 
   .mobile-menu {
     display: block;
-    top: 117px;
-    height: calc(100vh - 117px);
+    top: 72px;
+    height: calc(100vh - 72px);
   }
 }
 
 @media (max-width: 480px) {
-  .utility-right {
-    display: none;
+  .brand-logo-img {
+    height: 52px;
   }
 
-  .brand-logo-image {
-    width: clamp(130px, 42vw, 180px);
-    height: 46px;
+  .brand-text-main {
+    font-size: 15px;
+  }
+
+  .brand-text-sub {
+    font-size: 9px;
+    letter-spacing: 1.5px;
   }
 
   .mobile-menu {
-    top: 117px;
-    height: calc(100vh - 117px);
+    top: 72px;
+    height: calc(100vh - 72px);
   }
 }
 </style>

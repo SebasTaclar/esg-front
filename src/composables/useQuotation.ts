@@ -54,7 +54,7 @@ watch(quotationItems, (newItems) => {
 
 function buildWhatsAppMessage(items: QuotationItem[]): string {
   const lines: string[] = []
-  lines.push('Hola DISEF.')
+  lines.push('Hola ESG.')
   lines.push('')
   lines.push('Estoy interesado en recibir una cotización de los siguientes productos:')
   lines.push('')

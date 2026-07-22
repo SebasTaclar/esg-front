@@ -147,7 +147,7 @@ const products = computed<FeaturedProduct[]>(() => {
       return {
         id: p.id,
         name: p.name,
-        brand: p.brand || 'DISEF',
+        brand: p.brand || 'ESG',
         sku: p.sku || 'N/A',
         image: p.images?.[0] || 'https://placehold.co/400x400/1a1a1a/ffffff?text=Producto',
         badge,

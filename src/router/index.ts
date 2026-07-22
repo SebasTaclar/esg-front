@@ -82,8 +82,7 @@ const router = createRouter({
 
     {
       path: '/ofertas',
-      name: 'ofertas',
-      component: () => import('../views/AirPodsPage.vue'),
+      redirect: '/',
     },
 
     {

@@ -3,7 +3,7 @@
     <div class="why-container">
       <header class="why-header">
         <span class="why-label">— POR QUÉ ELEGIR —</span>
-        <h2 class="why-title">DISE<span class="highlight">F</span></h2>
+        <h2 class="why-title">ES<span class="highlight">G</span></h2>
         <p class="why-subtitle">Más de 20 años siendo aliados estratégicos de empresas, contratistas e ingenieros, ofreciendo soluciones eléctricas e industriales con calidad, respaldo y confianza.</p>
         <span class="why-title-line"></span>
       </header>
@@ -83,7 +83,7 @@
               <i class="fas fa-phone"></i> Contactar un Asesor
             </a>
           </div>
-          <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784053605/WhatsApp_Image_2026-07-04_at_12.02.46_PM_1_sdgzrg.jpg" alt="Productos DISEF" class="why-cta-image" />
+          <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784053605/WhatsApp_Image_2026-07-04_at_12.02.46_PM_1_sdgzrg.jpg" alt="Productos ESG" class="why-cta-image" />
         </div>
       </div>
     </div>

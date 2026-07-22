@@ -1,156 +1,166 @@
 <template>
   <section class="contact-section">
     <div class="contact-container">
-      <!-- Header -->
       <header class="contact-header">
-        <span class="contact-label">— CONTÁCTANOS —</span>
-        <h2 class="contact-title">¿HABLAMOS DE <span class="highlight">TU PROYECTO</span>?</h2>
+        <div class="header-line"></div>
+        <h2 class="contact-title">CONTÁCT<span class="highlight">ANOS</span></h2>
+        <p class="contact-subtitle">Estamos listos para acompañar a su organización en cada paso hacia la excelencia.</p>
       </header>
 
-      <!-- Main Content -->
       <div class="contact-main">
-        <!-- Left Side -->
         <div class="contact-left">
-          <p class="contact-text">Estamos listos para ayudarte a encontrar la mejor solución eléctrica e industrial. <strong>¡Hablemos!</strong></p>
+          <h3 class="left-title">HABLEMOS DE CÓMO <span class="highlight">PODEMOS AYUDARLE</span></h3>
+          <p class="left-desc">Déjenos sus datos o escríbanos directamente. Nuestro equipo de expertos se pondrá en contacto con usted a la brevedad.</p>
 
-          <div class="contact-whatsapp">
-            <div class="whatsapp-icon">
-              <i class="fab fa-whatsapp"></i>
-            </div>
-            <div class="whatsapp-info">
-              <span class="whatsapp-title">¿Necesitas ayuda ahora?</span>
-              <span class="whatsapp-text">Escríbenos por WhatsApp y te respondemos rápido.</span>
-            </div>
-          </div>
-
-          <a href="https://wa.me/573213727442" target="_blank" class="btn-whatsapp">
-            <i class="fab fa-whatsapp"></i> ESCRÍBENOS POR WHATSAPP <i class="fas fa-arrow-right"></i>
-          </a>
-
-          <!-- Features Grid -->
-          <div class="contact-features">
-            <div class="feature-box">
-              <i class="fas fa-headset"></i>
-              <span class="feature-title">ASESORÍA ESPECIALIZADA</span>
-              <span class="feature-text">Te asesoramos para seleccionar los productos adecuados para tu proyecto con el respaldo de expertos.</span>
-            </div>
-            <div class="feature-box">
-              <i class="fas fa-bolt"></i>
-              <span class="feature-title">RESPUESTA RÁPIDA</span>
-              <span class="feature-text">Nuestro equipo está listo para responder tus consultas y brindarte soluciones oportunas.</span>
-            </div>
-            <div class="feature-box">
-              <i class="fas fa-truck-fast"></i>
-              <span class="feature-title">COBERTURA NACIONAL</span>
-              <span class="feature-text">Enviamos a todo el país con opciones de envío seguras y seguimiento en tiempo real.</span>
-            </div>
-            <div class="feature-box">
-              <i class="fas fa-shield-halved"></i>
-              <span class="feature-title">CONFIANZA Y RESPALDO</span>
-              <span class="feature-text">Más de 20 años acompañando proyectos eléctricos e industriales de nuestros clientes.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Side -->
-        <div class="contact-right">
-          <div class="contact-info-list">
-            <div class="info-row">
-              <div class="info-icon">
-                <i class="fas fa-map-marker-alt"></i>
+          <div class="contact-info-items">
+            <div class="info-item">
+              <div class="info-icon-circle">
+                <i class="fas fa-phone-alt"></i>
               </div>
-              <div class="info-content">
-                <span class="info-label">Dirección</span>
-                <span class="info-value">Bogotá, Colombia</span>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-icon">
-                <i class="fas fa-phone"></i>
-              </div>
-              <div class="info-content">
+              <div class="info-text">
                 <span class="info-label">Teléfono</span>
-                <span class="info-value">+57 (601) 123 4567</span>
+                <span class="info-value">324 289 9188 - 318 388 6699 - 302 226 8128</span>
               </div>
             </div>
-            <div class="info-row">
-              <div class="info-icon whatsapp">
-                <i class="fab fa-whatsapp"></i>
-              </div>
-              <div class="info-content">
-                <span class="info-label">WhatsApp</span>
-                <span class="info-value">+57 300 123 4567</span>
-              </div>
-            </div>
-            <div class="info-row">
-              <div class="info-icon">
+            <div class="info-item">
+              <div class="info-icon-circle">
                 <i class="fas fa-envelope"></i>
               </div>
-              <div class="info-content">
-                <span class="info-label">Correo electrónico</span>
-                <span class="info-value">contacto@disef.com.co</span>
+              <div class="info-text">
+                <span class="info-label">Correo</span>
+                <span class="info-value">comercial@esgestionempresarial.com<br/>ventas@esgestionempresarial.com</span>
               </div>
             </div>
-            <div class="info-row">
-              <div class="info-icon">
+            <div class="info-item">
+              <div class="info-icon-circle">
+                <i class="fas fa-map-marker-alt"></i>
+              </div>
+              <div class="info-text">
+                <span class="info-label">Dirección</span>
+                <span class="info-value">Colombia</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-icon-circle">
                 <i class="fas fa-clock"></i>
               </div>
-              <div class="info-content">
+              <div class="info-text">
                 <span class="info-label">Horario de atención</span>
-                <span class="info-value">Lunes a Viernes<br/>8:00 AM - 6:00 PM</span>
+                <span class="info-value">L-V 08:00 a.m - 06:00 p.m</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="contact-image">
-            <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784053605/WhatsApp_Image_2026-07-04_at_12.02.46_PM_1_sdgzrg.jpg" alt="Productos DISEF" />
+        <div class="contact-right">
+          <div class="form-card">
+            <div class="form-header">
+              <div class="form-header-icon">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div class="form-header-text">
+                <h4>Envíenos un mensaje</h4>
+                <p>Completa el formulario y te responderemos pronto.</p>
+              </div>
+            </div>
+
+            <form class="contact-form" @submit.prevent="handleSubmit">
+              <div class="form-row">
+                <div class="form-group">
+                  <div class="input-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" v-model="form.name" placeholder="Nombre completo" required />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="input-icon">
+                    <i class="fas fa-building"></i>
+                    <input type="text" v-model="form.company" placeholder="Empresa" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <div class="input-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" v-model="form.email" placeholder="Correo electrónico" required />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="input-icon">
+                    <i class="fas fa-phone"></i>
+                    <input type="tel" v-model="form.phone" placeholder="Teléfono" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-icon select-icon">
+                  <i class="fas fa-list-ul"></i>
+                  <select v-model="form.subject" required>
+                    <option value="" disabled selected>¿En qué podemos ayudarle?</option>
+                    <option value="consultoria">Consultoría</option>
+                    <option value="auditoria">Auditoría</option>
+                    <option value="certificacion">Certificación ISO</option>
+                    <option value="capacitacion">Capacitación</option>
+                    <option value="laboratorio">Laboratorios</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-icon textarea-icon">
+                  <i class="fas fa-pen"></i>
+                  <textarea v-model="form.message" placeholder="Cuéntanos más sobre tu necesidad..." rows="4"></textarea>
+                </div>
+              </div>
+              <button type="submit" class="btn-submit">
+                Enviar mensaje <i class="fas fa-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+
+          <div class="contact-image-side">
+            <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784053605/WhatsApp_Image_2026-07-04_at_12.02.46_PM_1_sdgzrg.jpg" alt="ES Gestión Empresarial" />
           </div>
         </div>
       </div>
 
-      <!-- Bottom CTA -->
-      <div class="contact-bottom">
-        <div class="bottom-left">
-          <i class="fas fa-phone-alt bottom-icon"></i>
-          <div>
-            <h4>¿No encuentras el producto que buscas?</h4>
-            <p>Nuestro equipo puede ayudarte a encontrar la solución ideal para tu necesidad.</p>
+      <div class="contact-badges">
+        <div class="badge-item">
+          <div class="badge-icon">
+            <i class="fas fa-bolt"></i>
+          </div>
+          <div class="badge-text">
+            <span class="badge-title">Respuesta rápida</span>
+            <span class="badge-desc">Nos comprometemos a responder en menos de 24 horas hábiles.</span>
           </div>
         </div>
-        <div class="bottom-buttons">
-          <a href="https://wa.me/573213727442" target="_blank" class="btn btn-yellow">
-            <i class="fas fa-file-invoice"></i> SOLICITAR COTIZACIÓN
-          </a>
-          <a href="tel:+573213727442" class="btn btn-outline">
-            <i class="fas fa-phone"></i> LLÁMANOS AHORA
-          </a>
+        <div class="badge-item">
+          <div class="badge-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="badge-text">
+            <span class="badge-title">Atención personalizada</span>
+            <span class="badge-desc">Escuchamos sus necesidades y diseñamos soluciones a su medida.</span>
+          </div>
         </div>
-      </div>
-
-      <!-- Trust Badges -->
-      <div class="contact-trust">
-        <div class="trust-item">
-          <i class="fas fa-certificate"></i>
-          <span class="trust-title">Productos certificados</span>
-          <span class="trust-text">Normas nacionales e internacionales.</span>
+        <div class="badge-item">
+          <div class="badge-icon">
+            <i class="fas fa-handshake"></i>
+          </div>
+          <div class="badge-text">
+            <span class="badge-title">Confidencialidad</span>
+            <span class="badge-desc">Manejamos su información con total confidencialidad y profesionalismo.</span>
+          </div>
         </div>
-        <div class="trust-separator"></div>
-        <div class="trust-item">
-          <i class="fas fa-users"></i>
-          <span class="trust-title">Atención personalizada</span>
-          <span class="trust-text">Soluciones a la medida de tu empresa y proyecto.</span>
-        </div>
-        <div class="trust-separator"></div>
-        <div class="trust-item">
-          <i class="fas fa-award"></i>
-          <span class="trust-title">Marcas líderes</span>
-          <span class="trust-text">Distribuidores de fabricantes reconocidos a nivel mundial.</span>
-        </div>
-        <div class="trust-separator"></div>
-        <div class="trust-item">
-          <i class="fas fa-check-circle"></i>
-          <span class="trust-title">Calidad garantizada</span>
-          <span class="trust-text">Equipos confiables para máxima seguridad y rendimiento.</span>
+        <div class="badge-item">
+          <div class="badge-icon">
+            <i class="fas fa-bullseye"></i>
+          </div>
+          <div class="badge-text">
+            <span class="badge-title">Soluciones efectivas</span>
+            <span class="badge-desc">Enfoque estratégico para generar resultados reales y sostenibles.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -158,9 +168,34 @@
 </template>
 
 <script setup lang="ts">
+import { reactive } from 'vue'
+
 defineOptions({
   name: 'ContactSection'
 })
+
+const form = reactive({
+  name: '',
+  company: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: ''
+})
+
+const handleSubmit = () => {
+  const phone = '573242899188'
+  let text = `*Nuevo mensaje de contacto*\n\n`
+  text += `*Nombre:* ${form.name}\n`
+  if (form.company) text += `*Empresa:* ${form.company}\n`
+  text += `*Correo:* ${form.email}\n`
+  if (form.phone) text += `*Teléfono:* ${form.phone}\n`
+  text += `*Asunto:* ${form.subject}\n`
+  if (form.message) text += `*Mensaje:* ${form.message}\n`
+
+  const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`
+  window.open(url, '_blank')
+}
 </script>
 
 <style scoped>
@@ -170,205 +205,105 @@ defineOptions({
 }
 
 .contact-container {
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 clamp(16px, 4vw, 44px);
 }
 
 .contact-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 48px;
 }
 
-.contact-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #FFC107;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  margin-bottom: 8px;
+.header-line {
+  width: 40px;
+  height: 4px;
+  background: #C89B2D;
+  margin: 0 auto 16px;
+  border-radius: 2px;
 }
 
 .contact-title {
-  margin: 0;
-  font-size: clamp(28px, 3.5vw, 42px);
-  font-weight: 900;
-  color: #111111;
+  margin: 0 0 12px;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 800;
+  color: #1A1A1A;
   letter-spacing: -0.5px;
-  font-style: italic;
-  line-height: 1.2;
 }
 
 .contact-title .highlight {
-  color: #FFC107;
+  color: #C89B2D;
+}
+
+.contact-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: #6B6B6B;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .contact-main {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 50px;
-  margin-bottom: 40px;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 48px;
+  align-items: start;
+  margin-bottom: 48px;
 }
 
 .contact-left {
+  padding-top: 8px;
+}
+
+.left-title {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1A1A1A;
+  line-height: 1.3;
+}
+
+.left-title .highlight {
+  color: #C89B2D;
+}
+
+.left-desc {
+  margin: 0 0 32px;
+  font-size: 14px;
+  color: #6B6B6B;
+  line-height: 1.7;
+}
+
+.contact-info-items {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.contact-text {
-  font-size: 16px;
-  color: #555555;
-  line-height: 1.7;
-  margin: 0;
-}
-
-.contact-text strong {
-  color: #111111;
-}
-
-.contact-whatsapp {
+.info-item {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 20px;
-  background: #F7F8FA;
-  border-radius: 12px;
 }
 
-.whatsapp-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #25D366;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.whatsapp-icon i {
-  color: #FFFFFF;
-  font-size: 22px;
-}
-
-.whatsapp-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.whatsapp-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #111111;
-}
-
-.whatsapp-text {
-  font-size: 13px;
-  color: #777777;
-}
-
-.btn-whatsapp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 14px 28px;
-  background: #25D366;
-  color: #FFFFFF;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  letter-spacing: 0.5px;
-  transition: all 0.3s ease;
-  width: fit-content;
-}
-
-.btn-whatsapp:hover {
-  background: #1DA851;
-  transform: translateY(-2px);
-}
-
-.contact-features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 10px;
-}
-
-.feature-box {
-  padding: 20px;
-  background: #F7F8FA;
-  border-radius: 12px;
-  border: 1px solid #E5E5E5;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.feature-box i {
-  font-size: 20px;
-  color: #FFC107;
-}
-
-.feature-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #111111;
-  letter-spacing: 0.5px;
-}
-
-.feature-text {
-  font-size: 12px;
-  color: #777777;
-  line-height: 1.5;
-}
-
-.contact-right {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.contact-info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.info-row .info-icon {
+.info-icon-circle {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255, 193, 7, 0.12);
+  background: rgba(200, 155, 45, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.info-row .info-icon i {
-  font-size: 18px;
-  color: #FFC107;
+.info-icon-circle i {
+  font-size: 16px;
+  color: #C89B2D;
 }
 
-.info-row .info-icon.whatsapp {
-  background: rgba(37, 211, 102, 0.12);
-}
-
-.info-row .info-icon.whatsapp i {
-  color: #25D366;
-}
-
-.info-content {
+.info-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -376,172 +311,227 @@ defineOptions({
 
 .info-label {
   font-size: 13px;
-  font-weight: 600;
-  color: #FFC107;
+  font-weight: 700;
+  color: #C89B2D;
 }
 
 .info-value {
   font-size: 14px;
-  color: #555555;
-  line-height: 1.5;
+  color: #4A4A4A;
 }
 
-.contact-image {
+.contact-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.form-card {
+  background: #FFFFFF;
   border-radius: 16px;
-  overflow: hidden;
-  height: 200px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid #F0F0F0;
+  padding: 32px;
 }
 
-.contact-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.contact-bottom {
+.form-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 24px 32px;
-  background: #F7F8FA;
-  border-radius: 16px;
-  border: 1px solid #E5E5E5;
-  margin-bottom: 40px;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
-.bottom-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.bottom-icon {
-  font-size: 28px;
-  color: #FFC107;
-}
-
-.bottom-left h4 {
-  margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #111111;
-}
-
-.bottom-left p {
-  margin: 0;
-  font-size: 13px;
-  color: #777777;
-}
-
-.bottom-buttons {
-  display: flex;
-  gap: 12px;
-  flex-shrink: 0;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  border: none;
-  white-space: nowrap;
-  letter-spacing: 0.5px;
-}
-
-.btn-yellow {
-  background: #FFC107;
-  color: #111111;
-}
-
-.btn-yellow:hover {
-  background: #E5AC00;
-  transform: translateY(-2px);
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid #111111;
-  color: #111111;
-}
-
-.btn-outline:hover {
-  background: #111111;
-  color: #FFFFFF;
-  transform: translateY(-2px);
-}
-
-.contact-trust {
+.form-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(200, 155, 45, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  padding: 24px 40px;
-  border: 1px solid #E5E5E5;
-  border-radius: 12px;
+  flex-shrink: 0;
 }
 
-.trust-item {
+.form-header-icon i {
+  font-size: 20px;
+  color: #C89B2D;
+}
+
+.form-header-text h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1A1A1A;
+}
+
+.form-header-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #6B6B6B;
+}
+
+.contact-form {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-icon {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 32px;
-  text-align: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #E5E5E5;
+  border-radius: 10px;
+  background: #FAFAFA;
+  transition: border-color 0.3s ease;
 }
 
-.trust-item i {
-  font-size: 20px;
-  color: #FFC107;
+.input-icon:focus-within {
+  border-color: #C89B2D;
+  background: #FFFFFF;
 }
 
-.trust-title {
+.input-icon i {
+  font-size: 14px;
+  color: #AAAAAA;
+  flex-shrink: 0;
+}
+
+.input-icon input,
+.input-icon select,
+.input-icon textarea {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: #1A1A1A;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.input-icon input::placeholder,
+.input-icon textarea::placeholder {
+  color: #AAAAAA;
+}
+
+.select-icon select {
+  appearance: none;
+  cursor: pointer;
+  color: #AAAAAA;
+}
+
+.select-icon select:valid {
+  color: #1A1A1A;
+}
+
+.textarea-icon {
+  align-items: flex-start;
+}
+
+.textarea-icon i {
+  margin-top: 4px;
+}
+
+.input-icon textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: #C89B2D;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  width: 100%;
+}
+
+.btn-submit:hover {
+  background: #B8891F;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(200, 155, 45, 0.3);
+}
+
+.contact-image-side {
+  display: none;
+}
+
+.contact-badges {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding-top: 40px;
+  border-top: 1px solid #F0F0F0;
+}
+
+.badge-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.badge-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(200, 155, 45, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.badge-icon i {
+  font-size: 16px;
+  color: #C89B2D;
+}
+
+.badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.badge-title {
   font-size: 13px;
   font-weight: 700;
-  color: #111111;
+  color: #1A1A1A;
 }
 
-.trust-text {
-  font-size: 11px;
-  color: #777777;
-}
-
-.trust-separator {
-  width: 1px;
-  height: 50px;
-  background: #E5E5E5;
-  flex-shrink: 0;
+.badge-desc {
+  font-size: 12px;
+  color: #6B6B6B;
+  line-height: 1.5;
 }
 
 @media (max-width: 1024px) {
   .contact-main {
     grid-template-columns: 1fr;
-    gap: 40px;
   }
 
-  .contact-bottom {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-  }
-
-  .bottom-left {
-    flex-direction: column;
-  }
-
-  .contact-trust {
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-
-  .trust-separator {
-    display: none;
+  .contact-badges {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -550,31 +540,12 @@ defineOptions({
     padding: 60px 0;
   }
 
-  .contact-features {
+  .form-row {
     grid-template-columns: 1fr;
   }
 
-  .bottom-buttons {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .btn {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .contact-trust {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .trust-item {
-    align-items: flex-start;
-    text-align: left;
-    padding: 0;
+  .contact-badges {
+    grid-template-columns: 1fr;
   }
 }
 </style>
