@@ -1,5 +1,5 @@
 export const BRAND = {
-	name: 'DISEF Comercializadora Industrial'
+	name: 'ESG Gestión Empresarial'
 } as const
 
 export const SOCIALS = {

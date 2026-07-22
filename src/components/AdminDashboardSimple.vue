@@ -4,7 +4,11 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <router-link to="/" class="sidebar-logo">
-          <img src="/images/logof.png" alt="DISEF" class="logo-img" />
+          <div class="logo-text-mark">
+            <span class="logo-mark-e">E</span>
+            <span class="logo-mark-s">S</span>
+            <span class="logo-mark-g">G</span>
+          </div>
         </router-link>
         <p class="sidebar-subtitle">Comercializadora Industrial</p>
       </div>
@@ -34,7 +38,7 @@
           </span>
           <span class="nav-label">Cerrar sesión</span>
         </button>
-        <p class="copyright">DISEF Comercializadora Industrial<br/>© 2025 Todos los derechos reservados.</p>
+        <p class="copyright">ESG Gestión Empresarial<br/>© 2025 Todos los derechos reservados.</p>
       </div>
     </aside>
 

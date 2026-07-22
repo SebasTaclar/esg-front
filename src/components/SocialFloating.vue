@@ -21,8 +21,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
-// Número de WhatsApp de DISEF Comercializadora Industrial
-const rawNumber = '3229118168'
+// Número de WhatsApp de ESG Gestión Empresarial
+const rawNumber = '3242899188'
 // Normaliza a formato internacional (prepend 57 para Colombia)
 const whatsappNumber = '57' + rawNumber.replace(/[^\d]/g, '')
 
@@ -44,7 +44,7 @@ defineOptions({ name: 'SocialFloating' })
 /* === WHATSAPP FLOTANTE DERECHA === */
 .floating-whatsapp {
   position: fixed;
-  bottom: 20px;
+  bottom: 40px;
   right: 20px;
   z-index: 1000;
 }

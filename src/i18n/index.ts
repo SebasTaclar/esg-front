@@ -28,7 +28,7 @@ const messages = {
 			explore: 'EXPLORAR COLECCIÓN',
 			learnMore: 'CONOCER MÁS',
 			scrollDown: 'Desliza',
-			logoAlt: 'DISEF Comercializadora Industrial'
+			logoAlt: 'ESG Gestión Empresarial'
 		},
 		visit: {
 			title: 'Visítanos',
@@ -44,7 +44,7 @@ const messages = {
 			quickLinks: 'Enlaces Rápidos',
 			customerSupport: 'Atención al Cliente',
 			madeWith: 'Soluciones para obra, planta y mantenimiento ✨',
-			copyright: '© {year} DISEF Comercializadora Industrial. Todos los derechos reservados.',
+			copyright: '© {year} ESG Gestión Empresarial. Todos los derechos reservados.',
 			links: {
 				products: 'Productos',
 				categories: 'Categorías',
@@ -58,7 +58,7 @@ const messages = {
 		},
 		whatsapp: {
 			defaultMessage:
-				'Hola! Me interesa conocer más sobre los productos y soluciones de DISEF Comercializadora Industrial. ¿Me pueden brindar más información?'
+				'Hola! Me interesa conocer más sobre los productos y soluciones de ESG Gestión Empresarial. ¿Me pueden brindar más información?'
 		},
 		store: {
 			pickup: {
@@ -100,7 +100,7 @@ const messages = {
 				{
 					title: '1. Información general',
 					paragraphs: [
-						'Estos Términos y Condiciones regulan el uso del sitio web y la compra de productos y soluciones ofrecidos por DISEF Comercializadora Industrial.',
+						'Estos Términos y Condiciones regulan el uso del sitio web y la compra de productos y soluciones ofrecidos por ESG Gestión Empresarial.',
 						'Al navegar, registrarte o realizar una compra, aceptas estos términos. Si no estás de acuerdo, por favor no uses el sitio.',
 						'Podemos actualizar estos términos cuando sea necesario. La versión vigente será la publicada en esta página.'
 					]
@@ -206,7 +206,7 @@ const messages = {
 			explore: 'EXPLORE COLLECTION',
 			learnMore: 'LEARN MORE',
 			scrollDown: 'Scroll',
-			logoAlt: 'DISEF Commercial Industrial'
+			logoAlt: 'ESG Gestión Empresarial'
 		},
 		visit: {
 			title: 'Visit us',
@@ -222,7 +222,7 @@ const messages = {
 			quickLinks: 'Quick Links',
 			customerSupport: 'Customer Support',
 			madeWith: 'Solutions for worksites, plants and maintenance ✨',
-			copyright: '© {year} DISEF Commercial Industrial. All rights reserved.',
+			copyright: '© {year} ESG Gestión Empresarial. All rights reserved.',
 			links: {
 				products: 'Products',
 				categories: 'Categories',
@@ -235,7 +235,7 @@ const messages = {
 			}
 		},
 		whatsapp: {
-			defaultMessage: 'Hi! I would like to know more about DISEF Comercializadora Industrial products and solutions. Can you share more information?'
+			defaultMessage: 'Hi! I would like to know more about ESG Gestión Empresarial products and solutions. Can you share more information?'
 		},
 		store: {
 			pickup: {
@@ -277,7 +277,7 @@ const messages = {
 				{
 					title: '1. General information',
 					paragraphs: [
-						'These Terms & Conditions govern the use of the website and the purchase of products and solutions offered by DISEF Comercializadora Industrial.',
+						'These Terms & Conditions govern the use of the website and the purchase of products and solutions offered by ESG Gestión Empresarial.',
 						'By browsing, signing up, or placing an order, you agree to these terms. If you do not agree, please do not use the site.',
 						'We may update these terms when needed. The current version is the one published on this page.'
 					]

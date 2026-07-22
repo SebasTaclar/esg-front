@@ -3,52 +3,54 @@
 @import './styles/modern-ecommerce.css';
 
 :root {
-  /* SOYDANI Brand Colors - Rojo, Negro, Blanco */
-  --primary-red: #DC2626;        /* Rojo principal */
-  --secondary-red: #EF4444;      /* Rojo claro */
-  --tertiary-red: #B91C1C;       /* Rojo medio */
-  --dark-red: #991B1B;           /* Rojo oscuro */
-  --black: #000000;              /* Negro */
-  --white: #ffffff;              /* Blanco */
+  /* ESG Brand Colors - Dorado, Gris Oscuro, Blanco */
+  --primary-gold: #C89B2D;
+  --primary-gold-light: #D4AD4B;
+  --primary-gold-dark: #A88224;
+  --dark-gray: #4A4A4A;
+  --medium-gray: #757575;
+  --light-gray: #F5F5F5;
+  --white: #ffffff;
+  --black: #1A1A1A;
 
   /* Legacy support for existing components */
-  --primary-color: var(--primary-red);
-  --primary-color-dark: var(--dark-red);
-  --primary-color-light: var(--secondary-red);
-  --accent-color: var(--primary-red);
-  --accent-color-dark: var(--tertiary-red);
+  --primary-color: var(--primary-gold);
+  --primary-color-dark: var(--primary-gold-dark);
+  --primary-color-light: var(--primary-gold-light);
+  --accent-color: var(--primary-gold);
+  --accent-color-dark: var(--primary-gold-dark);
   --accent-color-light: var(--white);
 
   /* Brand Color with Alpha */
-  --primary-color-alpha-30: rgba(220, 38, 38, 0.3);
-  --primary-color-alpha-40: rgba(220, 38, 38, 0.4);
-  --primary-color-alpha-60: rgba(220, 38, 38, 0.6);
-  --primary-color-alpha-80: rgba(220, 38, 38, 0.8);
+  --primary-color-alpha-30: rgba(200, 155, 45, 0.3);
+  --primary-color-alpha-40: rgba(200, 155, 45, 0.4);
+  --primary-color-alpha-60: rgba(200, 155, 45, 0.6);
+  --primary-color-alpha-80: rgba(200, 155, 45, 0.8);
 
   /* Secondary Color with Alpha */
-  --secondary-color-alpha-30: rgba(239, 68, 68, 0.3);
-  --secondary-color-alpha-40: rgba(239, 68, 68, 0.4);
-  --secondary-color-alpha-60: rgba(239, 68, 68, 0.6);
-  --secondary-color-alpha-80: rgba(239, 68, 68, 0.8);
+  --secondary-color-alpha-30: rgba(74, 74, 74, 0.3);
+  --secondary-color-alpha-40: rgba(74, 74, 74, 0.4);
+  --secondary-color-alpha-60: rgba(74, 74, 74, 0.6);
+  --secondary-color-alpha-80: rgba(74, 74, 74, 0.8);
 
   /* Gradients */
-  --primary-gradient: linear-gradient(135deg, var(--primary-red) 0%, var(--dark-red) 100%);
-  --primary-gradient-hover: linear-gradient(135deg, var(--dark-red) 0%, var(--primary-red) 100%);
-  --secondary-gradient: linear-gradient(135deg, var(--secondary-red) 0%, var(--primary-red) 100%);
-  --secondary-gradient-hover: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%);
+  --primary-gradient: linear-gradient(135deg, var(--primary-gold) 0%, var(--primary-gold-dark) 100%);
+  --primary-gradient-hover: linear-gradient(135deg, var(--primary-gold-dark) 0%, var(--primary-gold) 100%);
+  --secondary-gradient: linear-gradient(135deg, var(--dark-gray) 0%, #3A3A3A 100%);
+  --secondary-gradient-hover: linear-gradient(135deg, #3A3A3A 0%, var(--dark-gray) 100%);
 
   /* Typography */
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   --font-primary: var(--font-family);
 }
 
 /* Dark Theme Variables (Default) */
 :root {
   /* Default theme - Dark */
-  --bg-color: #000000;
+  --bg-color: #1A1A1A;
   --text-color: #ffffff;
   --text-secondary: rgba(255, 255, 255, 0.9);
-  --border-color: rgba(220, 38, 38, 0.3);
+  --border-color: rgba(200, 155, 45, 0.3);
   --card-bg: rgba(20, 20, 20, 0.9);
   --card-hover-bg: rgba(255, 255, 255, 0.15);
 }

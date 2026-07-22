@@ -1,65 +1,81 @@
 <template>
-  <section class="hero-banner-wrapper">
-    <section class="hero-banner">
-      <div class="hero-bg">
-        <img :src="slides[currentSlide].image" :alt="slides[currentSlide].alt" class="hero-bg-img" />
+  <section class="esg-hero">
+    <!-- Geometric decorative elements -->
+    <div class="esg-hero__geo esg-hero__geo--1" aria-hidden="true"></div>
+    <div class="esg-hero__geo esg-hero__geo--2" aria-hidden="true"></div>
+    <div class="esg-hero__geo esg-hero__geo--3" aria-hidden="true"></div>
+
+    <div class="esg-hero__container">
+      <!-- LEFT: Content -->
+      <div class="esg-hero__content">
+
+
+        <p class="esg-hero__kicker">
+          <span class="esg-hero__kicker-line" aria-hidden="true"></span>
+          CONSULTORÍA ESPECIALIZADA
+        </p>
+
+        <h1 class="esg-hero__title">
+          EXPERTOS EN <br />
+          SISTEMAS DE<br />
+          <span class="esg-hero__title-gold">GESTIÓN</span>
+        </h1>
+
+        <p class="esg-hero__description">
+          Implementamos, fortalecemos y optimizamos Sistemas de Gestión para empresas y laboratorios, impulsando el cumplimiento de estándares, la eficiencia operativa y la mejora continua.
+        </p>
+
+        <blockquote class="esg-hero__quote">
+          «Lo que no se puede medir no se puede controlar; lo que no se puede controlar no se puede gestionar; lo que no se puede gestionar no se puede mejorar.»
+        </blockquote>
+
+
+
+        <!-- CTA Buttons -->
+        <div class="esg-hero__actions">
+          <a href="#contacto" class="esg-hero__btn esg-hero__btn--primary">
+            <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            Solicitar asesoría
+          </a>
+          <a
+            href="https://wa.me/573213727442"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="esg-hero__btn esg-hero__btn--secondary"
+          >
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+            Hablar por WhatsApp
+          </a>
+        </div>
       </div>
 
-      <div class="hero-overlay-left"></div>
-      <div class="hero-diagonal-lines"></div>
+      <!-- RIGHT: Image -->
+      <div class="esg-hero__visual">
+        <div class="esg-hero__image-wrapper">
+          <img
+            src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784583890/esg_yxcmsw.jpg"
+            alt="Profesionales revisando tablet en laboratorio moderno"
+            class="esg-hero__image"
+            loading="eager"
+          />
+          <div class="esg-hero__image-overlay" aria-hidden="true"></div>
+        </div>
 
-      <button class="hero-arrow hero-arrow--left" @click="prevSlide" aria-label="Slide anterior">
-        <i class="fas fa-chevron-left"></i>
-      </button>
-      <button class="hero-arrow hero-arrow--right" @click="nextSlide" aria-label="Siguiente slide">
-        <i class="fas fa-chevron-right"></i>
-      </button>
 
-      <div class="hero-content">
-        <div class="hero-copy">
-          <p class="hero-kicker">
-            <i class="fas fa-bolt" aria-hidden="true"></i>
-            Soluciones industriales y eléctricas
-          </p>
-          <h1 class="hero-title">
-            Más de <span class="hero-highlight">20 años</span><br />
-            ofreciendo soluciones<br />
-            eléctricas e industriales
-          </h1>
-          <p class="hero-subtitle">Calidad, seguridad y eficiencia en cada proyecto.</p>
+      </div>
+    </div>
 
-          <div class="hero-actions">
-            <button class="btn-hero btn-hero--primary" @click="scrollToProducts">
-              <i class="fas fa-clipboard-list" aria-hidden="true"></i>
-              <span>Solicitar cotización</span>
-            </button>
-            <button class="btn-hero btn-hero--secondary" @click="scrollToContact">
-              <i class="fas fa-file-lines" aria-hidden="true"></i>
-              <span>Solicitar cotización</span>
-            </button>
+    <!-- Bottom Value Propositions -->
+    <div class="esg-hero__values-bar">
+      <div class="esg-hero__values-container">
+        <div class="esg-hero__value" v-for="val in values" :key="val.title">
+          <div class="esg-hero__value-icon">
+            <i :class="val.icon" aria-hidden="true"></i>
           </div>
-        </div>
-      </div>
-
-      <div class="hero-indicators">
-        <button
-          v-for="(_, index) in slides"
-          :key="index"
-          class="hero-dot"
-          :class="{ active: index === currentSlide }"
-          @click="goToSlide(index)"
-          :aria-label="`Slide ${index + 1}`"
-        ></button>
-      </div>
-    </section>
-    <div class="benefits-bar">
-      <div class="benefit-item" v-for="benefit in benefits" :key="benefit.title">
-        <div class="benefit-icon">
-          <i :class="benefit.icon" aria-hidden="true"></i>
-        </div>
-        <div class="benefit-text">
-          <strong>{{ benefit.title }}</strong>
-          <span>{{ benefit.description }}</span>
+          <div class="esg-hero__value-info">
+            <strong class="esg-hero__value-title">{{ val.title }}</strong>
+            <span class="esg-hero__value-desc">{{ val.description }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -67,93 +83,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-
-const currentSlide = ref(0)
-let autoplayTimer: ReturnType<typeof setInterval> | null = null
-
-const slides = [
-  {
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1783533124/ChatGPT_Image_8_jul_2026_12_45_14_plultb.png',
-    alt: 'Técnico electricista trabajando en tablero eléctrico industrial'
-  },
-  {
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1783533912/ChatGPT_Image_8_jul_2026_13_05_00_pmnahb.png',
-    alt: 'Equipo de trabajo en instalaciones eléctricas industriales'
-  },
-  {
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1783519773/ChatGPT_Image_8_jul_2026_09_09_13_g2nws1.png',
-    alt: 'Soluciones eléctricas industriales de alta calidad'
-  }
-]
-
-const benefits = [
-  { icon: 'fas fa-certificate', title: 'Productos certificados', description: 'Cumplimiento de normas' },
-  { icon: 'fas fa-truck-fast', title: 'Envíos a todo el país', description: 'Cobertura nacional' },
-  { icon: 'fas fa-headset', title: 'Asesoría técnica', description: 'Especialistas a tu servicio' },
-  { icon: 'fas fa-award', title: 'Marcas líderes', description: 'Distribuidores autorizados' },
-  { icon: 'fas fa-shield-halved', title: 'Pagos seguros', description: 'Compra protegida' }
-]
-
-const nextSlide = () => {
-  currentSlide.value = (currentSlide.value + 1) % slides.length
-  resetAutoplay()
-}
-
-const prevSlide = () => {
-  currentSlide.value = (currentSlide.value - 1 + slides.length) % slides.length
-  resetAutoplay()
-}
-
-const goToSlide = (index: number) => {
-  currentSlide.value = index
-  resetAutoplay()
-}
-
-const resetAutoplay = () => {
-  if (autoplayTimer) clearInterval(autoplayTimer)
-  autoplayTimer = setInterval(nextSlide, 6000)
-}
-
-const scrollToSection = (selector: string) => {
-  const target = document.querySelector(selector)
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-}
-
-const scrollToProducts = () => scrollToSection('#products')
-const scrollToContact = () => scrollToSection('#contact')
-
-onMounted(() => {
-  autoplayTimer = setInterval(nextSlide, 6000)
-})
-
-onUnmounted(() => {
-  if (autoplayTimer) clearInterval(autoplayTimer)
-})
-
 defineOptions({
   name: 'MainBanner'
 })
+
+const certifications = [
+  {
+    iso: 'ISO/IEC 17025',
+    description: 'Laboratorios de ensayo y calibración',
+    icon: 'fas fa-flask'
+  },
+  {
+    iso: 'ISO 9001',
+    description: 'Sistema de Gestión de Calidad',
+    icon: 'fas fa-award'
+  },
+  {
+    iso: 'ISO 45001',
+    description: 'Seguridad y Salud en el Trabajo',
+    icon: 'fas fa-hard-hat'
+  },
+  {
+    iso: 'ISO 14001',
+    description: 'Gestión Ambiental',
+    icon: 'fas fa-leaf'
+  }
+]
+
+const values = [
+  { title: 'Crecimiento', description: 'Explotamos al máximo las capacidades de su organización', icon: 'fas fa-chart-line' },
+  { title: 'Apoyo', description: 'Ponemos nuestra experiencia a su disposición', icon: 'fas fa-handshake' },
+  { title: 'Misión', description: 'Acompañar como aliado estratégico en el logro de objetivos', icon: 'fas fa-gem' },
+  { title: 'Flexibilidad', description: 'Nos ajustamos a sus necesidades', icon: 'fas fa-puzzle-piece' }
+]
 </script>
 
 <style scoped>
-@keyframes slideFromLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-60px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
+/* ========================================
+   ESG Premium Hero Banner
+   Ultra realistic, Fortune 500 quality
+   ======================================== */
 
-@keyframes fadeIn {
+@keyframes heroFadeIn {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -161,404 +135,694 @@ defineOptions({
   }
 }
 
-@keyframes slowZoom {
-  0% {
-    transform: scale(1);
+@keyframes heroSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
   }
-  100% {
-    transform: scale(1.08);
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
-.hero-banner-wrapper {
+@keyframes heroSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes heroFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes heroPulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes heroCountUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Hero Wrapper ---- */
+.esg-hero {
   position: relative;
   width: 100%;
-  margin-bottom: 0;
-}
-
-.hero-banner {
-  position: relative;
-  width: 100%;
-  height: 580px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #FAFAFA;
   overflow: hidden;
-  background: transparent;
-  margin: 0;
-  padding: 0;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.hero-bg {
+/* ---- Geometric Decorative Elements ---- */
+.esg-hero__geo {
   position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  background: #0B0B0B;
-}
-
-.hero-bg-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-  animation: slowZoom 12s ease-in-out infinite alternate;
-  filter: brightness(0.85) saturate(1.1);
-}
-
-.hero-overlay-left {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 45%;
-  height: 100%;
-  background: rgba(11, 11, 11, 0.45);
-  z-index: 1;
-  overflow: hidden;
-}
-
-.hero-diagonal-lines {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
   pointer-events: none;
-  background: 
-    linear-gradient(180deg, rgba(11, 11, 11, 0.1) 0%, rgba(11, 11, 11, 0.25) 100%),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 80px,
-      rgba(255, 193, 7, 0.05) 80px,
-      rgba(255, 193, 7, 0.05) 82px
-    );
-  overflow: hidden;
+  z-index: 0;
 }
 
-.hero-content {
+.esg-hero__geo--1 {
+  top: 10%;
+  left: -5%;
+  width: 400px;
+  height: 400px;
+  border: 1px solid rgba(200, 155, 45, 0.08);
+  border-radius: 50%;
+  animation: heroPulse 6s ease-in-out infinite;
+}
+
+.esg-hero__geo--2 {
+  bottom: 20%;
+  right: -3%;
+  width: 250px;
+  height: 250px;
+  border: 1px solid rgba(200, 155, 45, 0.06);
+  transform: rotate(45deg);
+  animation: heroPulse 8s ease-in-out infinite 1s;
+}
+
+.esg-hero__geo--3 {
+  top: 60%;
+  left: 45%;
+  width: 120px;
+  height: 120px;
+  border: 1px solid rgba(200, 155, 45, 0.05);
+  border-radius: 50%;
+  animation: heroPulse 7s ease-in-out infinite 0.5s;
+}
+
+/* ---- Main Container ---- */
+.esg-hero__container {
   position: relative;
-  z-index: 3;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  max-width: 1400px;
   width: 100%;
-  height: 100%;
+  margin: 0 auto;
+  padding: 0;
+  flex: 1;
+  align-items: stretch;
+}
+
+/* ---- Left Content ---- */
+.esg-hero__content {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 130px clamp(24px, 5vw, 80px);
+  animation: heroSlideLeft 0.8s ease both;
+}
+
+/* Logo */
+.esg-hero__logo {
   display: flex;
   align-items: center;
-  padding-left: clamp(40px, 6vw, 100px);
+  margin-bottom: 8px;
 }
 
-.hero-copy {
-  max-width: 520px;
-  animation: slideFromLeft 0.7s ease both;
+.esg-hero__logo-img {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
 }
 
-.hero-kicker {
+/* Kicker */
+.esg-hero__kicker {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 20px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  background: rgba(255, 193, 7, 0.12);
-  border: 1px solid rgba(255, 193, 7, 0.25);
-  color: #FFC107;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #C89B2D;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.esg-hero__kicker-line {
+  display: inline-block;
+  width: 40px;
+  height: 2px;
+  background: #C89B2D;
+  border-radius: 1px;
+}
+
+/* Title */
+.esg-hero__title {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 64px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: #1A1A1A;
+  letter-spacing: -1.5px;
+}
+
+.esg-hero__title-gold {
+  color: #C89B2D;
+  display: inline-block;
+}
+
+/* Description */
+.esg-hero__description {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: #757575;
+  max-width: 480px;
+}
+
+/* Quote */
+.esg-hero__quote {
+  margin: 0;
+  padding: 16px 0 16px 20px;
+  border-left: 3px solid #C89B2D;
+  font-size: 13px;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.7;
+  color: #9A9A9A;
+  max-width: 480px;
+}
+
+.esg-hero__quote-author {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  font-style: normal;
+  color: #C89B2D;
   letter-spacing: 0.5px;
 }
 
-.hero-kicker i {
-  font-size: 0.9rem;
-}
-
-.hero-title {
-  margin: 0 0 20px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 46px;
-  font-weight: 700;
-  line-height: 1.1;
-  color: #FFFFFF;
-  letter-spacing: -0.5px;
-}
-
-.hero-highlight {
-  color: #FFC107;
-  display: inline;
-}
-
-.hero-subtitle {
-  margin: 0 0 28px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: clamp(16px, 1.8vw, 20px);
-  font-weight: 400;
-  color: #B5B5B5;
-  line-height: 1.5;
-  max-width: 420px;
-}
-
-.hero-actions {
-  display: flex;
-  gap: 16px;
-  animation: fadeIn 0.7s ease 0.3s both;
-}
-
-.btn-hero {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  border: none;
-}
-
-.btn-hero--primary {
-  background: #FFC107;
-  color: #0B0B0B;
-}
-
-.btn-hero--primary:hover {
-  background: #E0A800;
-  transform: scale(1.03);
-  box-shadow: 0 8px 24px rgba(255, 193, 7, 0.3);
-}
-
-.btn-hero--secondary {
-  background: transparent;
-  color: #FFFFFF;
-  border: 2px solid #FFFFFF;
-}
-
-.btn-hero--secondary:hover {
-  background: #FFFFFF;
-  color: #0B0B0B;
-}
-
-.hero-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 5;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #0B0B0B;
-  border: 1px solid #555555;
-  color: #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  font-size: 16px;
-}
-
-.hero-arrow:hover {
-  background: #FFC107;
-  border-color: #FFC107;
-  color: #0B0B0B;
-}
-
-.hero-arrow--left {
-  left: 24px;
-}
-
-.hero-arrow--right {
-  right: 24px;
-}
-
-.hero-indicators {
-  position: absolute;
-  bottom: 90px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  display: flex;
-  gap: 10px;
-}
-
-.hero-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid #FFFFFF;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  padding: 0;
-}
-
-.hero-dot.active {
-  background: #FFC107;
-  border-color: #FFC107;
-}
-
-.hero-dot:hover:not(.active) {
-  border-color: #FFC107;
-}
-
-.benefits-bar {
-  position: relative;
-  width: calc(100% - 80px);
-  max-width: 1320px;
-  margin: -60px auto 0;
+/* ---- Certification Cards ---- */
+.esg-hero__certifications {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  background: #1A1A1A;
-  border-radius: 16px;
-  padding: 28px 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  z-index: 10;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
-.benefit-item {
+.esg-hero__cert-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 24px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 12px;
+  padding: 16px 18px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #ECECEC;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.benefit-item:last-child {
-  border-right: none;
+.esg-hero__cert-card:hover {
+  border-color: rgba(200, 155, 45, 0.3);
+  box-shadow: 0 4px 16px rgba(200, 155, 45, 0.08);
+  transform: translateY(-2px);
 }
 
-.benefit-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: rgba(255, 193, 7, 0.12);
+.esg-hero__cert-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(200, 155, 45, 0.08);
   flex-shrink: 0;
 }
 
-.benefit-icon i {
-  color: #FFC107;
-  font-size: 18px;
+.esg-hero__cert-icon i {
+  color: #C89B2D;
+  font-size: 16px;
 }
 
-.benefit-text {
+.esg-hero__cert-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.benefit-text strong {
-  color: #FFFFFF;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 14px;
-  font-weight: 600;
+.esg-hero__cert-iso {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4A4A4A;
+  letter-spacing: 0.3px;
+}
+
+.esg-hero__cert-desc {
+  font-size: 11px;
+  font-weight: 400;
+  color: #9A9A9A;
   line-height: 1.3;
 }
 
-.benefit-text span {
-  color: #B5B5B5;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 12px;
+/* ---- CTA Buttons ---- */
+.esg-hero__actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.esg-hero__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 28px;
+  border-radius: 10px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  border: none;
+  letter-spacing: 0.2px;
+}
+
+.esg-hero__btn--primary {
+  background: #C89B2D;
+  color: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(200, 155, 45, 0.3);
+}
+
+.esg-hero__btn--primary:hover {
+  background: #B8891F;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(200, 155, 45, 0.35);
+}
+
+.esg-hero__btn--secondary {
+  background: transparent;
+  color: #4A4A4A;
+  border: 2px solid #4A4A4A;
+}
+
+.esg-hero__btn--secondary:hover {
+  background: #4A4A4A;
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(74, 74, 74, 0.2);
+}
+
+/* ---- Right Visual ---- */
+.esg-hero__visual {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  animation: heroSlideRight 0.8s ease both 0.2s;
+}
+
+.esg-hero__image-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.esg-hero__image {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.esg-hero__image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    #FAFAFA 0%,
+    rgba(250, 250, 250, 0.85) 15%,
+    rgba(250, 250, 250, 0.4) 35%,
+    rgba(250, 250, 250, 0) 55%
+  );
+}
+
+/* ---- Floating Card ---- */
+.esg-hero__float-card {
+  position: absolute;
+  bottom: 40px;
+  left: -30px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 22px 26px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+  max-width: 320px;
+  animation: heroFloat 5s ease-in-out infinite;
+  z-index: 3;
+}
+
+.esg-hero__float-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(200, 155, 45, 0.1);
+  flex-shrink: 0;
+}
+
+.esg-hero__float-icon i {
+  color: #C89B2D;
+  font-size: 18px;
+}
+
+.esg-hero__float-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.esg-hero__float-content strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1A1A1A;
+  letter-spacing: 0.2px;
+}
+
+.esg-hero__float-content span {
+  font-size: 13px;
   font-weight: 400;
+  color: #9A9A9A;
+  line-height: 1.5;
 }
 
+/* ---- Bottom Value Propositions ---- */
+.esg-hero__values-bar {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  background: #1A1A1A;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: auto;
+}
+
+.esg-hero__values-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 5vw, 80px);
+}
+
+.esg-hero__value {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 24px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  animation: heroCountUp 0.6s ease both;
+}
+
+.esg-hero__value:last-child {
+  border-right: none;
+}
+
+.esg-hero__value:nth-child(1) { animation-delay: 0.1s; }
+.esg-hero__value:nth-child(2) { animation-delay: 0.2s; }
+.esg-hero__value:nth-child(3) { animation-delay: 0.3s; }
+.esg-hero__value:nth-child(4) { animation-delay: 0.4s; }
+
+.esg-hero__value-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(200, 155, 45, 0.15);
+  flex-shrink: 0;
+}
+
+.esg-hero__value-icon i {
+  color: #C89B2D;
+  font-size: 20px;
+}
+
+.esg-hero__value-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.esg-hero__value-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.esg-hero__value-desc {
+  font-size: 13px;
+  font-weight: 400;
+  color: #9A9A9A;
+  line-height: 1.4;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+/* Tablet */
 @media (max-width: 1200px) {
-  .hero-title {
-    font-size: 56px;
+  .esg-hero__container {
+    gap: 0;
   }
 
-  .hero-subtitle {
-    font-size: 20px;
+  .esg-hero__title {
+    font-size: clamp(36px, 4.5vw, 52px);
   }
 
-  .benefits-bar {
-    width: calc(100% - 40px);
+  .esg-hero__float-card {
+    left: -20px;
+    bottom: 30px;
   }
 }
 
+/* Mobile Landscape / Small Tablet */
+@media (max-width: 992px) {
+  .esg-hero__container {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .esg-hero__content {
+    order: 1;
+    text-align: center;
+    align-items: center;
+    padding: 40px clamp(24px, 5vw, 80px);
+  }
+
+  .esg-hero__kicker {
+    justify-content: center;
+  }
+
+  .esg-hero__description {
+    text-align: center;
+  }
+
+  .esg-hero__actions {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .esg-hero__visual {
+    order: 0;
+    width: 100%;
+  }
+
+  .esg-hero__image-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .esg-hero__image {
+    height: 360px;
+  }
+
+  .esg-hero__float-card {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 20px;
+    max-width: 300px;
+  }
+
+  .esg-hero__image-overlay {
+    background: linear-gradient(
+      to bottom,
+      #FAFAFA 0%,
+      rgba(250, 250, 250, 0.7) 15%,
+      rgba(250, 250, 250, 0) 40%
+    );
+  }
+
+  .esg-hero__values-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .esg-hero__value {
+    border-right: none;
+    border-bottom: 1px solid #ECECEC;
+  }
+
+  .esg-hero__value:nth-child(odd) {
+    border-right: 1px solid #ECECEC;
+  }
+}
+
+/* Mobile Portrait */
 @media (max-width: 768px) {
-  .hero-banner {
-    height: auto;
+  .esg-hero {
     min-height: auto;
   }
 
-  .hero-bg-img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 500px;
+  .esg-hero__container {
+    gap: 0;
   }
 
-  .hero-overlay-left {
-    width: 100%;
-    height: 500px;
-    background: rgba(11, 11, 11, 0.7);
+  .esg-hero__content {
+    padding: 36px 20px 24px;
   }
 
-  .hero-diagonal-lines {
-    height: 500px;
+  .esg-hero__title {
+    font-size: clamp(28px, 7vw, 40px);
+    letter-spacing: -1px;
   }
 
-  .hero-content {
-    padding-left: 24px;
-    padding-right: 24px;
-    padding-top: 120px;
-    padding-bottom: 60px;
-    min-height: 500px;
+  .esg-hero__description {
+    font-size: 15px;
   }
 
-  .hero-title {
-    font-size: clamp(28px, 7vw, 36px);
+  .esg-hero__certifications {
+    grid-template-columns: 1fr;
   }
 
-  .hero-subtitle {
-    font-size: 18px;
-  }
-
-  .hero-actions {
+  .esg-hero__actions {
     flex-direction: column;
+    width: 100%;
   }
 
-  .btn-hero {
+  .esg-hero__btn {
     width: 100%;
     justify-content: center;
   }
 
-  .hero-arrow {
-    display: none;
+  .esg-hero__image {
+    height: 300px;
   }
 
-  .hero-indicators {
+  .esg-hero__float-card {
+    position: relative;
+    left: 0;
+    transform: none;
     bottom: auto;
-    top: 460px;
-  }
-
-  .benefits-bar {
-    width: calc(100% - 32px);
     margin-top: -40px;
+    margin-left: 20px;
+    margin-right: 20px;
+    max-width: none;
+    animation: none;
+  }
+
+  .esg-hero__image-overlay {
+    background: linear-gradient(
+      to bottom,
+      #FAFAFA 0%,
+      rgba(250, 250, 250, 0.6) 20%,
+      rgba(250, 250, 250, 0) 45%
+    );
+  }
+
+  .esg-hero__values-container {
     grid-template-columns: 1fr;
-    gap: 0;
-    border-radius: 16px;
-    padding: 0;
-    overflow: hidden;
   }
 
-  .benefit-item {
-    padding: 16px 20px;
+  .esg-hero__value {
     border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid #ECECEC;
+    padding: 20px 24px;
   }
 
-  .benefit-item:last-child {
+  .esg-hero__value:last-child {
     border-bottom: none;
+  }
+
+  .esg-hero__geo {
+    display: none;
   }
 }
 
+/* Small Mobile */
 @media (max-width: 480px) {
-  .hero-title {
-    font-size: clamp(22px, 6vw, 28px);
+  .esg-hero__container {
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 28px;
   }
 
-  .hero-subtitle {
-    font-size: 16px;
+  .esg-hero__logo-img {
+    height: 48px;
+  }
+
+  .esg-hero__title {
+    font-size: clamp(24px, 8vw, 34px);
+  }
+
+  .esg-hero__cert-card {
+    padding: 14px 16px;
+  }
+
+  .esg-hero__cert-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .esg-hero__cert-icon i {
+    font-size: 14px;
+  }
+
+  .esg-hero__value-title {
+    font-size: 14px;
+  }
+
+  .esg-hero__value-desc {
+    font-size: 12px;
   }
 }
 </style>

@@ -60,7 +60,7 @@ const testimonials = ref<Testimonial[]>([
     name: 'Carlos Méndez',
     company: 'Constructora ABC',
     avatar: 'https://placehold.co/100x100/FFC107/0B0B0B?text=CM',
-    text: 'Excelente servicio y productos de alta calidad. DISEF siempre nos brinda la mejor asesoría técnica.'
+    text: 'Excelente servicio y productos de alta calidad. ESG siempre nos brinda la mejor asesoría técnica.'
   },
   {
     id: '2',
