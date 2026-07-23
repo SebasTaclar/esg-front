@@ -24,7 +24,7 @@
             <a href="https://www.tiktok.com/@esg_empresarial" target="_blank" class="footer__social" aria-label="TikTok">
               <i class="fab fa-tiktok"></i>
             </a>
-            <a href="https://api.whatsapp.com/send?phone=573242899188" target="_blank" class="footer__social" aria-label="WhatsApp">
+            <a href="https://api.whatsapp.com/send?phone=573242899188&text=Hola,%20cordial%20saludo.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20sus%20servicios.%20%C2%BFPodr%C3%ADan%20ayudarme?" target="_blank" class="footer__social" aria-label="WhatsApp">
               <i class="fab fa-whatsapp"></i>
             </a>
           </div>
@@ -34,22 +34,22 @@
           <div class="footer__col">
             <h4 class="footer__col-title">Servicios</h4>
             <ul class="footer__list">
-              <li><a href="#">Consultoría</a></li>
-              <li><a href="#">Auditorías</a></li>
-              <li><a href="#">Gestión del SG</a></li>
-              <li><a href="#">Formación</a></li>
-              <li><a href="#">Gestión de proyectos</a></li>
+              <li><a href="/servicios">Consultoría</a></li>
+              <li><a href="/servicios">Auditorías</a></li>
+              <li><a href="/servicios">Gestión del SG</a></li>
+              <li><a href="/servicios">Formación</a></li>
+              <li><a href="/servicios">Gestión de proyectos</a></li>
             </ul>
           </div>
 
           <div class="footer__col">
             <h4 class="footer__col-title">Empresa</h4>
             <ul class="footer__list">
-              <li><a href="#">Sobre nosotros</a></li>
-              <li><a href="#">Metodología</a></li>
-              <li><a href="#">Casos de éxito</a></li>
-              <li><a href="#">Blog</a></li>
-              <li><a href="#">Contacto</a></li>
+              <li><a href="/nosotros">Sobre nosotros</a></li>
+              <li><a href="/#metodologia">Metodología</a></li>
+              <li><a href="/clientes-recursos">Clientes / Recursos</a></li>
+              <li><a href="/servicios">Servicios</a></li>
+              <li><a href="/#contacto">Contacto</a></li>
             </ul>
           </div>
 

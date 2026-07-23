@@ -41,8 +41,35 @@ const router = createRouter({
       name: 'login',
       component: () => import('../views/Login.vue'),
       meta: {
-        requiresGuest: true, // Solo accesible cuando no está autenticado
+        requiresGuest: true,
       },
+    },
+
+    {
+      path: '/login-clientes',
+      name: 'client-login',
+      component: () => import('../views/ClientLogin.vue'),
+      meta: {
+        requiresGuest: true,
+      },
+    },
+
+    {
+      path: '/nosotros',
+      name: 'nosotros',
+      component: () => import('../views/NosotrosView.vue'),
+    },
+
+    {
+      path: '/servicios',
+      name: 'servicios',
+      component: () => import('../views/ServiciosView.vue'),
+    },
+
+    {
+      path: '/clientes-recursos',
+      name: 'clientes-recursos',
+      component: () => import('../views/ClientesRecursos.vue'),
     },
 
     {

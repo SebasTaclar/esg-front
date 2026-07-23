@@ -3,11 +3,11 @@
     <div class="login-container">
       <div class="login-card">
         <div class="login-icon">
-          <i class="fas fa-user-lock"></i>
+          <i class="fas fa-users"></i>
         </div>
 
-        <h1 class="login-title">Portal ESG</h1>
-        <p class="login-subtitle">Ingrese sus credenciales para acceder al sistema</p>
+        <h1 class="login-title">Portal de Clientes</h1>
+        <p class="login-subtitle">Acceda a sus proyectos, documentos y seguimiento</p>
 
         <form @submit.prevent="handleLogin" class="login-form">
           <div class="input-group">
@@ -55,13 +55,13 @@
               <i class="fas fa-spinner fa-spin"></i> Accediendo...
             </span>
             <span v-else>
-              Iniciar sesión <i class="fas fa-arrow-right"></i>
+              Ingresar <i class="fas fa-arrow-right"></i>
             </span>
           </button>
         </form>
 
         <div class="login-footer">
-          <p>¿No tiene cuenta? <a href="/#contacto">Contáctenos</a></p>
+          <p>¿No tiene cuenta? <a href="/#contacto">Solicite acceso</a></p>
         </div>
       </div>
     </div>
@@ -74,7 +74,7 @@ import { useRouter } from 'vue-router'
 import { authService, type LoginCredentials } from '@/services/api'
 
 defineOptions({
-  name: 'LoginView'
+  name: 'ClientLoginView'
 })
 
 const email = ref('')

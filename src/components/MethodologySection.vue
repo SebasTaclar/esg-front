@@ -1,5 +1,5 @@
 <template>
-  <section class="methodology">
+  <section id="metodologia" class="methodology">
     <!-- Background image overlay -->
     <div class="methodology__bg" aria-hidden="true"></div>
     <div class="methodology__bg-overlay" aria-hidden="true"></div>
@@ -22,10 +22,6 @@
           de su organización.
         </p>
 
-        <a href="#metodologia" class="methodology__cta">
-          Conozca nuestra metodología
-          <i class="fas fa-arrow-right" aria-hidden="true"></i>
-        </a>
       </div>
 
       <!-- RIGHT: Timeline -->

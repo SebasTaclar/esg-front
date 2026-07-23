@@ -76,10 +76,10 @@
         </div>
         <div class="why-cta-right">
           <div class="why-cta-buttons">
-            <a href="https://wa.me/573213727442" target="_blank" class="btn btn-yellow">
+            <a href="https://wa.me/573242899188" target="_blank" class="btn btn-yellow">
               <i class="fab fa-whatsapp"></i> Solicitar Cotización
             </a>
-            <a href="tel:+573213727442" class="btn btn-outline">
+            <a href="tel:+573242899188" class="btn btn-outline">
               <i class="fas fa-phone"></i> Contactar un Asesor
             </a>
           </div>

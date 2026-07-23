@@ -1,5 +1,5 @@
 <template>
-  <header v-if="showUtilityBar" class="site-header" :class="{ scrolled: isScrolled }">
+  <header v-if="showUtilityBar" class="site-header" :class="{ scrolled: isScrolled || isNosotros }">
     <nav class="header-main">
       <RouterLink class="brand-container" to="/" @click="closeMobileMenu">
         <div class="brand-logo">
@@ -15,25 +15,15 @@
       <div class="nav-menu desktop-only">
         <RouterLink to="/" class="nav-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
         <RouterLink to="/nosotros" class="nav-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
-        <div class="nav-link-dropdown" @mouseenter="showServiciosDropdown = true" @mouseleave="showServiciosDropdown = false">
-          <span class="nav-link" :class="{ active: isCurrentRoute('/servicios') }">
-            Servicios <i class="fas fa-chevron-down" aria-hidden="true"></i>
-          </span>
-          <div class="nav-dropdown" v-show="showServiciosDropdown">
-            <RouterLink to="/servicios" class="dropdown-item" @click="closeMobileMenu">Todos los servicios</RouterLink>
-            <RouterLink to="/certificaciones" class="dropdown-item" @click="closeMobileMenu">Certificaciones ISO</RouterLink>
-            <RouterLink to="/laboratorios" class="dropdown-item" @click="closeMobileMenu">Laboratorios</RouterLink>
-          </div>
-        </div>
-        <RouterLink to="/normas" class="nav-link" :class="{ active: isCurrentRoute('/normas') }" @click="closeMobileMenu">Normas</RouterLink>
-        <RouterLink to="/recursos" class="nav-link" :class="{ active: isCurrentRoute('/recursos') }" @click="closeMobileMenu">Recursos</RouterLink>
-        <RouterLink to="/contacto" class="nav-link" :class="{ active: isCurrentRoute('/contacto') }" @click="closeMobileMenu">Contacto</RouterLink>
+        <RouterLink to="/servicios" class="nav-link" :class="{ active: isCurrentRoute('/servicios') }" @click="closeMobileMenu">Servicios</RouterLink>
+        <RouterLink to="/clientes-recursos" class="nav-link" :class="{ active: isCurrentRoute('/clientes-recursos') }" @click="closeMobileMenu">Clientes / Recursos</RouterLink>
+        <a href="/#contacto" class="nav-link" @click="closeMobileMenu">Contacto</a>
       </div>
 
       <div class="nav-actions desktop-only">
-        <a href="#portal" class="btn-portal">
+        <RouterLink to="/login-clientes" class="btn-portal">
           Portal Clientes
-        </a>
+        </RouterLink>
         <RouterLink v-if="!isLoggedIn" to="/login" class="btn-login">
           <i class="fas fa-user" aria-hidden="true"></i>
           Iniciar sesión
@@ -67,17 +57,14 @@
           <RouterLink to="/" class="mobile-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
           <RouterLink to="/nosotros" class="mobile-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
           <RouterLink to="/servicios" class="mobile-link" :class="{ active: isCurrentRoute('/servicios') }" @click="closeMobileMenu">Servicios</RouterLink>
-          <RouterLink to="/certificaciones" class="mobile-link" :class="{ active: isCurrentRoute('/certificaciones') }" @click="closeMobileMenu">Certificaciones</RouterLink>
-          <RouterLink to="/laboratorios" class="mobile-link" :class="{ active: isCurrentRoute('/laboratorios') }" @click="closeMobileMenu">Laboratorios</RouterLink>
-          <RouterLink to="/normas" class="mobile-link" :class="{ active: isCurrentRoute('/normas') }" @click="closeMobileMenu">Normas</RouterLink>
-          <RouterLink to="/recursos" class="mobile-link" :class="{ active: isCurrentRoute('/recursos') }" @click="closeMobileMenu">Recursos</RouterLink>
-          <RouterLink to="/contacto" class="mobile-link" :class="{ active: isCurrentRoute('/contacto') }" @click="closeMobileMenu">Contacto</RouterLink>
+          <RouterLink to="/clientes-recursos" class="mobile-link" :class="{ active: isCurrentRoute('/clientes-recursos') }" @click="closeMobileMenu">Clientes / Recursos</RouterLink>
+          <a href="/#contacto" class="mobile-link" @click="closeMobileMenu">Contacto</a>
         </div>
 
         <div class="mobile-controls">
-          <a href="#portal" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
+          <RouterLink to="/login-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
             Portal Clientes
-          </a>
+          </RouterLink>
           <RouterLink v-if="!isLoggedIn" class="mobile-btn btn-login-mobile" to="/login" @click="closeMobileMenu">
             <i class="fas fa-user" aria-hidden="true"></i>
             Iniciar sesión
@@ -125,14 +112,14 @@ import { useProductQuickView } from '@/composables/useProductQuickView'
 const isLoggedIn = ref(false)
 const username = ref('')
 const isMobileMenuOpen = ref(false)
-const showServiciosDropdown = ref(false)
 const isScrolled = ref(false)
 
 const { isOpen: quickViewOpen, product: quickViewProduct, close: closeQuickView } = useProductQuickView()
 
 const currentRoute = useRoute()
 const isAdmin = computed(() => authService.isAdmin())
-const showUtilityBar = computed(() => !currentRoute.path.startsWith('/admin') && currentRoute.path !== '/login')
+const showUtilityBar = computed(() => !currentRoute.path.startsWith('/admin'))
+const isNosotros = computed(() => currentRoute.path === '/nosotros')
 
 const isCurrentRoute = (path: string): boolean => currentRoute.path === path
 
