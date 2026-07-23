@@ -41,7 +41,7 @@
             <h3 class="services__card-title">{{ service.title }}</h3>
           </div>
           <p class="services__card-desc">{{ service.description }}</p>
-          <a href="#" class="services__card-link">
+          <a href="/servicios" class="services__card-link">
             Conocer más <i class="fas fa-arrow-right" aria-hidden="true"></i>
           </a>
         </div>
@@ -60,7 +60,7 @@
             Integramos un profesional ESG dentro de su organización
             para acompañar la gestión de forma permanente.
           </p>
-          <a href="#" class="services__card-link">
+          <a href="/servicios" class="services__card-link">
             Conocer más <i class="fas fa-arrow-right" aria-hidden="true"></i>
           </a>
         </div>
@@ -115,7 +115,7 @@
               </div>
             </div>
 
-            <a href="#" class="services__cta-btn">
+            <a href="#contacto" class="services__cta-btn">
               Solicitar asesoría
               <i class="fas fa-arrow-right" aria-hidden="true"></i>
             </a>

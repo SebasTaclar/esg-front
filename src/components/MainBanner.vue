@@ -38,7 +38,7 @@
             Solicitar asesoría
           </a>
           <a
-            href="https://wa.me/573213727442"
+            href="https://wa.me/573242899188?text=Hola,%20cordial%20saludo.%20Me%20interesa%20recibir%20informaci%C3%B3n%20sobre%20sus%20servicios.%20%C2%BFPodr%C3%ADan%20ayudarme?"
             target="_blank"
             rel="noopener noreferrer"
             class="esg-hero__btn esg-hero__btn--secondary"
