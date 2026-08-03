@@ -142,49 +142,7 @@
     </section>
 
     <!-- Recursos Section -->
-    <section class="recursos">
-      <div class="recursos-container">
-        <div class="recursos-content">
-          <div class="recursos-text">
-            <h2 class="section-title">
-              RECURSOS PARA SU <span class="highlight">ORGANIZACIÓN</span>
-            </h2>
-            <p class="recursos-desc">
-              Acceda a nuestra biblioteca de recursos diseñados para ayudarle a mejorar la gestión de su organización.
-            </p>
-          </div>
 
-          <div class="recursos-tabs">
-            <button
-              v-for="tab in recursosTabs"
-              :key="tab.id"
-              :class="['recurso-tab', { active: activeRecursoTab === tab.id }]"
-              @click="activeRecursoTab = tab.id"
-            >
-              <i :class="tab.icon"></i>
-              {{ tab.label }}
-            </button>
-          </div>
-
-          <div class="recursos-grid">
-            <div
-              v-for="recurso in filteredRecursos"
-              :key="recurso.title"
-              class="recurso-card"
-            >
-              <div class="recurso-icon">
-                <i :class="recurso.icon"></i>
-              </div>
-              <h3 class="recurso-title">{{ recurso.title }}</h3>
-              <p class="recurso-desc">{{ recurso.description }}</p>
-              <a href="#" class="recurso-link">
-                Descargar <i class="fas fa-download"></i>
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- CTA Section -->
     <section class="cta-section">

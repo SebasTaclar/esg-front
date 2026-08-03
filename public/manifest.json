@@ -1,11 +1,11 @@
 {
-  "name": "Joyería Angelie",
-  "short_name": "Angelie",
-  "description": "Joyería en Bogotá: anillos, aretes, collares, pulseras y esmeraldas. Piezas en oro y plata con atención personalizada.",
+  "name": "ES Gestión Empresarial",
+  "short_name": "ESG",
+  "description": "Consultoría especializada en sistemas de gestión, implementación de normas ISO y auditorías para empresas y laboratorios.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#DC2626",
+  "background_color": "#FFFFFF",
+  "theme_color": "#C89B2D",
   "orientation": "portrait-primary",
   "lang": "es-CO",
   "dir": "ltr",
@@ -60,20 +60,13 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["shopping", "technology", "lifestyle", "home", "seasonal"],
-  "screenshots": [
-    {
-      "src": "/images/screenshot-1.jpg",
-      "sizes": "1280x720",
-      "type": "image/jpeg"
-    }
-  ],
+  "categories": ["business", "education"],
   "shortcuts": [
     {
-      "name": "Tecnología",
-      "short_name": "Tech",
-      "description": "Ver productos de tecnología",
-      "url": "/iphone",
+      "name": "Servicios",
+      "short_name": "Servicios",
+      "description": "Consultoría, auditorías y formación ISO",
+      "url": "/servicios",
       "icons": [
         {
           "src": "/icons/icon-96x96.png",
@@ -82,10 +75,10 @@
       ]
     },
     {
-      "name": "Navidad",
-      "short_name": "Navidad",
-      "description": "Ver decoración navideña",
-      "url": "/mac",
+      "name": "Nosotros",
+      "short_name": "Nosotros",
+      "description": "Conoce a ES Gestión Empresarial",
+      "url": "/nosotros",
       "icons": [
         {
           "src": "/icons/icon-96x96.png",
@@ -94,10 +87,10 @@
       ]
     },
     {
-      "name": "Hogar",
-      "short_name": "Hogar",
-      "description": "Ver artículos del hogar",
-      "url": "/ipad",
+      "name": "Contacto",
+      "short_name": "Contacto",
+      "description": "Contáctanos para asesoría",
+      "url": "/clientes-recursos",
       "icons": [
         {
           "src": "/icons/icon-96x96.png",

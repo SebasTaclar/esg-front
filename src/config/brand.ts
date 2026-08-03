@@ -3,10 +3,10 @@ export const BRAND = {
 } as const
 
 export const SOCIALS = {
-	facebookUrl: 'https://www.facebook.com/disefcolombia/',
-	instagramUrl: 'https://www.instagram.com/disefcolombia/',
-	instagramHandle: '@disefcolombia',
-	tiktokUrl: 'https://www.tiktok.com/@disefcolombia'
+	facebookUrl: '',
+	instagramUrl: 'https://www.instagram.com/es_gestion_empresarial/',
+	instagramHandle: '@es_gestion_empresarial',
+	tiktokUrl: 'https://www.tiktok.com/@esg_empresarial'
 } as const
 
 export const STORE = {

@@ -87,6 +87,13 @@ const router = useRouter()
 const handleLogin = async () => {
   loading.value = true
   try {
+    // Login temporal quemado (desarrollo)
+    if (email.value === 'admin@esg.com' && password.value === 'admin123') {
+      authService.temporaryAdminLogin()
+      router.push('/admin/products')
+      return
+    }
+
     const credentials: LoginCredentials = {
       email: email.value,
       password: password.value

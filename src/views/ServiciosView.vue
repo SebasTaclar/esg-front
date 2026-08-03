@@ -42,11 +42,12 @@
           <div
             v-for="service in services"
             :key="service.id"
+            :id="`service-${service.slug}`"
             class="service-card"
+            :class="{ 'is-hovered': hoveredCardId === service.id }"
           >
-            <div class="service-card-gold-line"></div>
-            <div class="service-icon">
-              <i :class="service.icon"></i>
+            <div class="service-card-image">
+              <img :src="service.image" :alt="service.name" />
             </div>
             <h3 class="service-name">{{ service.name }}</h3>
             <p class="service-desc">{{ service.description }}</p>
@@ -86,7 +87,7 @@
             </div>
             <div class="benefit">
               <i class="fas fa-check-circle"></i>
-              <span>Cobertura nacional</span>
+              <span>Cobertura nacional e internacional</span>
             </div>
             <div class="benefit">
               <i class="fas fa-check-circle"></i>
@@ -118,7 +119,7 @@
         <div class="trust-divider"></div>
         <div class="trust-item">
           <div class="trust-icon"><i class="fas fa-earth-americas"></i></div>
-          <span class="trust-label">Cobertura nacional</span>
+          <span class="trust-label">Cobertura nacional e internacional</span>
         </div>
       </div>
     </section>
@@ -126,75 +127,127 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
+
 defineOptions({
   name: 'ServiciosView'
 })
 
+const route = useRoute()
+const hoveredCardId = ref<number | null>(null)
+
 const services = [
   {
     id: 1,
+    slug: 'consultoria',
     name: 'Consultoría',
     icon: 'fas fa-building',
-    description: 'Diseño e implementación de Sistemas de Gestión adaptados a cada organización.',
+    image: 'https://iveconsultores.com/wp-content/uploads/2019/10/foto-principal-consultoria-empresarial.jpg',
+    description: 'Diseño e implementación de Sistemas de Gestión adaptados a cada organización. Incluye ampliación de alcance.',
     summary: 'Desarrollamos sistemas de gestión personalizados que se alinean con los objetivos estratégicos de su empresa, asegurando cumplimiento normativo y eficiencia operativa.'
   },
   {
     id: 2,
+    slug: 'auditorias',
     name: 'Auditorías',
     icon: 'fas fa-clipboard-check',
+    image: 'https://prevencionar.com/wp-content/uploads/2024/06/auditoria.jpg',
     description: 'Auditorías diagnósticas, internas, de segunda parte y de preparación.',
     summary: 'Realizamos auditorías rigurosas que identifican oportunidades de mejora y garantizan el cumplimiento de los estándares internacionales.'
   },
   {
     id: 3,
+    slug: 'gestion-sg',
     name: 'Gestión del SG',
     icon: 'fas fa-cogs',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQqdCd7NSs0JT6s9bAU98bsQTXgMfCpkVEiYBZf_wDtis6qBlQlmJW4Zo&s=10',
     description: 'Mantenimiento, fortalecimiento y mejora continua de Sistemas de Gestión.',
     summary: 'Acompañamos el ciclo de vida de su sistema de gestión para asegurar su efectividad y evolución continua.'
   },
   {
     id: 4,
+    slug: 'formaciones',
     name: 'Formaciones',
     icon: 'fas fa-graduation-cap',
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=400&h=300&fit=crop',
     description: 'Capacitación especializada en normas internacionales y buenas prácticas.',
     summary: 'Programas de formación diseñados para fortalecer las competencias de su equipo en áreas críticas de gestión.'
   },
   {
     id: 5,
+    slug: 'proyectos',
     name: 'Gestión de Proyectos',
     icon: 'fas fa-chart-line',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
     description: 'Planeación y ejecución de proyectos estratégicos de implementación.',
     summary: 'Lideramos proyectos de transformación digital y optimización de procesos con resultados medibles.'
   },
   {
     id: 6,
+    slug: 'supervision',
     name: 'Supervisión de Personal',
     icon: 'fas fa-users',
+    image: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=400&h=300&fit=crop',
     description: 'Acompañamiento técnico para fortalecer la operación.',
     summary: 'Brindamos supervisión especializada para ensure que su equipo operativo cumpla con los estándares de calidad.'
   },
   {
     id: 7,
+    slug: 'proveedores',
     name: 'Gestión de Proveedores',
     icon: 'fas fa-handshake',
+    image: 'https://images.unsplash.com/photo-1556745753-b2904692b3cd?w=400&h=300&fit=crop',
     description: 'Evaluación y desarrollo de proveedores.',
     summary: 'Implementamos procesos de evaluación y desarrollo que fortalecen la cadena de suministro de su organización.'
   },
   {
     id: 8,
+    slug: 'metologia',
     name: 'Gestión Metrológica',
     icon: 'fas fa-ruler-combined',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop',
     description: 'Aseguramiento metrológico y trazabilidad de equipos.',
     summary: 'Garantizamos la trazabilidad y calibración de sus equipos de medición conforme a normas internacionales.'
   },
   {
     id: 9,
+    slug: 'in-house',
     name: 'Administración In House',
     icon: 'fas fa-user-tie',
+    image: 'https://brigoperu.com/wp-content/uploads/2021/04/inmoimagen18.jpg',
     description: 'Un consultor ESG trabajando directamente dentro de la organización.',
     summary: 'Nuestro equipo se integra a su organización para liderar la gestión interna con un enfoque de excelencia.'
   }
 ]
+
+const scrollToService = async () => {
+  const hash = route.hash.replace('#', '')
+  if (hash) {
+    const service = services.find(s => s.slug === hash)
+    if (service) {
+      await nextTick()
+      setTimeout(() => {
+        const cardEl = document.getElementById(`service-${service.slug}`)
+        if (cardEl) {
+          cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          hoveredCardId.value = service.id
+          setTimeout(() => {
+            hoveredCardId.value = null
+          }, 3000)
+        }
+      }, 100)
+    }
+  }
+}
+
+onMounted(() => {
+  scrollToService()
+})
+
+watch(() => route.hash, () => {
+  scrollToService()
+})
 </script>
 
 <style scoped>
@@ -387,23 +440,28 @@ const services = [
   position: relative;
   background: #FFFFFF;
   border-radius: 16px;
-  padding: 40px 32px 36px;
+  padding: 0;
   border: 1px solid #F0F0F0;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   cursor: default;
 }
 
-.service-card-gold-line {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: #C89B2D;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.service-card-image {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.service-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.service-card:hover .service-card-image img {
+  transform: scale(1.05);
 }
 
 .service-card:hover {
@@ -412,40 +470,21 @@ const services = [
   border-color: transparent;
 }
 
-.service-card:hover .service-card-gold-line {
-  transform: scaleX(1);
+.service-card.is-hovered {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
+  border-color: transparent;
 }
 
-.service-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  background: rgba(200, 155, 45, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  transition: all 0.3s ease;
-}
-
-.service-icon i {
-  font-size: 24px;
-  color: #C89B2D;
-  transition: transform 0.3s ease;
-}
-
-.service-card:hover .service-icon {
-  background: #C89B2D;
-  transform: scale(1.05);
-}
-
-.service-card:hover .service-icon i {
-  color: #FFFFFF;
-  transform: scale(1.1);
+.service-card.is-hovered .service-hover-content {
+  opacity: 1;
+  max-height: 200px;
+  margin-top: 20px;
 }
 
 .service-name {
   margin: 0 0 12px;
+  padding: 32px 32px 0;
   font-size: 18px;
   font-weight: 700;
   color: #2F2F2F;
@@ -454,6 +493,7 @@ const services = [
 
 .service-desc {
   margin: 0;
+  padding: 0 32px 32px;
   font-size: 14px;
   color: #888888;
   line-height: 1.6;
@@ -465,6 +505,7 @@ const services = [
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 0;
+  padding: 0 32px 40px;
 }
 
 .service-card:hover .service-hover-content {

@@ -134,7 +134,7 @@ defineOptions({
 const services = [
   {
     title: 'Consultoría',
-    description: 'Diseñamos e implementamos Sistemas de Gestión adaptados a su organización.',
+    description: 'Diseño e implementación de Sistemas de Gestión adaptados a cada organización. Incluye ampliación de alcance.',
     icon: 'fas fa-building'
   },
   {
@@ -264,7 +264,7 @@ const services = [
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2.5px;
   color: #C89B2D;
@@ -282,7 +282,7 @@ const services = [
 
 .services__title {
   margin: 0 0 18px;
-  font-size: clamp(28px, 3.2vw, 38px);
+  font-size: clamp(30px, 3.2vw, 40px);
   font-weight: 800;
   line-height: 1.2;
   color: #3F3F3F;
@@ -650,7 +650,7 @@ const services = [
   }
 
   .services__title {
-    font-size: clamp(24px, 6vw, 32px);
+    font-size: clamp(26px, 6vw, 34px);
   }
 
   .services__grid {

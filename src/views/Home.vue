@@ -16,6 +16,9 @@
       <WhyChooseSection />
     </section>
     <section class="section">
+      <ClientsSection />
+    </section>
+    <section class="section">
       <ContactSection />
     </section>
   </main>
@@ -27,6 +30,7 @@ import PurposeSection from '@/components/PurposeSection.vue'
 import MethodologySection from '@/components/MethodologySection.vue'
 import ServicesSection from '@/components/ServicesSection.vue'
 import WhyChooseSection from '@/components/WhyChooseSection.vue'
+import ClientsSection from '@/components/ClientsSection.vue'
 import ContactSection from '@/components/ContactSection.vue'
 
 defineOptions({

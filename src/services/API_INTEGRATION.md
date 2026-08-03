@@ -1,8 +1,8 @@
-# Integración de API Backend
+# Integración de API Backend — ESG Gestión Empresarial
 
 ## Estructura de Servicios
 
-La aplicación ahora incluye una arquitectura organizada para la comunicación con el backend:
+La aplicación incluye una arquitectura organizada para la comunicación con el backend:
 
 ### 📁 `src/services/api/`
 
@@ -11,7 +11,7 @@ La aplicación ahora incluye una arquitectura organizada para la comunicación c
 - **Configuración base** para todas las llamadas a la API
 - **Cliente HTTP** reutilizable con manejo automático de tokens
 - **Tipos de respuesta** estándar de la API
-- **URL base**: `https://soydanirodriguezz-back-efdec0a3crfpdkcz.centralus-01.azurewebsites.net/api/v1`
+- **URL base**: Configurada en `apiConfig.ts` según el entorno
 
 #### `authService.ts`
 
@@ -60,7 +60,7 @@ authService.logout() // Limpia token y datos del usuario
 
 ## 🛡️ Protección de Rutas
 
-Las rutas ahora incluyen guards de autenticación:
+Las rutas incluyen guards de autenticación:
 
 ```typescript
 // Ruta protegida (requiere autenticación)
@@ -118,7 +118,7 @@ const { isAuthenticated, currentUser, isAdmin, userRole, userName, login, logout
 Para extender la integración del backend:
 
 1. **Crear servicios adicionales** en `src/services/api/`
-2. **Implementar llamadas CRUD** para equipos, torneos, etc.
+2. **Implementar llamadas CRUD** para entidades del dominio ESG
 3. **Añadir manejo de errores** global
 4. **Implementar refresh de tokens** automático
 5. **Añadir interceptors** para manejo de respuestas

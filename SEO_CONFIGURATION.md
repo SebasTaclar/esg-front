@@ -1,4 +1,4 @@
-# Configuración de SEO y Google Search Console
+# Configuración de SEO y Google Search Console — ESG Gestión Empresarial
 
 ## ✅ Configuraciones Implementadas
 
@@ -43,7 +43,7 @@
 2. Inicia sesión con tu cuenta de Google
 3. Haz clic en "Agregar propiedad"
 4. Selecciona "Prefijo de URL"
-5. Ingresa: `https://mistorepro.com`
+5. Ingresa: `https://www.esgestionempresarial.com`
 
 ### Paso 2: Verificar Propiedad del Sitio
 Elige uno de estos métodos:
@@ -73,14 +73,12 @@ Elige uno de estos métodos:
 
 ### Paso 4: Solicitar Indexación
 1. Ve a "Inspección de URLs"
-2. Ingresa tu URL principal: `https://mistorepro.com`
+2. Ingresa tu URL principal: `https://www.esgestionempresarial.com`
 3. Haz clic en "Solicitar indexación"
 4. Repite para páginas importantes:
-   - https://mistorepro.com/iphone
-   - https://mistorepro.com/mac
-   - https://mistorepro.com/ipad
-   - https://mistorepro.com/apple-watch
-   - https://mistorepro.com/accesorios
+   - https://www.esgestionempresarial.com/nosotros
+   - https://www.esgestionempresarial.com/servicios
+   - https://www.esgestionempresarial.com/clientes-recursos
 
 ---
 
@@ -92,7 +90,7 @@ Elige uno de estos métodos:
 3. Haz clic en "Add a Site"
 
 ### Paso 2: Verificación
-1. Ingresa: `https://mistorepro.com`
+1. Ingresa: `https://www.esgestionempresarial.com`
 2. Selecciona método de verificación (Meta Tag)
 3. Copia el código que te proporcionen
 4. Edita `index.html` y descomenta:
@@ -103,7 +101,7 @@ Elige uno de estos métodos:
 
 ### Paso 3: Enviar Sitemap a Bing
 1. Ve a "Sitemaps"
-2. Agrega: `https://mistorepro.com/sitemap.xml`
+2. Agrega: `https://www.esgestionempresarial.com/sitemap.xml`
 3. Haz clic en "Submit"
 
 ---
@@ -114,7 +112,7 @@ Elige uno de estos métodos:
 Crea y sube estas imágenes a `public/images/`:
 - **og-image.jpg** (1200x630px) - Para Open Graph/Facebook
 - **twitter-image.jpg** (1200x600px) - Para Twitter Cards
-- Usa imágenes de alta calidad de tus productos
+- Usa imágenes de alta calidad de la marca ESG
 
 ### 2. Generar Favicons
 Asegúrate de tener estos iconos en `public/icons/`:
@@ -160,7 +158,7 @@ Puedes usar: https://realfavicongenerator.net/
 
 1. **Google PageSpeed Insights**
    - URL: https://pagespeed.web.dev/
-   - Analiza: `https://mistorepro.com`
+   - Analiza: `https://www.esgestionempresarial.com`
 
 2. **Google Rich Results Test**
    - URL: https://search.google.com/test/rich-results
@@ -176,7 +174,7 @@ Puedes usar: https://realfavicongenerator.net/
 
 5. **Security Headers**
    - URL: https://securityheaders.com/
-   - Analiza: `https://mistorepro.com`
+   - Analiza: `https://www.esgestionempresarial.com`
 
 ---
 
@@ -192,7 +190,7 @@ Puedes usar: https://realfavicongenerator.net/
 
 ## ✅ Checklist de Verificación
 
-- [ ] Sitio desplegado y accesible en `https://mistorepro.com`
+- [ ] Sitio desplegado y accesible en `https://www.esgestionempresarial.com`
 - [ ] Certificado SSL activo (HTTPS)
 - [ ] Google Search Console configurado y verificado
 - [ ] Sitemap enviado a Google Search Console
@@ -210,7 +208,7 @@ Puedes usar: https://realfavicongenerator.net/
 ## 🆘 Solución de Problemas
 
 ### El sitio no aparece en Google
-1. Verifica que el sitio esté indexado: `site:mistorepro.com` en Google
+1. Verifica que el sitio esté indexado: `site:esgestionempresarial.com` en Google
 2. Revisa Google Search Console > Cobertura
 3. Asegúrate de que robots.txt no bloquee el rastreo
 4. Verifica que el sitemap esté enviado correctamente
@@ -237,5 +235,5 @@ Si necesitas ayuda adicional:
 
 ---
 
-**Última actualización**: 2 de noviembre de 2025
-**Versión**: 1.0
+**Última actualización**: 30 de julio de 2026
+**Versión**: 2.0

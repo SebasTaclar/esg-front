@@ -225,7 +225,7 @@ const handleSubmit = () => {
 
 .contact-title {
   margin: 0 0 12px;
-  font-size: clamp(32px, 4vw, 48px);
+  font-size: clamp(34px, 4vw, 50px);
   font-weight: 800;
   color: #1A1A1A;
   letter-spacing: -0.5px;
@@ -258,7 +258,7 @@ const handleSubmit = () => {
 
 .left-title {
   margin: 0 0 16px;
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 800;
   color: #1A1A1A;
   line-height: 1.3;
@@ -359,7 +359,7 @@ const handleSubmit = () => {
 
 .form-header-text h4 {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #1A1A1A;
 }
