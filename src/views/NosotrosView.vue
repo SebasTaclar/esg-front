@@ -60,22 +60,29 @@
       <div class="team-container">
         <div class="team-header">
           <div class="header-line"></div>
-          <h2 class="team-title">NUESTRO EQUIPO <span class="highlight">DIRECTIVO</span></h2>
+          <h2 class="team-title">NUESTRO EQUIPO</h2>
         </div>
 
         <div class="team-grid">
           <div class="team-card">
             <div class="team-photo">
               <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784746118/WhatsApp-Image-2022-06-28-at-10.25.30-AM-e1705703868283_v1k2pb.jpg" alt="Ing. Camila Escobar F." />
-            </div>
-            <div class="team-info">
-              <h3 class="team-name">Ing. Camila<br/>Escobar F.</h3>
-              <span class="team-role">Gerente General</span>
-              <div class="team-divider"></div>
-              <p class="team-bio">Lidera la estrategia corporativa y acompaña a nuestros clientes en la transformación de sus organizaciones mediante soluciones de alto impacto.</p>
               <div class="team-socials">
                 <a href="mailto:comercial@esgestionempresarial.com" class="team-social"><i class="fas fa-envelope"></i></a>
                 <a href="https://co.linkedin.com/in/camila-andrea-escobar-fernandez" target="_blank" class="team-social"><i class="fab fa-linkedin-in"></i></a>
+              </div>
+            </div>
+            <div class="team-info">
+              <h3 class="team-name">Ing. Camila Escobar F.</h3>
+              <span class="team-role">Gerente General</span>
+              <div class="team-divider"></div>
+              <p class="team-bio">Ingeniera Química, especialista en Gerencia de la Calidad, con más de 6 años de experiencia en evaluación de la conformidad y Sistemas de Gestión.</p>
+              <div class="team-badges">
+                <span class="badge-cert">ISO 9001:2015</span>
+                <span class="badge-cert">ISO 14001:2015</span>
+                <span class="badge-cert">ISO 45001:2018</span>
+                <span class="badge-cert">ISO/IEC 17025:2017</span>
+                <span class="badge-cert">ISO/IEC 17065:2012</span>
               </div>
             </div>
           </div>
@@ -83,16 +90,41 @@
           <div class="team-card">
             <div class="team-photo">
               <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1784746118/WhatsApp-Image-2024-01-16-at-8.59.07-PM-e1705704103313_yckiwk.jpg" alt="Ing. Luis Eduardo Salcedo" />
-            </div>
-            <div class="team-info">
-              <h3 class="team-name">Ing. Luis Eduardo<br/>Salcedo</h3>
-              <span class="team-role">Gerente Técnico</span>
-              <div class="team-divider"></div>
-              <p class="team-bio">Responsable del direccionamiento técnico de los proyectos, asegurando el cumplimiento de estándares nacionales e internacionales.</p>
               <div class="team-socials">
                 <a href="mailto:comercial@esgestionempresarial.com" class="team-social"><i class="fas fa-envelope"></i></a>
                 <a href="https://www.linkedin.com/in/luis-eduardo-salcedo-lara-a84555b9" target="_blank" class="team-social"><i class="fab fa-linkedin-in"></i></a>
               </div>
+            </div>
+            <div class="team-info">
+              <h3 class="team-name">Ing. Luis Eduardo Salcedo</h3>
+              <span class="team-role">Gerente Técnico</span>
+              <div class="team-divider"></div>
+              <p class="team-bio">Ingeniero Industrial, Tecnólogo en Metrología Industrial y Técnico en Electricidad Industrial, con más de 22 años de experiencia en laboratorios de ensayo, calibración y organismos de certificación.</p>
+              <div class="team-badges">
+                <span class="badge-cert">ONAC</span>
+                <span class="badge-cert">SAE</span>
+                <span class="badge-cert">SIAAC</span>
+                <span class="badge-cert">RETIE</span>
+                <span class="badge-cert">RETILAP</span>
+                <span class="badge-cert">RETIQ</span>
+                <span class="badge-cert">ISO/IEC 17025:2017</span>
+                <span class="badge-cert">ISO/IEC 17065:2012</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="team-card">
+            <div class="team-photo">
+              <img src="https://res.cloudinary.com/dlwzazojt/image/upload/v1785693127/WhatsApp_Image_2026-07-24_at_11.00.28_dg2ctl.jpg" alt="María Paula Salcedo" />
+              <div class="team-socials">
+                <a href="mailto:comercial@esgestionempresarial.com" class="team-social"><i class="fas fa-envelope"></i></a>
+              </div>
+            </div>
+            <div class="team-info">
+              <h3 class="team-name">María Paula Salcedo</h3>
+              <span class="team-role">Community Manager</span>
+              <div class="team-divider"></div>
+              <p class="team-bio">Responsable de la estrategia de comunicación digital, posicionamiento de marca y gestión de contenidos institucionales.</p>
             </div>
           </div>
         </div>
@@ -212,7 +244,7 @@ defineOptions({
 
 .hero-label {
   display: inline-block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #C89B2D;
   letter-spacing: 2px;
@@ -222,7 +254,7 @@ defineOptions({
 
 .hero-title {
   margin: 0 0 24px;
-  font-size: clamp(28px, 3.5vw, 40px);
+  font-size: clamp(30px, 3.5vw, 42px);
   font-weight: 800;
   color: #1A1A1A;
   line-height: 1.25;
@@ -310,7 +342,7 @@ defineOptions({
 
 .feature-title {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: #1A1A1A;
   line-height: 1.3;
@@ -335,7 +367,7 @@ defineOptions({
 
 .feature-text {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #6B6B6B;
   line-height: 1.6;
 }
@@ -347,9 +379,9 @@ defineOptions({
 }
 
 .team-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 clamp(16px, 4vw, 44px);
+  padding: 0 20px;
 }
 
 .team-header {
@@ -367,7 +399,7 @@ defineOptions({
 
 .team-title {
   margin: 0;
-  font-size: clamp(24px, 3vw, 32px);
+  font-size: clamp(26px, 3vw, 34px);
   font-weight: 800;
   color: #C89B2D;
 }
@@ -378,26 +410,38 @@ defineOptions({
 
 .team-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 .team-card {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: row;
   background: #FFFFFF;
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  border: 1px solid #E5E5E5;
+  border: 1px solid #E8E8E8;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  align-items: stretch;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
 }
 
 .team-photo {
-  height: 100%;
-  min-height: 320px;
+  position: relative;
+  width: 40%;
+  height: auto;
+  flex-shrink: 0;
   overflow: hidden;
 }
 
 .team-photo img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -405,65 +449,94 @@ defineOptions({
 }
 
 .team-info {
-  padding: 32px 28px;
+  flex: 1;
+  padding: 24px 15px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .team-name {
   margin: 0;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 800;
   color: #1A1A1A;
-  line-height: 1.2;
+  line-height: 1.25;
+  word-wrap: break-word;
 }
 
 .team-role {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #C89B2D;
   margin-top: 4px;
 }
 
 .team-divider {
-  width: 28px;
+  width: 24px;
   height: 2px;
   background: #C89B2D;
-  margin: 12px 0;
+  margin: 6px 0;
 }
 
 .team-bio {
   margin: 0;
   font-size: 13px;
   color: #6B6B6B;
-  line-height: 1.6;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  margin-bottom: 8px;
 }
 
 .team-socials {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
   display: flex;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 16px;
+  gap: 8px;
+  z-index: 2;
 }
 
 .team-social {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(200, 155, 45, 0.1);
+  background: rgba(200, 155, 45, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: #C89B2D;
-  font-size: 16px;
+  color: #FFFFFF;
+  font-size: 14px;
   transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
 }
 
 .team-social:hover {
   background: #C89B2D;
-  color: #FFFFFF;
+  transform: scale(1.1);
+}
+
+.team-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.badge-cert {
+  display: inline-block;
+  padding: 3px 8px;
+  background: rgba(200, 155, 45, 0.1);
+  border: 1px solid rgba(200, 155, 45, 0.25);
+  border-radius: 9999px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #A88224;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
 }
 
 /* Values */
@@ -485,7 +558,7 @@ defineOptions({
 
 .values-title {
   margin: 0;
-  font-size: clamp(22px, 3vw, 28px);
+  font-size: clamp(25px, 3vw, 32px);
   font-weight: 800;
   color: #1A1A1A;
   letter-spacing: 1px;
@@ -530,14 +603,14 @@ defineOptions({
 
 .value-name {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #1A1A1A;
 }
 
 .value-desc {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   color: #6B6B6B;
   line-height: 1.6;
 }
@@ -681,6 +754,16 @@ defineOptions({
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .team-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .team-grid .team-card:last-child {
+    grid-column: 1 / -1;
+    max-width: 400px;
+    justify-self: center;
+  }
+
   .cta-container {
     flex-direction: column;
     text-align: center;
@@ -713,11 +796,18 @@ defineOptions({
   }
 
   .team-card {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    max-height: none;
   }
 
   .team-photo {
-    min-height: 280px;
+    width: 100%;
+    min-height: 300px;
+    max-height: 350px;
+  }
+
+  .team-info {
+    padding: 20px 16px;
   }
 
   .values-grid {
@@ -741,6 +831,11 @@ defineOptions({
 @media (max-width: 480px) {
   .features-container {
     grid-template-columns: 1fr;
+  }
+
+  .team-photo {
+    min-height: 280px;
+    max-height: 320px;
   }
 
   .values-grid {

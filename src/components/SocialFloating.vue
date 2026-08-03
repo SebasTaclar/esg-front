@@ -12,7 +12,7 @@
         alt="WhatsApp"
         class="social-icon"
       >
-      <span class="social-tooltip left">Compra aquí</span>
+      <span class="social-tooltip left">Escríbenos</span>
     </a>
   </div>
 </template>

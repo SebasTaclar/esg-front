@@ -73,51 +73,6 @@ const router = createRouter({
     },
 
     {
-      path: '/anillos',
-      name: 'anillos',
-      component: () => import('../views/CategoryProducts.vue'),
-      props: { slug: 'anillos', title: 'Anillos' },
-    },
-
-    {
-      path: '/collares',
-      name: 'collares',
-      component: () => import('../views/CategoryProducts.vue'),
-      props: { slug: 'collares', title: 'Collares' },
-    },
-
-    {
-      path: '/aretes',
-      name: 'aretes',
-      component: () => import('../views/CategoryProducts.vue'),
-      props: { slug: 'aretes', title: 'Aretes' },
-    },
-
-    {
-      path: '/pulseras',
-      name: 'pulseras',
-      component: () => import('../views/CategoryProducts.vue'),
-      props: { slug: 'pulseras', title: 'Pulseras' },
-    },
-
-    {
-      path: '/esmeraldas',
-      name: 'esmeraldas',
-      component: () => import('../views/CategoryProducts.vue'),
-      props: { slug: 'esmeraldas', title: 'Esmeraldas' },
-    },
-
-    {
-      path: '/ofertas',
-      redirect: '/',
-    },
-
-    {
-      path: '/perfumes',
-      redirect: '/ofertas',
-    },
-
-    {
       path: '/admin/products',
       name: 'admin-products',
       component: () => import('../views/AdminDashboardNew.vue'),
@@ -128,38 +83,9 @@ const router = createRouter({
     },
 
     {
-      path: '/payment/success',
-      name: 'payment-success',
-      component: () => import('../views/PaymentSuccess.vue'),
-    },
-    {
-      path: '/payment/failure',
-      name: 'payment-failure',
-      component: () => import('../views/PaymentFailure.vue'),
-    },
-    {
-      path: '/checkout',
-      redirect: '/',
-    },
-    {
       path: '/terms-and-conditions',
       name: 'TermsAndConditions',
       component: () => import('../views/TermsAndConditions.vue'),
-    },
-    {
-      path: '/test-sync',
-      name: 'test-sync',
-      component: () => import('../views/TestSync.vue'),
-    },
-    {
-      path: '/test-purchases',
-      name: 'test-purchases',
-      component: () => import('../views/TestPurchases.vue'),
-    },
-    {
-      path: '/payment/pending',
-      name: 'payment-pending',
-      component: () => import('../views/PaymentPending.vue'),
     },
     // Catch-all route - debe ir al final
     {

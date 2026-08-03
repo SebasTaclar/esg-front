@@ -187,7 +187,7 @@ const cards = [
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2.5px;
   color: #C89B2D;
@@ -206,7 +206,7 @@ const cards = [
 /* Title */
 .purpose__title {
   margin: 0;
-  font-size: clamp(24px, 2.8vw, 34px);
+  font-size: clamp(26px, 2.8vw, 36px);
   font-weight: 800;
   line-height: 1.2;
   color: #3F3F3F;
@@ -367,7 +367,7 @@ const cards = [
 }
 
 .purpose__float-content strong {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: 0.2px;
@@ -472,7 +472,7 @@ const cards = [
   }
 
   .purpose__title {
-    font-size: clamp(22px, 6vw, 30px);
+    font-size: clamp(24px, 6vw, 32px);
   }
 
   .purpose__cards {
@@ -503,17 +503,50 @@ const cards = [
     font-size: 22px;
   }
 
+  .purpose__visual {
+    order: 1;
+    width: 100%;
+    overflow: visible;
+  }
+
+  .purpose__image-wrapper {
+    position: relative;
+    max-width: 100%;
+  }
+
   .purpose__image {
-    min-height: 260px;
+    min-height: 280px;
+    max-height: 350px;
+    height: auto;
   }
 
   .purpose__float-card {
     position: relative;
     right: auto;
     bottom: auto;
-    margin: -30px 20px 0;
+    margin: -40px 40px 0;
     max-width: none;
     animation: none;
+    padding: 24px 20px;
+    border-radius: 14px;
+    z-index: 5;
+  }
+
+  .purpose__float-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .purpose__float-icon i {
+    font-size: 16px;
+  }
+
+  .purpose__float-content strong {
+    font-size: 14px;
+  }
+
+  .purpose__float-content span {
+    font-size: 12px;
   }
 
   .purpose__deco {
@@ -561,7 +594,18 @@ const cards = [
 
   .purpose__float-card {
     flex-direction: column;
-    margin: -20px 16px 0;
+    margin: -30px 20px 0;
+    padding: 20px 18px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .purpose__float-content strong {
+    font-size: 13px;
+  }
+
+  .purpose__float-content span {
+    font-size: 11px;
   }
 }
 </style>

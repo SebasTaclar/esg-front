@@ -156,6 +156,40 @@ class AuthService {
   }
 
   /**
+   * Login temporal con credenciales quemadas (para desarrollo)
+   */
+  temporaryAdminLogin(): boolean {
+    const hardcodedEmail = 'admin@esg.com'
+    const hardcodedPassword = 'admin123'
+
+    // Crear un JWT falso que pase las validaciones
+    const header = { alg: 'HS256', typ: 'JWT' }
+    const payload = {
+      id: 1,
+      email: hardcodedEmail,
+      name: 'Admin Temporal',
+      role: 'admin',
+      membershipPaid: true,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 86400 * 30, // 30 días
+      teamId: null,
+    }
+
+    const base64url = (obj: object) =>
+      btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+    const token = `${base64url(header)}.${base64url(payload)}.fakesignature`
+
+    this.setToken(token)
+    const userInfo = this.decodeToken(token)
+    if (userInfo) {
+      this.setUserInfo(userInfo)
+    }
+
+    return true
+  }
+
+  /**
    * Obtiene información básica del usuario para mostrar en la UI
    */
   getCurrentUser(): UserInfo | null {

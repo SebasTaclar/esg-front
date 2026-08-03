@@ -1,4 +1,4 @@
-# Robots.txt para SOYDANI
+# Robots.txt para ES GESTIÓN EMPRESARIAL
 # Permite el rastreo de todos los motores de búsqueda
 
 User-agent: *
@@ -7,27 +7,20 @@ Allow: /
 # Excluir páginas administrativas y privadas
 Disallow: /admin
 Disallow: /login
+Disallow: /login-clientes
 Disallow: /api/
-Disallow: /*.json$
-
-# Excluir páginas de proceso de pago en curso
-Disallow: /checkout/processing
-Disallow: /payment-processing
 
 # Permitir específicamente páginas importantes
-Allow: /iphone
-Allow: /mac
-Allow: /ipad
-Allow: /apple-watch
-Allow: /accesorios
-Allow: /checkout
-Allow: /terms
+Allow: /nosotros
+Allow: /servicios
+Allow: /clientes-recursos
+Allow: /terms-and-conditions
 
 # Crawl-delay para ser amigable con los servidores
 Crawl-delay: 1
 
 # Sitemap
-Sitemap: https://www.mistorepro.com/sitemap.xml
+Sitemap: https://www.esgestionempresarial.com/sitemap.xml
 
 # Motores de búsqueda específicos
 User-agent: Googlebot

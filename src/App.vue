@@ -15,7 +15,40 @@
       <div class="nav-menu desktop-only">
         <RouterLink to="/" class="nav-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
         <RouterLink to="/nosotros" class="nav-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
-        <RouterLink to="/servicios" class="nav-link" :class="{ active: isCurrentRoute('/servicios') }" @click="closeMobileMenu">Servicios</RouterLink>
+        <div class="nav-dropdown" @mouseenter="servicesOpen = true" @mouseleave="servicesOpen = false">
+          <RouterLink to="/servicios" class="nav-link" :class="{ active: isCurrentRoute('/servicios') }">
+            Servicios <i class="fas fa-chevron-down dropdown-arrow"></i>
+          </RouterLink>
+          <div class="nav-dropdown-menu" :class="{ active: servicesOpen }">
+            <RouterLink to="/servicios#consultoria" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-building"></i> Consultoría
+            </RouterLink>
+            <RouterLink to="/servicios#auditorias" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-clipboard-check"></i> Auditorías
+            </RouterLink>
+            <RouterLink to="/servicios#gestion-sg" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-cogs"></i> Gestión del SG
+            </RouterLink>
+            <RouterLink to="/servicios#formaciones" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-graduation-cap"></i> Formaciones
+            </RouterLink>
+            <RouterLink to="/servicios#proyectos" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-chart-line"></i> Gestión de Proyectos
+            </RouterLink>
+            <RouterLink to="/servicios#supervision" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-users"></i> Supervisión de Personal
+            </RouterLink>
+            <RouterLink to="/servicios#proveedores" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-handshake"></i> Gestión de Proveedores
+            </RouterLink>
+            <RouterLink to="/servicios#metologia" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-ruler-combined"></i> Gestión Metrológica
+            </RouterLink>
+            <RouterLink to="/servicios#in-house" class="dropdown-item" @click="closeMobileMenu">
+              <i class="fas fa-user-tie"></i> Administración In House
+            </RouterLink>
+          </div>
+        </div>
         <RouterLink to="/clientes-recursos" class="nav-link" :class="{ active: isCurrentRoute('/clientes-recursos') }" @click="closeMobileMenu">Clientes / Recursos</RouterLink>
         <a href="/#contacto" class="nav-link" @click="closeMobileMenu">Contacto</a>
       </div>
@@ -56,7 +89,40 @@
         <div class="mobile-nav-links">
           <RouterLink to="/" class="mobile-link" :class="{ active: isCurrentRoute('/') }" @click="closeMobileMenu">Inicio</RouterLink>
           <RouterLink to="/nosotros" class="mobile-link" :class="{ active: isCurrentRoute('/nosotros') }" @click="closeMobileMenu">Nosotros</RouterLink>
-          <RouterLink to="/servicios" class="mobile-link" :class="{ active: isCurrentRoute('/servicios') }" @click="closeMobileMenu">Servicios</RouterLink>
+          <div class="mobile-dropdown">
+            <div class="mobile-link mobile-dropdown-toggle" @click="mobileServicesOpen = !mobileServicesOpen">
+              Servicios <i class="fas" :class="mobileServicesOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="mobile-dropdown-menu" :class="{ active: mobileServicesOpen }">
+              <RouterLink to="/servicios#consultoria" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-building"></i> Consultoría
+              </RouterLink>
+              <RouterLink to="/servicios#auditorias" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-clipboard-check"></i> Auditorías
+              </RouterLink>
+              <RouterLink to="/servicios#gestion-sg" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-cogs"></i> Gestión del SG
+              </RouterLink>
+              <RouterLink to="/servicios#formaciones" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-graduation-cap"></i> Formaciones
+              </RouterLink>
+              <RouterLink to="/servicios#proyectos" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-chart-line"></i> Gestión de Proyectos
+              </RouterLink>
+              <RouterLink to="/servicios#supervision" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-users"></i> Supervisión de Personal
+              </RouterLink>
+              <RouterLink to="/servicios#proveedores" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-handshake"></i> Gestión de Proveedores
+              </RouterLink>
+              <RouterLink to="/servicios#metologia" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-ruler-combined"></i> Gestión Metrológica
+              </RouterLink>
+              <RouterLink to="/servicios#in-house" class="mobile-dropdown-item" @click.stop="handleServiceClick">
+                <i class="fas fa-user-tie"></i> Administración In House
+              </RouterLink>
+            </div>
+          </div>
           <RouterLink to="/clientes-recursos" class="mobile-link" :class="{ active: isCurrentRoute('/clientes-recursos') }" @click="closeMobileMenu">Clientes / Recursos</RouterLink>
           <a href="/#contacto" class="mobile-link" @click="closeMobileMenu">Contacto</a>
         </div>
@@ -86,7 +152,7 @@
 
   <RouterView />
 
-  <AppFooter />
+  <AppFooter v-if="showUtilityBar" />
 
   <ProductQuickViewModal
     :open="quickViewOpen"
@@ -94,7 +160,7 @@
     @close="closeQuickView"
   />
 
-  <GlobalCart />
+  <GlobalCart v-if="showUtilityBar" />
   <SocialFloating v-if="showUtilityBar" />
 </template>
 
@@ -113,6 +179,8 @@ const isLoggedIn = ref(false)
 const username = ref('')
 const isMobileMenuOpen = ref(false)
 const isScrolled = ref(false)
+const servicesOpen = ref(false)
+const mobileServicesOpen = ref(false)
 
 const { isOpen: quickViewOpen, product: quickViewProduct, close: closeQuickView } = useProductQuickView()
 
@@ -129,6 +197,12 @@ const toggleMobileMenu = () => {
 
 const closeMobileMenu = () => {
   isMobileMenuOpen.value = false
+  mobileServicesOpen.value = false
+}
+
+const handleServiceClick = () => {
+  isMobileMenuOpen.value = false
+  mobileServicesOpen.value = false
 }
 
 const checkAuthStatus = () => {
@@ -310,36 +384,118 @@ defineOptions({
 }
 
 /* Dropdown */
-.nav-link-dropdown {
+.nav-dropdown {
   position: relative;
 }
 
-.nav-dropdown {
+.nav-dropdown-menu {
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 220px;
+  min-width: 260px;
   background: #FFFFFF;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   border: 1px solid #F0F0F0;
   padding: 8px;
   z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: all 0.2s ease;
+}
+
+.nav-dropdown-menu.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .dropdown-item {
-  display: block;
-  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
   color: #4A4A4A;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
+.dropdown-item i {
+  font-size: 14px;
+  color: #C89B2D;
+  width: 20px;
+  text-align: center;
+}
+
 .dropdown-item:hover {
-  background: rgba(200, 155, 45, 0.06);
+  background: rgba(200, 155, 45, 0.08);
+  color: #C89B2D;
+}
+
+.dropdown-arrow {
+  font-size: 10px;
+  margin-left: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-dropdown:hover .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Mobile Dropdown */
+.mobile-dropdown {
+  width: 100%;
+}
+
+.mobile-dropdown-toggle {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-dropdown-toggle i {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.mobile-dropdown-menu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  padding-left: 16px;
+}
+
+.mobile-dropdown-menu.active {
+  max-height: 500px;
+}
+
+.mobile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: #4A4A4A;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mobile-dropdown-item i {
+  font-size: 14px;
+  color: #C89B2D;
+  width: 20px;
+  text-align: center;
+}
+
+.mobile-dropdown-item:hover {
+  background: rgba(200, 155, 45, 0.08);
   color: #C89B2D;
 }
 

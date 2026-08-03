@@ -162,7 +162,7 @@ const steps = [
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2.5px;
   color: #C89B2D;
@@ -181,7 +181,7 @@ const steps = [
 /* Title */
 .methodology__title {
   margin: 0;
-  font-size: clamp(26px, 3vw, 36px);
+  font-size: clamp(28px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.2;
   color: #FFFFFF;
@@ -321,7 +321,7 @@ const steps = [
 }
 
 .methodology__step-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: 0.3px;
@@ -417,7 +417,7 @@ const steps = [
   }
 
   .methodology__title {
-    font-size: clamp(22px, 5vw, 30px);
+    font-size: clamp(24px, 5vw, 32px);
   }
 
   .methodology__step {

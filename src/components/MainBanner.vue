@@ -296,7 +296,7 @@ const values = [
 /* Title */
 .esg-hero__title {
   margin: 0;
-  font-size: clamp(40px, 5vw, 64px);
+  font-size: clamp(42px, 5vw, 66px);
   font-weight: 800;
   line-height: 1.05;
   color: #1A1A1A;
@@ -627,7 +627,7 @@ const values = [
   }
 
   .esg-hero__title {
-    font-size: clamp(36px, 4.5vw, 52px);
+    font-size: clamp(38px, 4.5vw, 54px);
   }
 
   .esg-hero__float-card {
@@ -722,7 +722,7 @@ const values = [
   }
 
   .esg-hero__title {
-    font-size: clamp(28px, 7vw, 40px);
+    font-size: clamp(30px, 7vw, 42px);
     letter-spacing: -1px;
   }
 
@@ -801,7 +801,7 @@ const values = [
   }
 
   .esg-hero__title {
-    font-size: clamp(24px, 8vw, 34px);
+    font-size: clamp(26px, 8vw, 36px);
   }
 
   .esg-hero__cert-card {

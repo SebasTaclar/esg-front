@@ -58,7 +58,7 @@ const stats = [
   { number: '+15', label: 'Años de experiencia', icon: 'fas fa-award' },
   { number: '+500', label: 'Proyectos ejecutados', icon: 'fas fa-briefcase' },
   { number: '+200', label: 'Clientes atendidos', icon: 'fas fa-users' },
-  { number: '', label: 'Cobertura nacional', icon: 'fas fa-map-marker-alt' }
+  { number: '', label: 'Cobertura nacional e internacional', icon: 'fas fa-map-marker-alt' }
 ]
 
 const benefits = [
@@ -103,7 +103,8 @@ const benefits = [
 .why-choose {
   position: relative;
   width: 100%;
-  padding: 90px 0;
+  padding: 40px 0;
+  padding-bottom: 0px;
   background: #FAFAFA;
   overflow: hidden;
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -181,7 +182,7 @@ const benefits = [
 
 .why-choose__title {
   margin: 0 0 18px;
-  font-size: clamp(26px, 3vw, 36px);
+  font-size: clamp(28px, 3vw, 38px);
   font-weight: 800;
   line-height: 1.2;
   color: #3F3F3F;
@@ -462,7 +463,7 @@ const benefits = [
   }
 
   .why-choose__title {
-    font-size: clamp(24px, 6vw, 30px);
+    font-size: clamp(26px, 6vw, 32px);
   }
 
   .why-choose__stats {
