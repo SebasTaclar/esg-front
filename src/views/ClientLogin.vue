@@ -99,7 +99,7 @@ const handleLogin = async () => {
       if (userInfo?.role === 'admin') {
         router.push('/admin/products')
       } else {
-        router.push('/')
+        router.push('/portal-clientes')
       }
     } else {
       alert(response.message || 'Credenciales inválidas')
