@@ -55,6 +55,15 @@ const router = createRouter({
     },
 
     {
+      path: '/portal-clientes',
+      name: 'client-portal',
+      component: () => import('../views/ClientPortal.vue'),
+      meta: {
+        requiresAuth: true,
+      },
+    },
+
+    {
       path: '/nosotros',
       name: 'nosotros',
       component: () => import('../views/NosotrosView.vue'),
@@ -80,6 +89,98 @@ const router = createRouter({
         requiresAuth: true,
         requiredRole: 'admin', // Solo accesible para administradores
       },
+    },
+
+    {
+      path: '/admin/proyectos/:id',
+      name: 'admin-project-detail',
+      redirect: (to) => `/admin/crm/proyectos/${to.params.id}`,
+    },
+
+    {
+      path: '/admin/crm',
+      component: () => import('../views/crm/CRMMain.vue'),
+      meta: {
+        requiresAuth: true,
+        requiredRole: 'admin',
+      },
+      children: [
+        {
+          path: '',
+          name: 'crm-dashboard',
+          component: () => import('../views/crm/CRMDashboard.vue'),
+        },
+        {
+          path: 'clientes',
+          name: 'crm-clients',
+          component: () => import('../views/crm/ClientsList.vue'),
+        },
+        {
+          path: 'clientes/nuevo',
+          name: 'crm-client-new',
+          component: () => import('../views/crm/forms/ClientForm.vue'),
+        },
+        {
+          path: 'clientes/:id',
+          name: 'crm-client-detail',
+          component: () => import('../views/crm/ClientDetail.vue'),
+        },
+        {
+          path: 'clientes/:id/editar',
+          name: 'crm-client-edit',
+          component: () => import('../views/crm/forms/ClientForm.vue'),
+        },
+        {
+          path: 'proyectos',
+          name: 'crm-projects',
+          component: () => import('../views/crm/ProjectsList.vue'),
+        },
+        {
+          path: 'proyectos/nuevo',
+          name: 'crm-project-new',
+          component: () => import('../views/crm/forms/ProjectForm.vue'),
+        },
+        {
+          path: 'proyectos/:id',
+          name: 'crm-project-detail',
+          component: () => import('../views/crm/ProjectDetail.vue'),
+        },
+        {
+          path: 'proyectos/:id/editar',
+          name: 'crm-project-edit',
+          component: () => import('../views/crm/forms/ProjectForm.vue'),
+        },
+        {
+          path: 'prospectos',
+          name: 'crm-prospects',
+          component: () => import('../views/crm/ProspectsList.vue'),
+        },
+        {
+          path: 'prospectos/:id',
+          name: 'crm-prospect-detail',
+          component: () => import('../views/crm/ProspectsDetail.vue'),
+        },
+        {
+          path: 'prospectos/:id/editar',
+          name: 'crm-prospect-edit',
+          component: () => import('../views/crm/forms/ClientForm.vue'),
+        },
+        {
+          path: 'seguimientos',
+          name: 'crm-followups',
+          component: () => import('../views/crm/FollowUpsList.vue'),
+        },
+        {
+          path: 'colaboradores',
+          name: 'crm-colaboradores',
+          component: () => import('../views/crm/ColaboradoresList.vue'),
+        },
+        {
+          path: 'colaboradores/:id',
+          name: 'crm-colaborador-detail',
+          component: () => import('../views/crm/ColaboradorDetail.vue'),
+        },
+      ],
     },
 
     {
@@ -111,7 +212,11 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
       // Redirigir al login si no está autenticado
-      next('/login')
+      if (to.path === '/portal-clientes') {
+        next('/login-clientes')
+      } else {
+        next('/login')
+      }
       return
     }
 
@@ -132,11 +237,11 @@ router.beforeEach((to, from, next) => {
 
   // Si la ruta requiere ser invitado (no autenticado)
   if (to.meta.requiresGuest && isAuthenticated) {
-    // Si es invitado y autenticado: si es admin va a panel, si no a home
+    // Si es invitado y autenticado: si es admin va a panel, si no al portal
     if (userRole === 'admin') {
       next('/admin/products')
     } else {
-      next('/')
+      next('/portal-clientes')
     }
     return
   }

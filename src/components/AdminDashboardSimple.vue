@@ -18,6 +18,11 @@
         >
           <span class="nav-icon" v-html="item.icon"></span>
           <span class="nav-label">{{ item.label }}</span>
+          <svg v-if="'route' in item && item.route" class="external-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/>
+            <line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
         </button>
       </nav>
 
@@ -479,17 +484,21 @@
 
         <!-- ========== PROYECTOS ========== -->
         <div v-if="currentSection === 'proyectos'">
-          <div class="section-top">
-            <div>
-              <h2 class="page-title">Proyectos</h2>
-              <p class="page-subtitle">Administra tus proyectos en curso y finalizados.</p>
-            </div>
+          <div v-if="selectedProjectId" class="project-detail-inline">
+            <button class="back-btn" @click="backToProjects">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Volver a proyectos
+            </button>
+            <ProjectDetail :project-id="selectedProjectId" />
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">📁</div>
-            <h3>Módulo de Proyectos</h3>
-            <p>Próximamente podrás gestionar todos tus proyectos desde aquí.</p>
-          </div>
+          <ProjectsList v-else inline @view-project="viewProject" />
+        </div>
+
+        <!-- ========== LICITACIONES ========== -->
+        <div v-if="currentSection === 'licitaciones'">
+          <LicitacionesList />
         </div>
 
         <!-- ========== COTIZACIONES ========== -->
@@ -497,28 +506,119 @@
           <div class="section-top">
             <div>
               <h2 class="page-title">Cotizaciones</h2>
-              <p class="page-subtitle">Visualiza y gestiona todas las cotizaciones.</p>
+              <p class="page-subtitle">Gestiona las cotizaciones por cliente y servicio.</p>
             </div>
+            <button class="export-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nueva cotización
+            </button>
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">📋</div>
-            <h3>Módulo de Cotizaciones</h3>
-            <p>Próximamente podrás gestionar todas tus cotizaciones desde aquí.</p>
-          </div>
-        </div>
 
-        <!-- ========== SERVICIOS ========== -->
-        <div v-if="currentSection === 'servicios'">
-          <div class="section-top">
-            <div>
-              <h2 class="page-title">Servicios</h2>
-              <p class="page-subtitle">Administra los servicios que ofreces.</p>
+          <!-- Filtros -->
+          <div class="coti-filters">
+            <div class="coti-filter-group">
+              <label>Estado</label>
+              <select v-model="cotiFilterStatus" class="coti-select">
+                <option value="">Todos</option>
+                <option value="Borrador">Borrador</option>
+                <option value="Enviada">Enviada</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="Aprobada">Aprobada</option>
+                <option value="Rechazada">Rechazada</option>
+              </select>
+            </div>
+            <div class="coti-filter-group">
+              <label>Buscar</label>
+              <input v-model="cotiSearch" type="text" class="coti-input" placeholder="Cliente o servicio..." />
             </div>
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">⚙️</div>
-            <h3>Módulo de Servicios</h3>
-            <p>Próximamente podrás gestionar tus servicios desde aquí.</p>
+
+          <!-- Resumen -->
+          <div class="coti-summary-row">
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.length }}</span>
+              <span class="coti-summary-label">Total</span>
+            </div>
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Borrador').length }}</span>
+              <span class="coti-summary-label">Borradores</span>
+            </div>
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Enviada').length }}</span>
+              <span class="coti-summary-label">Enviadas</span>
+            </div>
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Pendiente').length }}</span>
+              <span class="coti-summary-label">Pendientes</span>
+            </div>
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Aprobada').length }}</span>
+              <span class="coti-summary-label">Aprobadas</span>
+            </div>
+            <div class="coti-summary-card">
+              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Rechazada').length }}</span>
+              <span class="coti-summary-label">Rechazadas</span>
+            </div>
+          </div>
+
+          <!-- Tabla -->
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Servicio</th>
+                    <th>Valor</th>
+                    <th>Estado</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="q in cotizacionesFiltradas" :key="q.id">
+                    <td class="q-id">{{ q.id }}</td>
+                    <td>{{ q.client }}</td>
+                    <td>{{ q.service }}</td>
+                    <td class="q-value">{{ q.value }}</td>
+                    <td><span class="q-status" :class="q.statusClass">{{ q.status }}</span></td>
+                    <td class="q-date">{{ q.date }}</td>
+                    <td>
+                      <div class="q-actions">
+                        <button class="q-action" title="Ver" @click="verCotizacion(q)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button class="q-action" title="Editar" @click="editarCotizacion(q)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button class="q-action danger" title="Eliminar" @click="eliminarCotizacion(q)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            <line x1="10" y1="11" x2="10" y2="17"/>
+                            <line x1="14" y1="11" x2="14" y2="17"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr v-if="cotizacionesFiltradas.length === 0">
+                    <td colspan="7" style="text-align:center; padding: 32px; color: var(--c-gray);">
+                      No se encontraron cotizaciones con los filtros seleccionados.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -527,13 +627,51 @@
           <div class="section-top">
             <div>
               <h2 class="page-title">Recursos</h2>
-              <p class="page-subtitle">Gestiona los recursos disponibles.</p>
+              <p class="page-subtitle">Proyectos realizados — {{ proyectosRecursos.length }} proyectos</p>
             </div>
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">📦</div>
-            <h3>Módulo de Recursos</h3>
-            <p>Próximamente podrás gestionar tus recursos desde aquí.</p>
+          <div class="table-card">
+            <div v-if="proyectosRecursos.length === 0" class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--c-gray-light); margin-bottom: 16px;">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <h3>No hay proyectos para mostrar</h3>
+            </div>
+            <div v-else class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Proyecto</th>
+                    <th>Cliente</th>
+                    <th>Tipo de servicio</th>
+                    <th>Fotos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="p in proyectosRecursos" :key="p.id">
+                    <td class="name-cell">{{ p.codigo }}</td>
+                    <td>{{ p.clienteRazonSocial }}</td>
+                    <td>{{ p.tipoServicioNombre }}</td>
+                    <td>
+                      <div class="url-input-wrapper">
+                        <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <input
+                          type="url"
+                          class="url-input"
+                          placeholder="https://..."
+                          :value="getFotoUrl(p.id)"
+                          @input="setFotoUrl(p.id, ($event.target as HTMLInputElement).value)"
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -545,26 +683,145 @@
               <p class="page-subtitle">Organiza tus eventos y actividades.</p>
             </div>
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">📅</div>
-            <h3>Módulo de Calendario</h3>
-            <p>Próximamente podrás gestionar tu calendario desde aquí.</p>
+
+          <div class="calendar-full-layout">
+            <!-- Calendario principal -->
+            <div class="calendar-main-card">
+              <div class="calendar-header">
+                <button class="cal-nav-btn-large" @click="calPrevMonth">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <h3 class="cal-month-title">{{ calMonthName }} {{ calYear }}</h3>
+                <button class="cal-nav-btn-large" @click="calNextMonth">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+                <button class="cal-today-btn" @click="calGoToday">Hoy</button>
+              </div>
+
+              <div class="calendar-weekdays">
+                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+              </div>
+
+              <div class="calendar-days-grid">
+                <div
+                  v-for="(day, idx) in calDays"
+                  :key="idx"
+                  class="cal-day-cell"
+                  :class="{
+                    'other-month': day.otherMonth,
+                    'is-today': day.isToday,
+                    'is-selected': day.dateStr === calSelectedDate,
+                    'has-events': day.events.length > 0
+                  }"
+                  @click="calSelectDay(day)"
+                >
+                  <span class="cal-day-number">{{ day.day }}</span>
+                  <div class="cal-day-dots" v-if="day.events.length > 0">
+                    <span
+                      v-for="(evt, eIdx) in day.events.slice(0, 3)"
+                      :key="eIdx"
+                      class="cal-event-dot"
+                      :class="evt.type"
+                    ></span>
+                    <span v-if="day.events.length > 3" class="cal-more-events">+{{ day.events.length - 3 }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="calendar-legend-full">
+                <span class="legend-item"><span class="legend-dot amber"></span> Auditorías</span>
+                <span class="legend-item"><span class="legend-dot green"></span> Capacitaciones</span>
+                <span class="legend-item"><span class="legend-dot blue"></span> Reuniones</span>
+                <span class="legend-item"><span class="legend-dot purple"></span> Compromisos</span>
+              </div>
+            </div>
+
+            <!-- Panel lateral de eventos -->
+            <div class="calendar-sidebar">
+              <div class="sidebar-events-card">
+                <h4 class="sidebar-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  {{ calSelectedDate ? 'Eventos del ' + calSelectedDateFormatted : 'Selecciona un día' }}
+                </h4>
+
+                <div v-if="calSelectedDayEvents.length === 0" class="no-events-msg">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--c-gray-light);">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p>No hay eventos programados</p>
+                </div>
+
+                <div v-else class="events-list">
+                  <div v-for="(evt, idx) in calSelectedDayEvents" :key="idx" class="event-card-item" :class="evt.type">
+                    <div class="event-card-header">
+                      <span class="event-type-badge" :class="evt.type">{{ evt.typeLabel }}</span>
+                      <span class="event-time-badge">{{ evt.time }}</span>
+                    </div>
+                    <h5 class="event-card-title">{{ evt.title }}</h5>
+                    <p class="event-card-client">{{ evt.client }}</p>
+                    <p class="event-card-desc" v-if="evt.description">{{ evt.description }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resumen del mes -->
+              <div class="sidebar-summary-card">
+                <h4 class="sidebar-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                  </svg>
+                  Resumen del mes
+                </h4>
+                <div class="summary-stats">
+                  <div class="summary-stat">
+                    <span class="summary-dot amber"></span>
+                    <span class="summary-label">Auditorías</span>
+                    <span class="summary-count">{{ calMonthStats.audits }}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-dot green"></span>
+                    <span class="summary-label">Capacitaciones</span>
+                    <span class="summary-count">{{ calMonthStats.trainings }}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-dot blue"></span>
+                    <span class="summary-label">Reuniones</span>
+                    <span class="summary-count">{{ calMonthStats.meetings }}</span>
+                  </div>
+                  <div class="summary-stat">
+                    <span class="summary-dot purple"></span>
+                    <span class="summary-label">Compromisos</span>
+                    <span class="summary-count">{{ calMonthStats.commitments }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- ========== REPORTES ========== -->
-        <div v-if="currentSection === 'reportes'">
-          <div class="section-top">
-            <div>
-              <h2 class="page-title">Reportes</h2>
-              <p class="page-subtitle">Genera y consulta reportes detallados.</p>
-            </div>
+        <!-- ========== COLABORADORES ========== -->
+        <div v-if="currentSection === 'colaboradores'">
+          <div v-if="selectedColaboradorId" class="colaborador-detail-inline">
+            <button class="back-btn" @click="backToColaboradores">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              Volver a colaboradores
+            </button>
+            <ColaboradorDetail :colaborador-id="selectedColaboradorId" />
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">📊</div>
-            <h3>Módulo de Reportes</h3>
-            <p>Próximamente podrás generar reportes desde aquí.</p>
-          </div>
+          <ColaboradoresList v-else inline @view-colaborador="viewColaborador" />
         </div>
 
         <!-- ========== USUARIOS ========== -->
@@ -572,28 +829,37 @@
           <div class="section-top">
             <div>
               <h2 class="page-title">Usuarios</h2>
-              <p class="page-subtitle">Administra los usuarios del sistema.</p>
+              <p class="page-subtitle">Equipo ESG — {{ usuarios.length }} usuarios registrados</p>
             </div>
           </div>
-          <div class="empty-state">
-            <div class="empty-icon">👤</div>
-            <h3>Módulo de Usuarios</h3>
-            <p>Próximamente podrás gestionar los usuarios desde aquí.</p>
-          </div>
-        </div>
-
-        <!-- ========== CONFIGURACIÓN ========== -->
-        <div v-if="currentSection === 'configuracion'">
-          <div class="section-top">
-            <div>
-              <h2 class="page-title">Configuración</h2>
-              <p class="page-subtitle">Ajusta la configuración del sistema.</p>
+          <div class="table-card">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Correo</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="u in usuarios" :key="u.id">
+                    <td>
+                      <div class="user-cell">
+                        <div class="user-avatar" :style="{ background: u.color }">
+                          <span>{{ u.iniciales }}</span>
+                        </div>
+                        <span class="user-name">{{ u.nombre }}</span>
+                      </div>
+                    </td>
+                    <td><span class="rol-badge" :class="u.rolClass">{{ u.rol }}</span></td>
+                    <td>{{ u.correo }}</td>
+                    <td><span class="estado-badge disponible">Activo</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
-          <div class="empty-state">
-            <div class="empty-icon">⚙️</div>
-            <h3>Módulo de Configuración</h3>
-            <p>Próximamente podrás configurar el sistema desde aquí.</p>
           </div>
         </div>
       </main>
@@ -602,26 +868,68 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '@/services/api/authService'
+import ProjectsList from '@/views/crm/ProjectsList.vue'
+import LicitacionesList from '@/views/crm/LicitacionesList.vue'
+import ProjectDetail from '@/views/crm/ProjectDetail.vue'
+import ColaboradoresList from '@/views/crm/ColaboradoresList.vue'
+import ColaboradorDetail from '@/views/crm/ColaboradorDetail.vue'
+import { mockProyectos } from '@/mock/proyectos'
 
 const router = useRouter()
 const currentSection = ref('dashboard')
 const sidebarOpen = ref(false)
 const userAvatar = ref<string | null>(null)
+const selectedProjectId = ref<number | null>(null)
+const selectedColaboradorId = ref<number | null>(null)
+
+function viewProject(id: number) {
+  selectedProjectId.value = id
+}
+
+function backToProjects() {
+  selectedProjectId.value = null
+}
+
+function viewColaborador(id: number) {
+  selectedColaboradorId.value = id
+}
+
+function backToColaboradores() {
+  selectedColaboradorId.value = null
+}
+
+const proyectosRecursos = mockProyectos.filter(p => p.estadoNombre === 'Finalizado' || p.estadoNombre === 'En ejecución')
+
+const fotosUrls = ref<Record<number, string>>({})
+
+function getFotoUrl(id: number): string {
+  return fotosUrls.value[id] || ''
+}
+
+function setFotoUrl(id: number, url: string) {
+  fotosUrls.value[id] = url
+}
+
+const usuarios = [
+  { id: 1, nombre: 'Camila', iniciales: 'CA', rol: 'Administrador ESG', rolClass: 'admin', correo: 'camila@consultopia.co', color: '#C89B2D' },
+  { id: 2, nombre: 'Luis Eduardo', iniciales: 'LE', rol: 'Gerente Técnico', rolClass: 'gerente', correo: 'luis@consultopia.co', color: '#3B82F6' },
+  { id: 3, nombre: 'María Paula', iniciales: 'MP', rol: 'Community Manager', rolClass: 'manager', correo: 'maria.paula@consultopia.co', color: '#8B5CF6' },
+  { id: 4, nombre: 'Felipe', iniciales: 'FE', rol: 'Colaborador', rolClass: 'colaborador', correo: 'felipe@consultopia.co', color: '#10B981' },
+]
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-  { id: 'clientes', label: 'Clientes', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
+  { id: 'clientes', label: 'Clientes', route: '/admin/crm/clientes', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
   { id: 'proyectos', label: 'Proyectos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' },
+  { id: 'licitaciones', label: 'Licitaciones', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
   { id: 'cotizaciones', label: 'Cotizaciones', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-  { id: 'servicios', label: 'Servicios', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4"/></svg>' },
   { id: 'recursos', label: 'Recursos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
   { id: 'calendario', label: 'Calendario', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
-  { id: 'reportes', label: 'Reportes', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' },
+  { id: 'colaboradores', label: 'Colaboradores', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
   { id: 'usuarios', label: 'Usuarios', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
-  { id: 'configuracion', label: 'Configuración', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' },
 ]
 
 const recentActivities = [
@@ -637,6 +945,201 @@ const upcomingEvents = [
   { day: '27', month: 'MAY', title: 'Capacitación ISO 9001:2015', client: 'Fundamentos y requisitos', time: '02:00 PM - 05:00 PM', type: 'training', typeLabel: 'Capacitación' },
 ]
 
+// ========== CALENDARIO ==========
+interface CalEvent {
+  title: string
+  client: string
+  time: string
+  type: 'audit' | 'training' | 'meeting' | 'commitment'
+  typeLabel: string
+  description?: string
+}
+
+interface CalDay {
+  day: number
+  dateStr: string
+  otherMonth: boolean
+  isToday: boolean
+  events: CalEvent[]
+}
+
+const calCurrentDate = ref(new Date())
+const calSelectedDate = ref<string | null>(null)
+
+const calendarEvents = ref<Record<string, CalEvent[]>>({
+  '2026-08-03': [{ title: 'Auditoría interna ISO 9001', client: 'EBM Metrology S.A.S.', time: '09:00 - 13:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría interna del sistema de gestión de calidad' }],
+  '2026-08-05': [{ title: 'Capacitación ISO 14001', client: 'Personal de planta', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación', description: 'Fundamentos del sistema de gestión ambiental' }],
+  '2026-08-07': [{ title: 'Reunión de seguimiento', client: 'Proyecto implementación SG', time: '10:00 - 11:30', type: 'meeting', typeLabel: 'Reunión' }],
+  '2026-08-10': [{ title: 'Revisión de documentación', client: 'Laboratorio García S.A.S.', time: '09:00 - 12:00', type: 'commitment', typeLabel: 'Compromiso' }],
+  '2026-08-12': [{ title: 'Auditoría ISO 45001', client: 'Industrias del Norte S.A.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría de seguridad y salud en el trabajo' }],
+  '2026-08-14': [{ title: 'Capacitación ISO 17025', client: 'Personal de laboratorio', time: '09:00 - 12:00', type: 'training', typeLabel: 'Capacitación' }, { title: 'Reunión cliente', client: 'Energía Eléctrica S.A.S.', time: '14:00 - 15:00', type: 'meeting', typeLabel: 'Reunión' }],
+  '2026-08-18': [{ title: 'Auditoría interna ISO 17025', client: 'EBM Metrology S.A.S.', time: '09:00 - 17:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría completa de laboratorio' }],
+  '2026-08-20': [{ title: 'Capacitación ISO 9001:2015', client: 'Todos los colaboradores', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación', description: 'Actualización de requisitos de calidad' }],
+  '2026-08-22': [{ title: 'Reunión de cierre', client: 'Proyecto implementación SG', time: '16:00 - 17:30', type: 'meeting', typeLabel: 'Reunión' }],
+  '2026-08-25': [{ title: 'Compromiso auditoría', client: 'Farma Salud S.A.S.', time: '10:00 - 12:00', type: 'commitment', typeLabel: 'Compromiso', description: 'Entrega de plan de acción' }],
+  '2026-08-27': [{ title: 'Auditoría ISO 9001', client: 'Laboratorio García S.A.S.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría' }],
+  '2026-08-29': [{ title: 'Capacitación auditoría interna', client: 'Auditores internos', time: '09:00 - 13:00', type: 'training', typeLabel: 'Capacitación', description: 'Habilidades de auditoría' }],
+  '2026-09-02': [{ title: 'Reunión mensual', client: 'Todo el equipo', time: '09:00 - 10:00', type: 'meeting', typeLabel: 'Reunión' }],
+  '2026-09-05': [{ title: 'Auditoría ISO 45001', client: 'Industrias del Norte S.A.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría' }],
+  '2026-09-10': [{ title: 'Capacitación ISO 14001', client: 'Personal ambiental', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación' }],
+  '2026-07-08': [{ title: 'Auditoría ISO 17025', client: 'EBM Metrology', time: '09:00 - 13:00', type: 'audit', typeLabel: 'Auditoría' }],
+  '2026-07-15': [{ title: 'Capacitación ISO 9001', client: 'Nuevo personal', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación' }],
+  '2026-07-22': [{ title: 'Reunión de avance', client: 'Proyecto SG', time: '10:00 - 11:00', type: 'meeting', typeLabel: 'Reunión' }],
+})
+
+const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+const calMonthName = computed(() => monthNames[calCurrentDate.value.getMonth()])
+const calYear = computed(() => calCurrentDate.value.getFullYear())
+
+const calDays = computed<CalDay[]>(() => {
+  const year = calCurrentDate.value.getFullYear()
+  const month = calCurrentDate.value.getMonth()
+  const today = new Date()
+
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+
+  let startDayOfWeek = firstDay.getDay()
+  if (startDayOfWeek === 0) startDayOfWeek = 7
+
+  const days: CalDay[] = []
+
+  for (let i = startDayOfWeek - 1; i > 0; i--) {
+    const d = new Date(year, month, 1 - i)
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    days.push({
+      day: d.getDate(),
+      dateStr,
+      otherMonth: true,
+      isToday: false,
+      events: calendarEvents.value[dateStr] || []
+    })
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d
+    days.push({
+      day: d,
+      dateStr,
+      otherMonth: false,
+      isToday,
+      events: calendarEvents.value[dateStr] || []
+    })
+  }
+
+  const remaining = 42 - days.length
+  for (let i = 1; i <= remaining; i++) {
+    const d = new Date(year, month + 1, i)
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    days.push({
+      day: d.getDate(),
+      dateStr,
+      otherMonth: true,
+      isToday: false,
+      events: calendarEvents.value[dateStr] || []
+    })
+  }
+
+  return days
+})
+
+const calSelectedDateFormatted = computed(() => {
+  if (!calSelectedDate.value) return ''
+  const [y, m, d] = calSelectedDate.value.split('-')
+  const date = new Date(parseInt(y), parseInt(m) - 1, parseInt(d))
+  return `${date.getDate()} de ${monthNames[date.getMonth()]} ${date.getFullYear()}`
+})
+
+const calSelectedDayEvents = computed(() => {
+  if (!calSelectedDate.value) return []
+  return calendarEvents.value[calSelectedDate.value] || []
+})
+
+const calMonthStats = computed(() => {
+  const year = calCurrentDate.value.getFullYear()
+  const month = calCurrentDate.value.getMonth()
+  const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`
+
+  let audits = 0, trainings = 0, meetings = 0, commitments = 0
+
+  Object.keys(calendarEvents.value).forEach(key => {
+    if (key.startsWith(prefix)) {
+      calendarEvents.value[key].forEach(evt => {
+        if (evt.type === 'audit') audits++
+        else if (evt.type === 'training') trainings++
+        else if (evt.type === 'meeting') meetings++
+        else if (evt.type === 'commitment') commitments++
+      })
+    }
+  })
+
+  return { audits, trainings, meetings, commitments }
+})
+
+function calPrevMonth() {
+  const d = calCurrentDate.value
+  calCurrentDate.value = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+  calSelectedDate.value = null
+}
+
+function calNextMonth() {
+  const d = calCurrentDate.value
+  calCurrentDate.value = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+  calSelectedDate.value = null
+}
+
+function calGoToday() {
+  calCurrentDate.value = new Date()
+  const today = new Date()
+  calSelectedDate.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+}
+
+function calSelectDay(day: CalDay) {
+  calSelectedDate.value = day.dateStr
+}
+
+const cotizaciones = ref([
+  { id: 'COT-2025-045', client: 'EBM Metrology S.A.S.', service: 'Auditoría ISO 17025', value: '$ 5.800.000', status: 'Enviada', statusClass: 'sent', date: '22 may 2025' },
+  { id: 'COT-2025-044', client: 'Laboratorio García S.A.S.', service: 'Implementación SG', value: '$ 12.500.000', status: 'Pendiente', statusClass: 'pending', date: '21 may 2025' },
+  { id: 'COT-2025-043', client: 'Industrias del Norte S.A.', service: 'Capacitación ISO 9001', value: '$ 4.200.000', status: 'Borrador', statusClass: 'draft', date: '20 may 2025' },
+  { id: 'COT-2025-042', client: 'Energía Eléctrica S.A.S.', service: 'Auditoría ISO 9001', value: '$ 6.750.000', status: 'Aprobada', statusClass: 'approved', date: '19 may 2025' },
+  { id: 'COT-2025-041', client: 'Farma Salud S.A.S.', service: 'Consultoría Regulatoria', value: '$ 8.900.000', status: 'Rechazada', statusClass: 'rejected', date: '18 may 2025' },
+  { id: 'COT-2025-040', client: 'EBM Metrology S.A.S.', service: 'Capacitación ISO 45001', value: '$ 3.200.000', status: 'Aprobada', statusClass: 'approved', date: '17 may 2025' },
+  { id: 'COT-2025-039', client: 'Laboratorio García S.A.S.', service: 'Auditoría ISO 9001', value: '$ 5.400.000', status: 'Enviada', statusClass: 'sent', date: '16 may 2025' },
+  { id: 'COT-2025-038', client: 'Industrias del Norte S.A.', service: 'Implementación ISO 14001', value: '$ 9.800.000', status: 'Pendiente', statusClass: 'pending', date: '15 may 2025' },
+  { id: 'COT-2025-037', client: 'Energía Eléctrica S.A.S.', service: 'Consultoría Ambiental', value: '$ 7.100.000', status: 'Borrador', statusClass: 'draft', date: '14 may 2025' },
+  { id: 'COT-2025-036', client: 'Farma Salud S.A.S.', service: 'Auditoría ISO 17025', value: '$ 6.300.000', status: 'Aprobada', statusClass: 'approved', date: '13 may 2025' },
+  { id: 'COT-2025-035', client: 'EBM Metrology S.A.S.', service: 'Implementación SG', value: '$ 11.000.000', status: 'Rechazada', statusClass: 'rejected', date: '12 may 2025' },
+  { id: 'COT-2025-034', client: 'Industrias del Norte S.A.', service: 'Auditoría ISO 45001', value: '$ 4.900.000', status: 'Enviada', statusClass: 'sent', date: '11 may 2025' },
+])
+
+const cotiFilterStatus = ref('')
+const cotiSearch = ref('')
+
+const cotizacionesFiltradas = computed(() => {
+  return cotizaciones.value.filter(q => {
+    const matchStatus = !cotiFilterStatus.value || q.status === cotiFilterStatus.value
+    const matchSearch = !cotiSearch.value || q.client.toLowerCase().includes(cotiSearch.value.toLowerCase()) || q.service.toLowerCase().includes(cotiSearch.value.toLowerCase())
+    return matchStatus && matchSearch
+  })
+})
+
+function verCotizacion(q: typeof cotizaciones.value[0]) {
+  alert(`Ver cotización ${q.id}\nCliente: ${q.client}\nServicio: ${q.service}\nValor: ${q.value}\nEstado: ${q.status}`)
+}
+
+function editarCotizacion(q: typeof cotizaciones.value[0]) {
+  alert(`Editar cotización ${q.id}`)
+}
+
+function eliminarCotizacion(q: typeof cotizaciones.value[0]) {
+  if (confirm(`¿Eliminar cotización ${q.id}?`)) {
+    cotizaciones.value = cotizaciones.value.filter(c => c.id !== q.id)
+  }
+}
+
 const recentQuotes = [
   { id: 'COT-2025-045', client: 'EBM Metrology S.A.S.', service: 'Auditoría ISO 17025', value: '$ 5.800.000', status: 'Enviada', statusClass: 'sent', date: '22 may 2025' },
   { id: 'COT-2025-044', client: 'Laboratorio García S.A.S.', service: 'Implementación SG', value: '$ 12.500.000', status: 'Pendiente', statusClass: 'pending', date: '21 may 2025' },
@@ -646,6 +1149,11 @@ const recentQuotes = [
 ]
 
 const setSection = (section: string) => {
+  const item = navItems.find((n) => n.id === section)
+  if (item && 'route' in item && item.route) {
+    router.push(item.route)
+    return
+  }
   currentSection.value = section
   sidebarOpen.value = false
 }
@@ -749,6 +1257,13 @@ const handleLogout = () => {
   background: var(--c-light);
   color: var(--c-black);
 }
+
+.external-icon {
+  margin-left: auto;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+.nav-item:hover .external-icon { opacity: 0.7; }
 
 .nav-item.active {
   background: rgba(200, 155, 45, 0.1);
@@ -1490,6 +2005,80 @@ const handleLogout = () => {
   border-radius: 6px;
 }
 .q-action:hover { background: var(--c-light); color: var(--c-black); }
+.q-action.danger:hover { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+
+.q-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* ===== COTIZACIONES ===== */
+.coti-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.coti-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.coti-filter-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.coti-select, .coti-input {
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  background: var(--c-white);
+  outline: none;
+  min-width: 200px;
+}
+
+.coti-select:focus, .coti-input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.1);
+}
+
+.coti-summary-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.coti-summary-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.coti-summary-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--c-black);
+}
+
+.coti-summary-label {
+  font-size: 0.72rem;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 .card-footer-btn {
   display: flex;
@@ -1613,12 +2202,460 @@ const handleLogout = () => {
   color: var(--c-gray);
 }
 
+/* ===== PROJECT DETAIL INLINE ===== */
+.project-detail-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  color: var(--c-gray);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: fit-content;
+}
+.back-btn:hover { border-color: var(--c-primary); color: var(--c-primary); }
+
+/* ===== USER TABLE ===== */
+.table-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.table-responsive { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--c-light);
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 14px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  border-bottom: 1px solid var(--c-border);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(249, 250, 251, 0.5); }
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.user-avatar span {
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.user-name { font-weight: 600; }
+
+.rol-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rol-badge.admin { background: #FEF3C7; color: #B45309; }
+.rol-badge.gerente { background: #EFF6FF; color: #1D4ED8; }
+.rol-badge.manager { background: #F3E8FF; color: #7C3AED; }
+.rol-badge.colaborador { background: #F0FDF4; color: #15803D; }
+
+.estado-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.estado-badge.disponible { background: #F0FDF4; color: #15803D; }
+
+.url-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 0 10px;
+  max-width: 260px;
+  transition: border-color 0.2s;
+}
+.url-input-wrapper:focus-within { border-color: var(--c-primary); }
+.url-icon { color: var(--c-gray-light); flex-shrink: 0; }
+.url-input {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--c-black);
+  background: transparent;
+  outline: none;
+}
+.url-input::placeholder { color: var(--c-gray-light); }
+
+/* ===== CALENDARIO FULL PAGE ===== */
+.calendar-full-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+.calendar-main-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.cal-month-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--c-black);
+  min-width: 180px;
+  text-align: center;
+}
+
+.cal-nav-btn-large {
+  background: none;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--c-gray);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.cal-nav-btn-large:hover { border-color: var(--c-primary); color: var(--c-primary); background: rgba(200, 155, 45, 0.04); }
+
+.cal-today-btn {
+  margin-left: auto;
+  padding: 6px 16px;
+  background: var(--c-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.cal-today-btn:hover { background: var(--c-primary-hover); }
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.calendar-weekdays span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px 16px 16px;
+  gap: 4px;
+}
+
+.cal-day-cell {
+  min-height: 80px;
+  border-radius: 10px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cal-day-cell:hover { background: var(--c-light); }
+
+.cal-day-cell.other-month {
+  opacity: 0.35;
+}
+
+.cal-day-cell.is-today {
+  border-color: var(--c-primary);
+  background: rgba(200, 155, 45, 0.04);
+}
+
+.cal-day-cell.is-selected {
+  background: rgba(200, 155, 45, 0.1);
+  border-color: var(--c-primary);
+}
+
+.cal-day-cell.has-events {
+  background: rgba(249, 250, 251, 0.8);
+}
+
+.cal-day-number {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c-black);
+  margin-bottom: 4px;
+}
+
+.cal-day-cell.is-today .cal-day-number {
+  background: var(--c-primary);
+  color: white;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-day-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cal-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.cal-event-dot.audit { background: #F59E0B; }
+.cal-event-dot.training { background: #10B981; }
+.cal-event-dot.meeting { background: #3B82F6; }
+.cal-event-dot.commitment { background: #8B5CF6; }
+
+.cal-more-events {
+  font-size: 0.6rem;
+  color: var(--c-gray);
+  font-weight: 600;
+}
+
+.calendar-legend-full {
+  display: flex;
+  gap: 20px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--c-border);
+  flex-wrap: wrap;
+}
+
+.calendar-legend-full .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--c-gray);
+  font-weight: 500;
+}
+
+.calendar-legend-full .legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ===== CALENDAR SIDEBAR ===== */
+.calendar-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sidebar-events-card,
+.sidebar-summary-card {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.sidebar-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--c-black);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.sidebar-title svg { color: var(--c-primary); }
+
+.no-events-msg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 12px;
+  text-align: center;
+}
+
+.no-events-msg p {
+  font-size: 0.82rem;
+  color: var(--c-gray);
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.event-card-item {
+  padding: 14px;
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  background: var(--c-light);
+}
+
+.event-card-item.audit { border-left-color: #F59E0B; }
+.event-card-item.training { border-left-color: #10B981; }
+.event-card-item.meeting { border-left-color: #3B82F6; }
+.event-card-item.commitment { border-left-color: #8B5CF6; }
+
+.event-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.event-type-badge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.event-type-badge.audit { background: rgba(245, 158, 11, 0.15); color: #D97706; }
+.event-type-badge.training { background: rgba(16, 185, 129, 0.15); color: #059669; }
+.event-type-badge.meeting { background: rgba(59, 130, 246, 0.15); color: #2563EB; }
+.event-type-badge.commitment { background: rgba(139, 92, 246, 0.15); color: #7C3AED; }
+
+.event-time-badge {
+  font-size: 0.72rem;
+  color: var(--c-gray);
+  font-weight: 500;
+}
+
+.event-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin-bottom: 4px;
+}
+
+.event-card-client {
+  font-size: 0.78rem;
+  color: var(--c-gray);
+  margin-bottom: 4px;
+}
+
+.event-card-desc {
+  font-size: 0.72rem;
+  color: var(--c-gray-light);
+  font-style: italic;
+}
+
+/* ===== SUMMARY STATS ===== */
+.summary-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.summary-stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.summary-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.summary-dot.amber { background: #F59E0B; }
+.summary-dot.green { background: #10B981; }
+.summary-dot.blue { background: #3B82F6; }
+.summary-dot.purple { background: #8B5CF6; }
+
+.summary-label {
+  font-size: 0.82rem;
+  color: var(--c-gray);
+  flex: 1;
+}
+
+.summary-count {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--c-black);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
   .stats-row { grid-template-columns: repeat(2, 1fr); }
   .dashboard-middle { grid-template-columns: 1fr; }
   .dashboard-bottom { grid-template-columns: 1fr; }
   .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  .calendar-full-layout { grid-template-columns: 1fr; }
+  .coti-summary-row { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -1652,5 +2689,10 @@ const handleLogout = () => {
   .stats-row { grid-template-columns: 1fr; }
   .metrics-row { grid-template-columns: 1fr; }
   .main-content { padding: 16px; }
+  .cal-day-cell { min-height: 60px; padding: 4px; }
+  .calendar-legend-full { gap: 12px; }
+  .coti-summary-row { grid-template-columns: repeat(2, 1fr); }
+  .coti-filters { flex-direction: column; }
+  .coti-select, .coti-input { min-width: auto; width: 100%; }
 }
 </style>

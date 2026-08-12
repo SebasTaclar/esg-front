@@ -54,7 +54,7 @@
       </div>
 
       <div class="nav-actions desktop-only">
-        <RouterLink to="/login-clientes" class="btn-portal">
+        <RouterLink to="/portal-clientes" class="btn-portal">
           Portal Clientes
         </RouterLink>
         <RouterLink v-if="!isLoggedIn" to="/login" class="btn-login">
@@ -128,7 +128,7 @@
         </div>
 
         <div class="mobile-controls">
-          <RouterLink to="/login-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
+          <RouterLink to="/portal-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
             Portal Clientes
           </RouterLink>
           <RouterLink v-if="!isLoggedIn" class="mobile-btn btn-login-mobile" to="/login" @click="closeMobileMenu">
