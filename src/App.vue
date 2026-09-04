@@ -54,20 +54,26 @@
       </div>
 
       <div class="nav-actions desktop-only">
-        <RouterLink to="/portal-clientes" class="btn-portal">
+        <RouterLink v-if="isClientLoggedIn" to="/portal-clientes" class="btn-portal">
+          <i class="fas fa-th-large" aria-hidden="true"></i>
+          Mi Portal
+        </RouterLink>
+        <RouterLink v-else to="/login-clientes" class="btn-portal">
           Portal Clientes
         </RouterLink>
-        <RouterLink v-if="!isLoggedIn" to="/login" class="btn-login">
+        <button v-if="isClientLoggedIn" type="button" class="btn-logout-sm" @click="logoutClient" title="Cerrar sesión clientes">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+        </button>
+        <RouterLink v-if="!isAdmin" to="/login" class="btn-login">
           <i class="fas fa-user" aria-hidden="true"></i>
           Iniciar sesión
         </RouterLink>
-        <RouterLink v-else-if="isAdmin" to="/admin/products" class="btn-login">
+        <RouterLink v-if="isLoggedIn && isAdmin" to="/admin/products" class="btn-login">
           <i class="fas fa-user-shield" aria-hidden="true"></i>
           Mi cuenta
         </RouterLink>
-        <button v-else type="button" class="btn-login" @click="logout">
-          <i class="fas fa-user" aria-hidden="true"></i>
-          Mi cuenta
+        <button v-if="isLoggedIn && isAdmin" type="button" class="btn-logout-sm" @click="logoutAdmin" title="Cerrar sesión admin">
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
         </button>
       </div>
 
@@ -128,22 +134,29 @@
         </div>
 
         <div class="mobile-controls">
-          <RouterLink to="/portal-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
+          <RouterLink v-if="isClientLoggedIn" to="/portal-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
+            <i class="fas fa-th-large" aria-hidden="true"></i>
+            Mi Portal
+          </RouterLink>
+          <RouterLink v-else to="/login-clientes" class="mobile-btn btn-portal-mobile" @click="closeMobileMenu">
             Portal Clientes
           </RouterLink>
-          <RouterLink v-if="!isLoggedIn" class="mobile-btn btn-login-mobile" to="/login" @click="closeMobileMenu">
+          <button v-if="isClientLoggedIn" class="mobile-btn logout-btn" @click="handleMobileLogoutClient">
+            Cerrar sesión clientes
+          </button>
+          <RouterLink v-if="!isAdmin" class="mobile-btn btn-login-mobile" to="/login" @click="closeMobileMenu">
             <i class="fas fa-user" aria-hidden="true"></i>
             Iniciar sesión
           </RouterLink>
-          <div v-if="isLoggedIn" class="mobile-user-greeting">
+          <div v-if="isLoggedIn && isAdmin" class="mobile-user-greeting">
             <span>Hola, {{ username }}</span>
           </div>
           <RouterLink v-if="isLoggedIn && isAdmin" class="mobile-btn btn-login-mobile" to="/admin/products" @click="closeMobileMenu">
             <i class="fas fa-user-shield" aria-hidden="true"></i>
             Mi cuenta
           </RouterLink>
-          <button v-if="isLoggedIn" class="mobile-btn logout-btn" @click="handleMobileLogout">
-            Cerrar sesión
+          <button v-if="isLoggedIn && isAdmin" class="mobile-btn logout-btn" @click="handleMobileLogoutAdmin">
+            Cerrar sesión admin
           </button>
         </div>
       </div>
@@ -166,7 +179,7 @@
 
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
-import { authService } from '@/services/api'
+import { authService, clientAuthService } from '@/services/api'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import router from './router'
 import SocialFloating from '@/components/SocialFloating.vue'
@@ -175,18 +188,19 @@ import ProductQuickViewModal from '@/components/ProductQuickViewModal.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import { useProductQuickView } from '@/composables/useProductQuickView'
 
-const isLoggedIn = ref(false)
 const username = ref('')
 const isMobileMenuOpen = ref(false)
 const isScrolled = ref(false)
 const servicesOpen = ref(false)
 const mobileServicesOpen = ref(false)
+const isLoggedIn = ref(false)
+const isAdmin = ref(false)
+const isClientLoggedIn = ref(false)
 
 const { isOpen: quickViewOpen, product: quickViewProduct, close: closeQuickView } = useProductQuickView()
 
 const currentRoute = useRoute()
-const isAdmin = computed(() => authService.isAdmin())
-const showUtilityBar = computed(() => !currentRoute.path.startsWith('/admin'))
+const showUtilityBar = computed(() => !currentRoute.path.startsWith('/admin') && !currentRoute.path.startsWith('/portal-clientes'))
 const isNosotros = computed(() => currentRoute.path === '/nosotros')
 
 const isCurrentRoute = (path: string): boolean => currentRoute.path === path
@@ -206,9 +220,15 @@ const handleServiceClick = () => {
 }
 
 const checkAuthStatus = () => {
-  isLoggedIn.value = authService.isAuthenticated()
-  if (isLoggedIn.value) {
+  isAdmin.value = authService.isAuthenticated() && authService.isAdmin()
+  isClientLoggedIn.value = clientAuthService.isAuthenticated()
+  isLoggedIn.value = isAdmin.value || isClientLoggedIn.value
+
+  if (isAdmin.value) {
     const currentUser = authService.getCurrentUser()
+    username.value = currentUser?.name || ''
+  } else if (isClientLoggedIn.value) {
+    const currentUser = clientAuthService.getCurrentUser()
     username.value = currentUser?.name || ''
   } else {
     username.value = ''
@@ -217,7 +237,26 @@ const checkAuthStatus = () => {
 
 const logout = () => {
   authService.logout()
+  clientAuthService.logout()
   isLoggedIn.value = false
+  isAdmin.value = false
+  isClientLoggedIn.value = false
+  username.value = ''
+  router.replace({ name: 'home' })
+}
+
+const logoutAdmin = () => {
+  authService.logout()
+  isLoggedIn.value = false
+  isAdmin.value = false
+  username.value = ''
+  router.replace({ name: 'home' })
+}
+
+const logoutClient = () => {
+  clientAuthService.logout()
+  isLoggedIn.value = false
+  isClientLoggedIn.value = false
   username.value = ''
   router.replace({ name: 'home' })
 }
@@ -225,6 +264,16 @@ const logout = () => {
 const handleMobileLogout = () => {
   closeMobileMenu()
   logout()
+}
+
+const handleMobileLogoutAdmin = () => {
+  closeMobileMenu()
+  logoutAdmin()
+}
+
+const handleMobileLogoutClient = () => {
+  closeMobileMenu()
+  logoutClient()
 }
 
 onMounted(() => {
@@ -554,6 +603,27 @@ defineOptions({
 
 .btn-login i {
   font-size: 13px;
+}
+
+.btn-logout-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #c09d29;
+  color: #f8f7f7;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-size: 14px;
+}
+
+.btn-logout-sm:hover {
+  background: #DC2626;
+  color: #FFF;
+  border-color: #DC2626;
 }
 
 /* Mobile Controls */

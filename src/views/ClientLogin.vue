@@ -10,6 +10,11 @@
         <p class="login-subtitle">Acceda a sus proyectos, documentos y seguimiento</p>
 
         <form @submit.prevent="handleLogin" class="login-form">
+          <div v-if="loginError" class="login-error">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ loginError }}
+          </div>
+
           <div class="input-group">
             <label for="email">Correo electrónico</label>
             <div class="input-wrapper">
@@ -71,7 +76,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService, type LoginCredentials } from '@/services/api'
+import { clientAuthService, type LoginCredentials } from '@/services/api'
 
 defineOptions({
   name: 'ClientLoginView'
@@ -84,30 +89,34 @@ const rememberMe = ref(false)
 const loading = ref(false)
 const router = useRouter()
 
+const loginError = ref('')
+
 const handleLogin = async () => {
   loading.value = true
+  loginError.value = ''
   try {
     const credentials: LoginCredentials = {
       email: email.value,
       password: password.value
     }
 
-    const response = await authService.login(credentials)
+    const response = await clientAuthService.login(credentials)
 
     if (response.success) {
-      const userInfo = authService.getCurrentUser()
+      const userInfo = clientAuthService.getCurrentUser()
       if (userInfo?.role === 'admin') {
-        router.push('/admin/products')
-      } else {
-        router.push('/portal-clientes')
+        loginError.value = 'Esta cuenta es de administrador. Use el acceso de administrador.'
+        clientAuthService.logout()
+        return
       }
+      router.push('/portal-clientes')
     } else {
-      alert(response.message || 'Credenciales inválidas')
+      loginError.value = response.message || 'Credenciales inválidas'
     }
   } catch (error: unknown) {
     console.error('Login error:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error en el servidor. Intente nuevamente.'
-    alert('Error: ' + errorMessage)
+    loginError.value = errorMessage
   } finally {
     loading.value = false
   }
@@ -173,6 +182,24 @@ const handleLogin = async () => {
   flex-direction: column;
   gap: 20px;
   text-align: left;
+}
+
+.login-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #DC2626;
+}
+
+.login-error i {
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .input-group label {

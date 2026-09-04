@@ -82,8 +82,8 @@ class ProductService {
     productData: UpdateProductRequest,
   ): Promise<ApiResponse<Product>> {
     try {
-      console.log('🌐 [productService] Llamando PUT /products/', id, productData)
-      const result = await apiClient.put<Product>(`/products/${id}`, productData)
+      console.log('🌐 [productService] Llamando PATCH /products/', id, productData)
+      const result = await apiClient.patch<Product>(`/products/${id}`, productData)
       console.log('📥 [productService] Producto actualizado:', result)
       return result
     } catch (error) {

@@ -73,7 +73,7 @@ class CategoryService {
     categoryData: Partial<CreateCategoryRequest>,
   ): Promise<ApiResponse<Category>> {
     try {
-      return await apiClient.put<Category>(`/categories/${id}`, categoryData)
+      return await apiClient.patch<Category>(`/categories/${id}`, categoryData)
     } catch (error) {
       console.error('Error updating category:', error)
       throw error

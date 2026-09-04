@@ -14,17 +14,16 @@
     <div class="project-header">
       <div class="header-left">
         <div class="project-code-row">
-          <span class="project-code">{{ proyecto.codigo }}</span>
+          <span class="project-code">{{ proyecto.code }}</span>
           <span class="separator">·</span>
-          <span class="project-oferta">{{ proyecto.oferta }}</span>
+          <span class="project-oferta">{{ proyecto.offer }}</span>
         </div>
-        <h1 class="project-client">{{ proyecto.clienteRazonSocial }}</h1>
-        <p class="project-type">{{ proyecto.tipoProyectoNombre }}</p>
+        <h1 class="project-client">{{ proyecto.client?.name || cliente?.razonSocial }}</h1>
+        <p class="project-type">{{ proyecto.projectType }}</p>
       </div>
       <div class="header-right">
-        <span class="status-badge" :style="{ background: proyecto.estadoColor + '15', color: proyecto.estadoColor }">
-          <span class="status-dot" :style="{ background: proyecto.estadoColor }"></span>
-          {{ proyecto.estadoNombre }}
+        <span class="status-badge">
+          {{ proyecto.status }}
         </span>
         <router-link :to="`/admin/crm/proyectos/${proyecto.id}/editar`" class="btn-outline">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -40,27 +39,27 @@
     <div class="summary-cards">
       <div class="summary-card">
         <span class="summary-label">Norma</span>
-        <span class="summary-value">{{ proyecto.normaCodigo }}</span>
+        <span class="summary-value">{{ proyecto.norm }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Servicio</span>
-        <span class="summary-value">{{ proyecto.tipoServicioNombre }}</span>
+        <span class="summary-value">{{ proyecto.serviceType }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Responsable</span>
-        <span class="summary-value">{{ proyecto.responsable }}</span>
+        <span class="summary-value">{{ proyecto.responsible }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Inicio</span>
-        <span class="summary-value">{{ formatDate(proyecto.fechaInicio) }}</span>
+        <span class="summary-value">{{ formatDate(proyecto.startDate) }}</span>
       </div>
       <div class="summary-card">
         <span class="summary-label">Fin</span>
-        <span class="summary-value">{{ proyecto.fechaFin ? formatDate(proyecto.fechaFin) : '-' }}</span>
+        <span class="summary-value">{{ proyecto.endDate ? formatDate(proyecto.endDate) : '-' }}</span>
       </div>
       <div class="summary-card highlight">
         <span class="summary-label">Valor</span>
-        <span class="summary-value">{{ formatCurrency(proyecto.costoTotal) }}</span>
+        <span class="summary-value">{{ formatCurrency(proyecto.totalCost) }}</span>
       </div>
     </div>
 
@@ -123,43 +122,43 @@
             <div class="info-rows">
               <div class="info-row">
                 <span class="info-label">Código</span>
-                <span class="info-value mono">{{ proyecto.codigo }}</span>
+                <span class="info-value mono">{{ proyecto.code }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Oferta</span>
-                <span class="info-value mono">{{ proyecto.oferta || '-' }}</span>
+                <span class="info-value mono">{{ proyecto.offer || '-' }}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Tipo de organización</span>
-                <span class="info-value">{{ proyecto.tipoProyectoNombre }}</span>
+                <span class="info-label">Tipo de proyecto</span>
+                <span class="info-value">{{ proyecto.projectType }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Norma</span>
-                <span class="info-value">{{ proyecto.normaCodigo }}</span>
+                <span class="info-value">{{ proyecto.norm }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Estado</span>
                 <span class="info-value">
-                  <span class="status-badge-sm" :style="{ background: proyecto.estadoColor + '15', color: proyecto.estadoColor }">
-                    {{ proyecto.estadoNombre }}
+                  <span class="status-badge-sm">
+                    {{ proyecto.status }}
                   </span>
                 </span>
               </div>
               <div class="info-row">
                 <span class="info-label">Responsable</span>
-                <span class="info-value">{{ proyecto.responsable }}</span>
+                <span class="info-value">{{ proyecto.responsible }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Fecha de inicio</span>
-                <span class="info-value">{{ formatDate(proyecto.fechaInicio) }}</span>
+                <span class="info-value">{{ formatDate(proyecto.startDate) }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Fecha de finalización</span>
-                <span class="info-value">{{ proyecto.fechaFin ? formatDate(proyecto.fechaFin) : '-' }}</span>
+                <span class="info-value">{{ proyecto.endDate ? formatDate(proyecto.endDate) : '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Valor total</span>
-                <span class="info-value highlight">{{ formatCurrency(proyecto.costoTotal) }}</span>
+                <span class="info-value highlight">{{ formatCurrency(proyecto.totalCost) }}</span>
               </div>
             </div>
           </div>
@@ -170,7 +169,7 @@
       <div v-if="activeTab === 'servicios'" class="tab-panel">
         <div class="section-header">
           <h3>Servicios ({{ servicios.length }})</h3>
-          <span class="total-value">Valor total: {{ formatCurrency(proyecto.costoTotal) }}</span>
+          <span class="total-value">Valor total: {{ formatCurrency(proyecto.totalCost) }}</span>
         </div>
         <div class="table-responsive">
           <table class="data-table">
@@ -185,13 +184,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="servicio in servicios" :key="servicio.id">
-                <td class="service-name">{{ servicio.nombre }}</td>
-                <td>{{ servicio.norma }}</td>
-                <td>{{ servicio.colaborador }}</td>
-                <td>{{ servicio.cantidad }}</td>
-                <td>{{ formatCurrency(servicio.valorUnitario) }}</td>
-                <td class="value-cell">{{ formatCurrency(servicio.valorTotal) }}</td>
+              <tr v-for="(servicio, index) in servicios" :key="index">
+                <td class="service-name">{{ servicio.name }}</td>
+                <td>{{ servicio.norm }}</td>
+                <td>{{ servicio.collaborator }}</td>
+                <td>{{ servicio.quantity }}</td>
+                <td>{{ formatCurrency(servicio.unitPrice) }}</td>
+                <td class="value-cell">{{ formatCurrency(servicio.totalPrice) }}</td>
               </tr>
             </tbody>
             <tfoot>
@@ -335,16 +334,16 @@ const tabs = computed(() => [
 ])
 
 const totalServicios = computed(() => {
-  return servicios.value.reduce((sum, s) => sum + s.valorTotal, 0)
+  return servicios.value.reduce((sum, s) => sum + s.totalPrice, 0)
 })
 
 async function loadProjectData(projectId: number) {
   proyecto.value = await fetchProyecto(projectId)
   if (!proyecto.value) return
 
-  cliente.value = await fetchCliente(proyecto.value.clienteId)
-  servicios.value = mockServicios.filter((s) => s.proyectoId === projectId)
-  contactos.value = mockContactosProyecto.filter((c) => c.proyectoId === projectId)
+  cliente.value = await fetchCliente(proyecto.value.clientId)
+  servicios.value = proyecto.value.services || []
+  contactos.value = []
   documentos.value = mockDocumentosProyecto.filter((d) => d.proyectoId === projectId)
   actividades.value = mockActividades
     .filter((a) => a.proyectoId === projectId)
@@ -506,7 +505,7 @@ watch(() => props.projectId, async (newId) => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px !important;
+  padding: 6px 14px;
   border-radius: 8px;
   font-size: 0.82rem;
   font-weight: 600;
@@ -530,7 +529,7 @@ watch(() => props.projectId, async (newId) => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px !important;
+  padding: 8px 16px;
   background: var(--c-white);
   color: var(--c-black);
   border: 1px solid var(--c-border);
@@ -609,7 +608,7 @@ watch(() => props.projectId, async (newId) => {
   background: var(--c-white);
   border: 1px solid var(--c-border);
   border-radius: 12px;
-  padding: 6px !important;
+  padding: 6px;
   overflow-x: auto;
 }
 
@@ -617,7 +616,7 @@ watch(() => props.projectId, async (newId) => {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px !important;
+  padding: 8px 14px;
   border: none;
   background: none;
   border-radius: 8px;
@@ -646,7 +645,7 @@ watch(() => props.projectId, async (newId) => {
   background: var(--c-white);
   border: 1px solid var(--c-border);
   border-radius: 14px;
-  padding: 24px !important;
+  padding: 24px;
 }
 
 .info-grid {
@@ -659,7 +658,7 @@ watch(() => props.projectId, async (newId) => {
   background: var(--c-light);
   border: 1px solid var(--c-border);
   border-radius: 12px;
-  padding: 24px !important;
+  padding: 24px;
 }
 
 .info-card h3 {

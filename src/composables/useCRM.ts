@@ -1,7 +1,8 @@
 import { ref, computed } from 'vue'
-import { clientService } from '@/services/api/clientMockService'
-import { projectService } from '@/services/api/projectMockService'
-import { catalogService } from '@/services/api/catalogMockService'
+import { clientService } from '@/services/api/clientService'
+import { projectService } from '@/services/api/projectService'
+import { catalogService } from '@/services/api/catalogService'
+import { quoteService } from '@/services/api/quoteService'
 import type {
   Cliente,
   Proyecto,
@@ -21,11 +22,16 @@ import type {
   CreateProyectoRequest,
   UpdateProyectoRequest,
   CreateSeguimientoRequest,
+  Cotizacion,
+  CreateCotizacionRequest,
+  UpdateCotizacionRequest,
+  ClientContact,
 } from '@/types/crmTypes'
 
 // Estado global compartido
 const clientes = ref<Cliente[]>([])
 const proyectos = ref<Proyecto[]>([])
+const cotizaciones = ref<Cotizacion[]>([])
 const stats = ref<CRMStats>({
   totalClientes: 0,
   totalProspectos: 0,
@@ -45,36 +51,17 @@ const error = ref<string | null>(null)
 const filtroEstado = ref<FiltroEstado>('todos')
 const busqueda = ref('')
 
+// Paginación server-side para clientes
+const currentPage = ref(1)
+const totalPages = ref(1)
+const totalItems = ref(0)
+const pageSize = ref(10)
+
 export function useCRM() {
   // ====== COMPUTED ======
 
   const clientesFiltrados = computed(() => {
-    let result = clientes.value
-
-    if (busqueda.value) {
-      const term = busqueda.value.toLowerCase()
-      result = result.filter(
-        (c) =>
-          c.razonSocial.toLowerCase().includes(term) ||
-          c.nit.includes(term) ||
-          c.correo.toLowerCase().includes(term),
-      )
-    }
-
-    switch (filtroEstado.value) {
-      case 'clientes':
-        result = result.filter((c) => c.estado === 'activo')
-        break
-      case 'prospectos':
-        const prospectStatuses = ['prospecto', 'nuevo', 'contactado', 'en_diagnostico', 'cotizacion_enviada', 'en_negociacion', 'ganado', 'perdido', 'en_pausa']
-        result = result.filter((c) => prospectStatuses.includes(c.estado))
-        break
-      case 'activos':
-        result = result.filter((c) => c.estado === 'activo')
-        break
-    }
-
-    return result
+    return clientes.value
   })
 
   const proyectosFiltrados = computed(() => {
@@ -84,24 +71,24 @@ export function useCRM() {
       const term = busqueda.value.toLowerCase()
       result = result.filter(
         (p) =>
-          p.codigo.toLowerCase().includes(term) ||
-          (p.clienteRazonSocial && p.clienteRazonSocial.toLowerCase().includes(term)) ||
-          p.responsable.toLowerCase().includes(term),
+          p.code.toLowerCase().includes(term) ||
+          (p.description && p.description.toLowerCase().includes(term)) ||
+          p.responsible.toLowerCase().includes(term),
       )
     }
 
     switch (filtroEstado.value) {
       case 'activos':
-        result = result.filter((p) => p.estadoNombre === 'En ejecución')
+        result = result.filter((p) => p.status === 'En Ejecucion')
         break
       case 'finalizados':
-        result = result.filter((p) => p.estadoNombre === 'Finalizado')
+        result = result.filter((p) => p.status === 'Finalizado')
         break
       case 'en_ejecucion':
-        result = result.filter((p) => p.estadoNombre === 'En ejecución')
+        result = result.filter((p) => p.status === 'En Ejecucion')
         break
       case 'suspendidos':
-        result = result.filter((p) => p.estadoNombre === 'Suspendido')
+        result = result.filter((p) => p.status === 'Suspendido')
         break
     }
 
@@ -110,15 +97,22 @@ export function useCRM() {
 
   // ====== CLIENTES ======
 
-  async function fetchClientes() {
+  async function fetchClientes(params?: { page?: number; limit?: number; search?: string }) {
     loading.value = true
     error.value = null
     try {
-      const response = await clientService.getAll()
+      const page = params?.page || currentPage.value
+      const limit = params?.limit || pageSize.value
+      const search = params?.search
+
+      const response = await clientService.getAll({ page, limit, search })
       clientes.value = response.data
-      const prospectStatuses = ['prospecto', 'nuevo', 'contactado', 'en_diagnostico', 'cotizacion_enviada', 'en_negociacion', 'ganado', 'perdido', 'en_pausa']
-      stats.value.totalClientes = response.data.filter((c) => c.estado === 'activo').length
-      stats.value.totalProspectos = response.data.filter((c) => prospectStatuses.includes(c.estado)).length
+      currentPage.value = response.page
+      totalPages.value = response.totalPages
+      totalItems.value = response.total
+
+      stats.value.totalClientes = response.data.filter((c) => !c.isProspect && c.isActive).length
+      stats.value.totalProspectos = response.data.filter((c) => c.isProspect).length
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar clientes'
     } finally {
@@ -144,7 +138,6 @@ export function useCRM() {
     error.value = null
     try {
       const cliente = await clientService.create(data)
-      clientes.value.unshift(cliente)
       return cliente
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al crear cliente'
@@ -185,11 +178,37 @@ export function useCRM() {
     }
   }
 
+  async function convertProspecto(id: number): Promise<Cliente | null> {
+    loading.value = true
+    error.value = null
+    try {
+      const cliente = await clientService.patch(id, { isProspect: false, isActive: true })
+      const index = clientes.value.findIndex((c) => c.id === id)
+      if (index !== -1) clientes.value[index] = cliente
+      return cliente
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al convertir prospecto'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ====== CONTACTOS ======
 
   async function fetchContactos(clienteId: number): Promise<Contacto[]> {
     try {
-      return await clientService.getContactos(clienteId)
+      const contacts = await clientService.getContactos(clienteId)
+      return contacts.map((c, i) => ({
+        id: c.id || i,
+        clienteId,
+        nombre: c.name || '',
+        cargo: c.position || '',
+        celular: c.phone || '',
+        correo: c.email || '',
+        esPrincipal: c.isPrimary || false,
+        createdAt: new Date().toISOString(),
+      }))
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar contactos'
       return []
@@ -203,7 +222,23 @@ export function useCRM() {
     loading.value = true
     error.value = null
     try {
-      return await clientService.createContacto(clienteId, data)
+      const contacto = await clientService.createContacto(clienteId, {
+        name: data.nombre,
+        position: data.cargo,
+        phone: data.celular,
+        email: data.correo,
+        isPrimary: data.esPrincipal,
+      })
+      return {
+        id: contacto.id || Date.now(),
+        clienteId,
+        nombre: contacto.name || '',
+        cargo: contacto.position || '',
+        celular: contacto.phone || '',
+        correo: contacto.email || '',
+        esPrincipal: contacto.isPrimary || false,
+        createdAt: new Date().toISOString(),
+      }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al crear contacto'
       return null
@@ -226,19 +261,46 @@ export function useCRM() {
     }
   }
 
-  // ====== PROYECTOS ======
-
-  async function fetchProyectos() {
+  async function updateContacto(
+    clienteId: number,
+    contactoId: number,
+    data: Partial<CreateContactoRequest>,
+  ): Promise<Contacto | null> {
     loading.value = true
     error.value = null
     try {
-      const response = await projectService.getAll()
+      const updated = await clientService.updateContacto(clienteId, contactoId, data as Partial<ClientContact>)
+      return {
+        id: updated.id || 0,
+        clienteId,
+        nombre: updated.name || '',
+        cargo: updated.position || '',
+        celular: updated.phone || '',
+        correo: updated.email || '',
+        esPrincipal: updated.isPrimary || false,
+        createdAt: new Date().toISOString(),
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al actualizar contacto'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ====== PROYECTOS ======
+
+  async function fetchProyectos(params?: { limit?: number }) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await projectService.getAll(params)
       proyectos.value = response.data
       stats.value.proyectosActivos = response.data.filter(
-        (p) => p.estadoNombre === 'En ejecución',
+        (p) => p.status === 'En Ejecucion',
       ).length
       stats.value.proyectosFinalizados = response.data.filter(
-        (p) => p.estadoNombre === 'Finalizado',
+        (p) => p.status === 'Finalizado',
       ).length
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar proyectos'
@@ -373,6 +435,87 @@ export function useCRM() {
     }
   }
 
+  // ====== COTIZACIONES ======
+
+  async function fetchCotizaciones(params?: { page?: number; limit?: number; search?: string; clientId?: number; projectId?: number }) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await quoteService.getAll({
+        page: params?.page || 1,
+        pageSize: params?.limit || 9999,
+        search: params?.search,
+        clientId: params?.clientId,
+        projectId: params?.projectId,
+      })
+      cotizaciones.value = response.data
+      stats.value.cotizacionesPendientes = response.data.filter((c) => c.status === 'pendiente').length
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al cargar cotizaciones'
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchCotizacion(id: number): Promise<Cotizacion | null> {
+    loading.value = true
+    error.value = null
+    try {
+      return await quoteService.getById(id)
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al cargar cotización'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function createCotizacion(data: CreateCotizacionRequest): Promise<Cotizacion | null> {
+    loading.value = true
+    error.value = null
+    try {
+      const cotizacion = await quoteService.create(data)
+      cotizaciones.value.unshift(cotizacion)
+      return cotizacion
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al crear cotización'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateCotizacion(id: number, data: UpdateCotizacionRequest): Promise<Cotizacion | null> {
+    loading.value = true
+    error.value = null
+    try {
+      const cotizacion = await quoteService.update(id, data)
+      const index = cotizaciones.value.findIndex((c) => c.id === id)
+      if (index !== -1) cotizaciones.value[index] = cotizacion
+      return cotizacion
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al actualizar cotización'
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteCotizacion(id: number): Promise<boolean> {
+    loading.value = true
+    error.value = null
+    try {
+      await quoteService.delete(id)
+      cotizaciones.value = cotizaciones.value.filter((c) => c.id !== id)
+      return true
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Error al eliminar cotización'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
   // ====== CRONOLOGÍA ======
 
   async function fetchCronologia(
@@ -419,7 +562,7 @@ export function useCRM() {
     loading.value = true
     error.value = null
     try {
-      await Promise.all([fetchClientes(), fetchProyectos(), fetchCatalogos()])
+      await Promise.all([fetchClientes({ page: 1, limit: 9999 }), fetchProyectos({ limit: 9999 }), fetchCatalogos()])
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Error al cargar dashboard'
     } finally {
@@ -445,6 +588,7 @@ export function useCRM() {
     // Estado
     clientes,
     proyectos,
+    cotizaciones,
     stats,
     tiposProyecto,
     normas,
@@ -454,6 +598,12 @@ export function useCRM() {
     error,
     filtroEstado,
     busqueda,
+
+    // Paginación
+    currentPage,
+    totalPages,
+    totalItems,
+    pageSize,
 
     // Computed
     clientesFiltrados,
@@ -465,10 +615,12 @@ export function useCRM() {
     createCliente,
     updateCliente,
     deleteCliente,
+    convertProspecto,
 
     // Contactos
     fetchContactos,
     createContacto,
+    updateContacto,
     deleteContacto,
 
     // Proyectos
@@ -489,6 +641,13 @@ export function useCRM() {
 
     // Cronología
     fetchCronologia,
+
+    // Cotizaciones
+    fetchCotizaciones,
+    fetchCotizacion,
+    createCotizacion,
+    updateCotizacion,
+    deleteCotizacion,
 
     // Catálogos
     fetchCatalogos,

@@ -4,7 +4,7 @@
     <div class="page-header">
       <div>
         <h1 class="page-title">Clientes</h1>
-        <p class="page-subtitle">{{ filteredClients.length }} clientes registrados</p>
+        <p class="page-subtitle">{{ clientes.length }} clientes registrados</p>
       </div>
       <div class="header-actions">
         <router-link to="/admin/crm/clientes/nuevo" class="btn-primary">
@@ -26,81 +26,18 @@
             <path d="m21 21-4.35-4.35"/>
           </svg>
           <input
-            v-model="searchTerm"
+            v-model="searchInput"
             type="text"
-            placeholder="Buscar por nombre, NIT o correo..."
+            placeholder="Buscar por nombre, NIT, código, email, tipo o norma..."
             class="search-input"
+            @input="onSearchInput"
           />
-          <button v-if="searchTerm" class="clear-btn" @click="clearSearch" title="Limpiar búsqueda">
+          <button v-if="searchInput" class="clear-btn" @click="clearSearch" title="Limpiar búsqueda">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
-        </div>
-
-        <div class="search-box code-filter">
-          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="16 18 22 12 16 6"/>
-            <polyline points="8 6 2 12 8 18"/>
-          </svg>
-          <input
-            v-model="codeFilter"
-            type="text"
-            placeholder="Filtrar por código..."
-            class="search-input"
-          />
-          <button v-if="codeFilter" class="clear-btn" @click="clearCodeFilter" title="Limpiar filtro">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <div class="org-dropdown" @click.stop>
-          <div class="org-dropdown-trigger" @click="toggleOrgDropdown">
-
-            <span class="org-dropdown-text">{{ orgFilter || 'Tipo de organización' }}</span>
-            <button v-if="orgFilter" class="org-dropdown-clear" @click.stop="clearOrgSelection" title="Limpiar filtro">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
-            <svg class="org-dropdown-arrow" :class="{ open: showOrgDropdown }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
-          <div v-if="showOrgDropdown" class="org-dropdown-menu">
-            <div class="org-dropdown-search">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="m21 21-4.35-4.35"/>
-              </svg>
-              <input
-                v-model="orgSearchTerm"
-                type="text"
-                placeholder="Buscar tipo..."
-                class="org-dropdown-search-input"
-                @input="filterOrgOptions"
-              />
-            </div>
-            <div class="org-dropdown-options">
-              <div
-                v-for="option in filteredOrgOptions"
-                :key="option"
-                class="org-dropdown-option"
-                :class="{ selected: orgFilter === option }"
-                @click="selectOrgFilter(option)"
-              >
-                {{ option }}
-              </div>
-              <div v-if="filteredOrgOptions.length === 0" class="org-dropdown-empty">
-                No se encontraron resultados
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -110,22 +47,63 @@
           :key="filter.value"
           class="filter-chip"
           :class="{ active: activeFilter === filter.value }"
-          @click="activeFilter = filter.value"
+          @click="setFilter(filter.value)"
         >
           {{ filter.label }}
           <span class="filter-count">{{ getFilterCount(filter.value) }}</span>
         </button>
+
+        <select v-model="selectedOrgType" class="org-type-filter" @change="frontPage = 1">
+          <option value="">Todos los tipos</option>
+          <option v-for="tipo in orgTypes" :key="tipo" :value="tipo">{{ tipo }}</option>
+        </select>
+
+        <select v-model="selectedNorma" class="org-type-filter" @change="frontPage = 1">
+          <option value="">Todas las normas</option>
+          <option v-for="n in normas" :key="n" :value="n">{{ n }}</option>
+        </select>
       </div>
     </div>
 
+    <!-- Error State -->
+    <div v-if="error && !loading" class="error-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h3>No fue posible cargar los clientes</h3>
+      <p>{{ error }}</p>
+      <button class="btn-primary" @click="loadData">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Reintentar
+      </button>
+    </div>
+
     <!-- Clients Table -->
-    <div class="table-card">
-      <div v-if="loading" class="loading-state">
-        <div class="spinner"></div>
-        <p>Cargando clientes...</p>
+    <div v-else class="table-card">
+      <!-- Skeleton Loading -->
+      <div v-if="loading" class="skeleton-table">
+        <div v-for="n in 5" :key="n" class="skeleton-row">
+          <div class="skeleton-cell skeleton-code"></div>
+          <div class="skeleton-cell skeleton-name">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-text-group">
+              <div class="skeleton-text long"></div>
+              <div class="skeleton-text short"></div>
+            </div>
+          </div>
+          <div class="skeleton-cell skeleton-org"></div>
+          <div class="skeleton-cell skeleton-status"></div>
+          <div class="skeleton-cell skeleton-actions"></div>
+        </div>
       </div>
 
-      <div v-else-if="filteredClients.length === 0" class="empty-state">
+      <!-- Empty State -->
+      <div v-else-if="clientesFiltrados.length === 0" class="empty-state">
         <div class="empty-icon">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -135,48 +113,32 @@
           </svg>
         </div>
         <h3>No se encontraron clientes</h3>
-        <p>{{ searchTerm ? 'Intenta con otros términos de búsqueda' : 'Comienza agregando tu primer cliente' }}</p>
-        <router-link v-if="!searchTerm" to="/admin/crm/clientes/nuevo" class="btn-primary">
+        <p>{{ searchInput ? 'Intenta con otros términos de búsqueda' : 'Comienza agregando tu primer cliente' }}</p>
+        <router-link v-if="!searchInput" to="/admin/crm/clientes/nuevo" class="btn-primary">
           Agregar Cliente
         </router-link>
       </div>
 
+      <!-- Data Table -->
       <div v-else>
         <div class="table-responsive">
           <table class="data-table">
             <thead>
               <tr>
-                <th @click="toggleSort('razonSocial')" class="sortable">
-                  Cliente
-                  <span v-if="sortField === 'razonSocial'" class="sort-icon">
-                    {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                  </span>
-                </th>
-                <th @click="toggleSort('codigo')" class="sortable">
-                  Código
-                  <span v-if="sortField === 'codigo'" class="sort-icon">
-                    {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                  </span>
-                </th>
+                <th>Código</th>
+                <th>Cliente</th>
                 <th>Tipo de organización</th>
                 <th>Norma</th>
-                <th>Proyectos</th>
-                <th @click="toggleSort('estado')" class="sortable">
-                  Estado
-                  <span v-if="sortField === 'estado'" class="sort-icon">
-                    {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                  </span>
-                </th>
+                <th v-if="activeFilter === 'prospectos'">OBS</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="cliente in paginatedClients" :key="cliente.id">
+              <tr v-for="cliente in clientesFiltrados" :key="cliente.id">
+                <td class="code-cell">{{ cliente.codigo || cliente.codigo || '-' }}</td>
                 <td>
                   <div class="client-info">
-                    <div class="client-avatar" :class="cliente.estado">
-                      {{ getInitials(cliente.razonSocial) }}
-                    </div>
                     <div>
                       <router-link :to="`/admin/crm/clientes/${cliente.id}`" class="client-name">
                         {{ cliente.razonSocial }}
@@ -185,26 +147,35 @@
                     </div>
                   </div>
                 </td>
-                <td class="code-cell">{{ cliente.codigo || '-' }}</td>
                 <td>
                   <span class="org-type-text">{{ cliente.tipoOrganizacion || '-' }}</span>
                 </td>
                 <td>
                   <span class="norma-text">{{ cliente.norma || '-' }}</span>
                 </td>
-                <td class="number-cell">
-                  <span class="count-badge" :class="{ highlight: (cliente.proyectosCount || 0) > 0 }">
-                    {{ cliente.proyectosCount || 0 }}
-                  </span>
+                <td v-if="activeFilter === 'prospectos'">
+                  <button
+                    v-if="cliente.observaciones"
+                    class="obs-btn"
+                    @click="openObsModal(cliente)"
+                    title="Ver observaciones"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    Ver
+                  </button>
+                  <span v-else class="no-obs">-</span>
                 </td>
                 <td>
-                  <span class="status-badge" :class="cliente.estado">
-                    {{ capitalizeFirst(cliente.estado) }}
+                  <span class="status-badge" :class="getStatusClass(cliente)">
+                    {{ getStatusLabel(cliente) }}
                   </span>
                 </td>
                 <td>
                   <div class="actions-cell">
-                    <router-link :to="`/admin/crm/clientes/${cliente.id}`" class="action-btn" title="Ver ficha">
+                    <router-link :to="`/admin/crm/clientes/${cliente.id}`" class="action-btn" title="Ver detalle">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                         <circle cx="12" cy="12" r="3"/>
@@ -216,6 +187,19 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </router-link>
+                    <button v-if="activeFilter === 'prospectos'" class="action-btn convert" title="Convertir a Cliente" @click="confirmConvert(cliente)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <polyline points="16 11 18 13 22 9"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn delete" title="Eliminar" @click="confirmDelete(cliente)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -224,32 +208,113 @@
         </div>
 
         <!-- Pagination -->
-        <div class="pagination-bar">
+        <div v-if="totalPages > 1" class="pagination-bar">
           <span class="pagination-info">
-            Mostrando {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredClients.length) }}
-            de {{ filteredClients.length }}
+            Mostrando {{ (frontPage - 1) * frontPageSize + 1 }}-{{ Math.min(frontPage * frontPageSize, totalItems) }}
+            de {{ totalItems }}
           </span>
           <div class="pagination-controls">
-            <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">
+            <button class="page-btn" :disabled="frontPage === 1" @click="goToPage(frontPage - 1)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"/>
               </svg>
             </button>
             <button
-              v-for="page in totalPages"
+              v-for="page in visiblePages"
               :key="page"
               class="page-btn"
-              :class="{ active: currentPage === page }"
-              @click="currentPage = page"
+              :class="{ active: frontPage === page }"
+              @click="goToPage(page)"
             >
               {{ page }}
             </button>
-            <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">
+            <button class="page-btn" :disabled="frontPage === totalPages" @click="goToPage(frontPage + 1)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+      <div class="modal-card">
+        <div class="modal-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <h3>¿Eliminar cliente?</h3>
+        <p>¿Deseas eliminar el cliente <strong>{{ clientToDelete?.razonSocial }}</strong>? Esta acción no se puede deshacer.</p>
+        <div v-if="deleteError" class="delete-error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span>{{ deleteError }}</span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-outline" @click="showDeleteModal = false">Cancelar</button>
+          <button class="btn-danger" :disabled="deleting" @click="handleDelete">
+            <span v-if="deleting" class="spinner-sm"></span>
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Convert Confirmation Modal -->
+    <div v-if="showConvertModal" class="modal-overlay" @click.self="showConvertModal = false">
+      <div class="modal-card">
+        <div class="modal-icon modal-icon-success">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <polyline points="16 11 18 13 22 9"/>
+          </svg>
+        </div>
+        <h3>Convertir a Cliente</h3>
+        <p>¿Deseas convertir <strong>{{ prospectoToConvert?.razonSocial }}</strong> en un cliente activo?</p>
+        <div v-if="convertError" class="delete-error">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span>{{ convertError }}</span>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-outline" @click="showConvertModal = false">Cancelar</button>
+          <button class="btn-success" :disabled="converting" @click="handleConvert">
+            <span v-if="converting" class="spinner-sm"></span>
+            Convertir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observations Modal -->
+    <div v-if="showObsModal" class="modal-overlay" @click.self="showObsModal = false">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Observaciones - {{ selectedCliente?.razonSocial }}</h3>
+          <button class="modal-close" @click="showObsModal = false">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>{{ selectedCliente?.observaciones }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-outline" @click="showObsModal = false">Cerrar</button>
         </div>
       </div>
     </div>
@@ -261,106 +326,128 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useCRM } from '@/composables/useCRM'
 import type { Cliente } from '@/types/crmTypes'
 
-const { clientes, loading, fetchClientes } = useCRM()
+const {
+  clientes,
+  loading,
+  error,
+  fetchClientes,
+  deleteCliente,
+  convertProspecto,
+} = useCRM()
 
-const searchTerm = ref('')
-const codeFilter = ref('')
-const orgFilter = ref('')
-const showOrgDropdown = ref(false)
-const orgSearchTerm = ref('')
+const searchInput = ref('')
 const activeFilter = ref('todos')
-const sortField = ref<string>('razonSocial')
-const sortDirection = ref<'asc' | 'desc'>('asc')
-const currentPage = ref(1)
-const pageSize = 10
+const selectedOrgType = ref('')
+const selectedNorma = ref('')
+const showDeleteModal = ref(false)
+const clientToDelete = ref<Cliente | null>(null)
+const deleting = ref(false)
+const deleteError = ref<string | null>(null)
+
+const frontPage = ref(1)
+const frontPageSize = 20
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const statusFilters = [
   { label: 'Todos', value: 'todos' },
-  { label: 'Activos', value: 'activo' },
-  { label: 'Inactivos', value: 'inactivo' },
+  { label: 'Clientes', value: 'clientes' },
+  { label: 'Prospectos', value: 'prospectos' },
 ]
 
-const prospectStatuses = ['prospecto', 'nuevo', 'contactado', 'en_diagnostico', 'cotizacion_enviada', 'en_negociacion', 'ganado', 'perdido', 'en_pausa']
-
-const orgOptions = computed(() => {
-  const types = new Set<string>()
-  clientes.value.forEach((c) => {
-    if (c.tipoOrganizacion && !prospectStatuses.includes(c.estado)) {
-      types.add(c.tipoOrganizacion)
-    }
-  })
-  return Array.from(types).sort()
+const orgTypes = computed(() => {
+  const types = new Set(clientes.value.map((c) => c.tipoOrganizacion).filter(Boolean))
+  return [...types].sort()
 })
 
-const filteredOrgOptions = computed(() => {
-  if (!orgSearchTerm.value) return orgOptions.value
-  const term = orgSearchTerm.value.toLowerCase()
-  return orgOptions.value.filter((opt) => opt.toLowerCase().includes(term))
+const normas = computed(() => {
+  const norms = new Set(clientes.value.map((c) => c.norma).filter(Boolean))
+  return [...norms].sort()
 })
 
-const filteredClients = computed(() => {
-  let result = [...clientes.value].filter((c) => !prospectStatuses.includes(c.estado))
+const allFiltered = computed(() => {
+  let result = [...clientes.value]
 
-  if (searchTerm.value) {
-    const term = searchTerm.value.toLowerCase()
-    result = result.filter(
-      (c) =>
-        c.razonSocial.toLowerCase().includes(term) ||
-        c.nit.includes(term) ||
-        c.correo.toLowerCase().includes(term),
+  if (searchInput.value) {
+    const term = searchInput.value.toLowerCase()
+    result = result.filter((c) =>
+      c.razonSocial.toLowerCase().includes(term) ||
+      c.nit.toLowerCase().includes(term) ||
+      (c.codigo && c.codigo.toLowerCase().includes(term)) ||
+      c.correo.toLowerCase().includes(term) ||
+      (c.tipoOrganizacion && c.tipoOrganizacion.toLowerCase().includes(term)) ||
+      (c.norma && c.norma.toLowerCase().includes(term)),
     )
   }
 
-  if (codeFilter.value) {
-    const codeTerm = codeFilter.value.toLowerCase()
-    result = result.filter(
-      (c) => c.codigo && c.codigo.toLowerCase().includes(codeTerm),
-    )
+  switch (activeFilter.value) {
+    case 'clientes':
+      result = result.filter((c) => !c.isProspect && c.isActive)
+      break
+    case 'prospectos':
+      result = result.filter((c) => c.isProspect)
+      break
   }
 
-  if (orgFilter.value) {
-    const orgTerm = orgFilter.value.toLowerCase()
-    result = result.filter(
-      (c) => c.tipoOrganizacion && c.tipoOrganizacion.toLowerCase().includes(orgTerm),
-    )
+  if (selectedOrgType.value) {
+    result = result.filter((c) => c.tipoOrganizacion === selectedOrgType.value)
   }
 
-  if (activeFilter.value !== 'todos') {
-    result = result.filter((c) => c.estado === activeFilter.value)
-  }
-
-  if (sortField.value) {
-    result.sort((a, b) => {
-      const aVal = a[sortField.value as keyof Cliente] ?? ''
-      const bVal = b[sortField.value as keyof Cliente] ?? ''
-      const cmp = String(aVal).localeCompare(String(bVal))
-      return sortDirection.value === 'desc' ? -cmp : cmp
-    })
+  if (selectedNorma.value) {
+    result = result.filter((c) => c.norma === selectedNorma.value)
   }
 
   return result
 })
 
-const totalPages = computed(() => Math.ceil(filteredClients.value.length / pageSize))
+const totalItems = computed(() => allFiltered.value.length)
+const totalPages = computed(() => Math.ceil(totalItems.value / frontPageSize))
 
-const paginatedClients = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredClients.value.slice(start, start + pageSize)
+const clientesFiltrados = computed(() => {
+  const start = (frontPage.value - 1) * frontPageSize
+  return allFiltered.value.slice(start, start + frontPageSize)
+})
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = frontPage.value
+  const pages: number[] = []
+
+  let start = Math.max(1, current - 2)
+  const end = Math.min(total, start + 4)
+  start = Math.max(1, end - 4)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  return pages
 })
 
 function getFilterCount(filter: string): number {
-  const clientsOnly = clientes.value.filter((c) => !prospectStatuses.includes(c.estado))
-  if (filter === 'todos') return clientsOnly.length
-  return clientsOnly.filter((c) => c.estado === filter).length
-}
+  let base = clientes.value
 
-function toggleSort(field: string) {
-  if (sortField.value === field) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortField.value = field
-    sortDirection.value = 'asc'
+  if (searchInput.value) {
+    const term = searchInput.value.toLowerCase()
+    base = base.filter((c) =>
+      c.razonSocial.toLowerCase().includes(term) ||
+      c.nit.toLowerCase().includes(term) ||
+      (c.codigo && c.codigo.toLowerCase().includes(term)) ||
+      c.correo.toLowerCase().includes(term) ||
+      (c.tipoOrganizacion && c.tipoOrganizacion.toLowerCase().includes(term)) ||
+      (c.norma && c.norma.toLowerCase().includes(term)),
+    )
   }
+
+  if (selectedOrgType.value) {
+    base = base.filter((c) => c.tipoOrganizacion === selectedOrgType.value)
+  }
+  if (selectedNorma.value) {
+    base = base.filter((c) => c.norma === selectedNorma.value)
+  }
+  if (filter === 'todos') return base.length
+  if (filter === 'clientes') return base.filter((c) => !c.isProspect && c.isActive).length
+  if (filter === 'prospectos') return base.filter((c) => c.isProspect).length
+  return 0
 }
 
 function getInitials(name: string): string {
@@ -372,55 +459,110 @@ function getInitials(name: string): string {
     .toUpperCase()
 }
 
-function capitalizeFirst(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1)
+function getAvatarClass(cliente: Cliente): string {
+  if (cliente.isProspect) return 'prospect'
+  if (cliente.isActive) return 'active'
+  return 'inactive'
+}
+
+function getStatusClass(cliente: Cliente): string {
+  if (cliente.isProspect) return 'prospect'
+  if (cliente.isActive) return 'active'
+  return 'inactive'
+}
+
+function getStatusLabel(cliente: Cliente): string {
+  if (cliente.isProspect) return 'Prospecto'
+  if (cliente.isActive) return 'Cliente'
+  return 'Inactivo'
+}
+
+function onSearchInput() {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    frontPage.value = 1
+  }, 300)
 }
 
 function clearSearch() {
-  searchTerm.value = ''
+  searchInput.value = ''
+  frontPage.value = 1
 }
 
-function clearCodeFilter() {
-  codeFilter.value = ''
+function setFilter(value: string) {
+  activeFilter.value = value
+  frontPage.value = 1
 }
 
-function toggleOrgDropdown() {
-  showOrgDropdown.value = !showOrgDropdown.value
-  if (showOrgDropdown.value) {
-    orgSearchTerm.value = ''
-  }
+function goToPage(page: number) {
+  if (page < 1 || page > totalPages.value) return
+  frontPage.value = page
 }
 
-function selectOrgFilter(value: string) {
-  if (orgFilter.value === value) {
-    orgFilter.value = ''
+function confirmDelete(cliente: Cliente) {
+  clientToDelete.value = cliente
+  deleteError.value = null
+  showDeleteModal.value = true
+}
+
+async function handleDelete() {
+  if (!clientToDelete.value) return
+  deleting.value = true
+  deleteError.value = null
+  const success = await deleteCliente(clientToDelete.value.id)
+  deleting.value = false
+  if (success) {
+    showDeleteModal.value = false
+    clientToDelete.value = null
   } else {
-    orgFilter.value = value
+    deleteError.value = error.value || 'No se pudo eliminar el cliente. Puede tener contactos o proyectos asociados.'
   }
-  showOrgDropdown.value = false
-  orgSearchTerm.value = ''
 }
 
-function clearOrgSelection() {
-  orgFilter.value = ''
-  orgSearchTerm.value = ''
+const showConvertModal = ref(false)
+const prospectoToConvert = ref<Cliente | null>(null)
+const converting = ref(false)
+const convertError = ref<string | null>(null)
+
+function confirmConvert(cliente: Cliente) {
+  prospectoToConvert.value = cliente
+  convertError.value = null
+  showConvertModal.value = true
 }
 
-function filterOrgOptions() {
-  // Computed property handles this
+async function handleConvert() {
+  if (!prospectoToConvert.value) return
+  converting.value = true
+  convertError.value = null
+  const result = await convertProspecto(prospectoToConvert.value.id)
+  converting.value = false
+  if (result) {
+    showConvertModal.value = false
+    prospectoToConvert.value = null
+  } else {
+    convertError.value = error.value || 'No se pudo convertir el prospecto.'
+  }
 }
 
-function closeOrgDropdown() {
-  showOrgDropdown.value = false
+const showObsModal = ref(false)
+const selectedCliente = ref<Cliente | null>(null)
+
+function openObsModal(cliente: Cliente) {
+  selectedCliente.value = cliente
+  showObsModal.value = true
 }
 
-watch([searchTerm, codeFilter, orgFilter, activeFilter], () => {
-  currentPage.value = 1
+async function loadData() {
+  await fetchClientes({ page: 1, limit: 9999 })
+  frontPage.value = 1
+}
+
+watch(activeFilter, () => {
+  frontPage.value = 1
 })
 
 onMounted(() => {
-  fetchClientes()
-  document.addEventListener('click', closeOrgDropdown)
+  loadData()
 })
 </script>
 
@@ -499,143 +641,6 @@ onMounted(() => {
   min-width: 250px;
 }
 
-.code-filter {
-  max-width: 280px;
-}
-
-/* ===== ORG DROPDOWN ===== */
-.org-dropdown {
-  position: relative;
-  min-width: 260px;
-}
-
-.org-dropdown-trigger {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1.5px solid var(--c-border);
-  border-radius: 8px;
-  background: var(--c-white);
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.org-dropdown-trigger:hover {
-  border-color: var(--c-gray-light);
-}
-
-.org-dropdown-icon {
-  color: var(--c-gray-light);
-  flex-shrink: 0;
-}
-
-.org-dropdown-text {
-  flex: 1;
-  font-size: 0.9rem;
-  color: var(--c-black);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.org-dropdown-text:empty::before {
-  content: 'Tipo de organización';
-  color: var(--c-gray-light);
-}
-
-.org-dropdown-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: var(--c-light);
-  color: var(--c-gray);
-  border-radius: 4px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-.org-dropdown-clear:hover {
-  background: var(--c-border);
-  color: var(--c-black);
-}
-
-.org-dropdown-arrow {
-  color: var(--c-gray-light);
-  transition: transform 0.2s ease;
-  flex-shrink: 0;
-}
-.org-dropdown-arrow.open {
-  transform: rotate(180deg);
-}
-
-.org-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  background: var(--c-white);
-  border: 1px solid var(--c-border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  z-index: 100;
-  overflow: hidden;
-}
-
-.org-dropdown-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--c-border);
-}
-.org-dropdown-search svg {
-  color: var(--c-gray-light);
-  flex-shrink: 0;
-}
-
-.org-dropdown-search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  font-size: 0.85rem;
-  font-family: inherit;
-  color: var(--c-black);
-  background: transparent;
-}
-.org-dropdown-search-input::placeholder {
-  color: var(--c-gray-light);
-}
-
-.org-dropdown-options {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.org-dropdown-option {
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  color: var(--c-black);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.org-dropdown-option:hover {
-  background: var(--c-light);
-}
-.org-dropdown-option.selected {
-  background: rgba(200, 155, 45, 0.1);
-  color: var(--c-primary);
-  font-weight: 600;
-}
-
-.org-dropdown-empty {
-  padding: 16px 14px;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--c-gray);
-}
-
 .search-icon {
   position: absolute;
   left: 14px;
@@ -643,7 +648,6 @@ onMounted(() => {
   transform: translateY(-50%);
   color: var(--c-gray-light);
   pointer-events: none;
-  transition: color 0.3s ease;
 }
 
 .search-input {
@@ -661,10 +665,6 @@ onMounted(() => {
 .search-input:focus {
   border-color: var(--c-primary);
   box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.08);
-}
-.search-input:focus + .search-icon,
-.search-input:focus ~ .search-icon {
-  color: var(--c-primary);
 }
 .search-input::placeholder { color: var(--c-gray-light); }
 
@@ -733,6 +733,51 @@ onMounted(() => {
   background: rgba(255,255,255,0.2);
 }
 
+.org-type-filter {
+  padding: 8px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-white);
+  color: var(--c-gray);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+.org-type-filter:hover {
+  border-color: var(--c-gray-light);
+  color: var(--c-black);
+}
+.org-type-filter:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.1);
+}
+
+/* ===== ERROR STATE ===== */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--c-gray);
+}
+.error-state h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-black);
+}
+.error-state p {
+  font-size: 0.88rem;
+  color: var(--c-gray);
+  margin-bottom: 8px;
+}
+
 /* ===== TABLE ===== */
 .table-card {
   background: var(--c-white);
@@ -764,14 +809,6 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.2s ease;
-}
-.sortable:hover { color: var(--c-black); }
-.sort-icon { margin-left: 4px; color: var(--c-primary); font-weight: 700; }
-
 .data-table td {
   padding: 14px 16px;
   font-size: 0.88rem;
@@ -800,9 +837,9 @@ onMounted(() => {
   font-weight: 700;
   flex-shrink: 0;
 }
-.client-avatar.activo { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.client-avatar.prospecto { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.client-avatar.inactivo { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
+.client-avatar.active { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.client-avatar.prospect { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.client-avatar.inactive { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 .client-name {
   display: block;
@@ -810,6 +847,8 @@ onMounted(() => {
   color: var(--c-black);
   text-decoration: none;
   transition: color 0.15s;
+  max-width: 220px;
+  word-wrap: break-word;
 }
 .client-name:hover { color: var(--c-primary); }
 
@@ -818,6 +857,8 @@ onMounted(() => {
   font-size: 0.78rem;
   color: var(--c-gray);
   margin-top: 2px;
+  max-width: 220px;
+  word-wrap: break-word;
 }
 
 .code-cell {
@@ -832,31 +873,35 @@ onMounted(() => {
   color: var(--c-black);
   min-width: 80px;
 }
-
 .norma-text {
   font-size: 0.82rem;
-  font-weight: 500;
-  min-width: 280px;
-  color: var(--c-gray);
-  white-space: nowrap;
+  color: var(--c-black);
+  min-width: 80px;
 }
 
-.number-cell { text-align: center; }
-
-.count-badge {
+.obs-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 8px;
-  background: var(--c-light);
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: var(--c-white);
   color: var(--c-gray);
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.count-badge.highlight { background: rgba(200, 155, 45, 0.1); color: var(--c-primary); }
+.obs-btn:hover {
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+
+.no-obs {
+  color: var(--c-gray-light);
+  font-size: 0.82rem;
+}
 
 .status-badge {
   display: inline-flex;
@@ -866,7 +911,6 @@ onMounted(() => {
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
-  text-transform: capitalize;
 }
 .status-badge::before {
   content: '';
@@ -875,9 +919,9 @@ onMounted(() => {
   border-radius: 50%;
   background: currentColor;
 }
-.status-badge.activo { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.status-badge.prospecto { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.status-badge.inactivo { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
+.status-badge.active { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.status-badge.prospect { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.status-badge.inactive { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 .actions-cell {
   display: flex;
@@ -903,6 +947,68 @@ onMounted(() => {
   color: var(--c-primary);
   transform: translateY(-1px);
 }
+.action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+.action-btn.convert:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+/* ===== SKELETON ===== */
+.skeleton-table {
+  padding: 0;
+}
+
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--c-border);
+}
+.skeleton-row:last-child { border-bottom: none; }
+
+.skeleton-cell {
+  flex-shrink: 0;
+}
+
+.skeleton-code { width: 100px; height: 16px; background: var(--c-light); border-radius: 4px; }
+
+.skeleton-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--c-light);
+  flex-shrink: 0;
+}
+
+.skeleton-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-text {
+  height: 12px;
+  background: var(--c-light);
+  border-radius: 4px;
+}
+.skeleton-text.long { width: 160px; }
+.skeleton-text.short { width: 100px; }
+
+.skeleton-org { width: 120px; height: 16px; background: var(--c-light); border-radius: 4px; }
+.skeleton-status { width: 80px; height: 24px; background: var(--c-light); border-radius: 6px; }
+.skeleton-actions { width: 80px; height: 34px; background: var(--c-light); border-radius: 8px; }
 
 /* ===== PAGINATION ===== */
 .pagination-bar {
@@ -952,27 +1058,7 @@ onMounted(() => {
 }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ===== LOADING & EMPTY ===== */
-.loading-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 60px 20px;
-  color: var(--c-gray);
-}
-
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--c-border);
-  border-top-color: var(--c-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
+/* ===== EMPTY ===== */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -981,6 +1067,128 @@ onMounted(() => {
 .empty-icon { color: var(--c-gray-light); margin-bottom: 16px; }
 .empty-state h3 { font-size: 1.1rem; font-weight: 700; color: var(--c-black); margin-bottom: 8px; }
 .empty-state p { font-size: 0.88rem; color: var(--c-gray); margin-bottom: 20px; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: var(--c-white);
+  border-radius: 14px;
+  padding: 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.modal-icon {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+
+.modal-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin-bottom: 8px;
+}
+
+.modal-card p {
+  font-size: 0.88rem;
+  color: var(--c-gray);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.delete-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--c-white);
+  color: var(--c-black);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline:hover { border-color: var(--c-gray-light); }
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-success:hover:not(:disabled) { background: #047857; }
+.btn-success:disabled { opacity: 0.6; cursor: not-allowed; }
+.modal-icon-success { background: rgba(16, 185, 129, 0.1); color: #059669; }
+
+.spinner-sm {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

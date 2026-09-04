@@ -62,28 +62,10 @@
           <h1>{{ currentTitle }}</h1>
         </div>
 
-        <div class="topbar-search">
-          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            :value="busqueda"
-            @input="onSearch"
-            placeholder="Buscar clientes, proyectos..."
-            class="search-input"
-          />
-        </div>
 
-        <div class="topbar-actions">
-          <button class="action-btn primary" @click="showQuickActions = !showQuickActions">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nuevo
-          </button>
+
+        <div class="topbar-actions" v-if="!isDashboard">
+
 
           <!-- Quick Actions Dropdown -->
           <div v-if="showQuickActions" class="quick-actions-dropdown">
@@ -128,7 +110,7 @@ const showQuickActions = ref(false)
 
 const navItems = [
   {
-    label: 'Resumen general',
+    label: 'Resumen General',
     route: '/admin/crm',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
   },
@@ -142,17 +124,16 @@ const navItems = [
     route: '/admin/crm/prospectos',
     icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>',
   },
-  {
-    label: 'Seguimientos',
-    route: '/admin/crm/seguimientos',
-    icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-  },
 ]
 
 const currentTitle = computed(() => {
-  const item = navItems.find((n) => route.path === n.route || route.path.startsWith(n.route + '/'))
-  return item?.label || 'CRM'
+  if (route.path === '/admin/crm') return 'CLIENTES / PROSPECTOS'
+  if (route.path.startsWith('/admin/crm/clientes')) return 'CLIENTES'
+  if (route.path.startsWith('/admin/crm/prospectos')) return 'PROSPECTOS'
+  return 'CRM'
 })
+
+const isDashboard = computed(() => route.path === '/admin/crm')
 
 function isActive(itemRoute: string): boolean {
   if (itemRoute === '/admin/crm') {
@@ -175,12 +156,6 @@ function handleLogout() {
 </script>
 
 <style scoped>
-.crm-layout, .crm-layout *, .crm-layout *::before, .crm-layout *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 .crm-layout {
   --c-primary: #C89B2D;
   --c-primary-hover: #B8892A;
@@ -196,7 +171,7 @@ function handleLogout() {
   --c-danger: #EF4444;
   --c-warning: #F59E0B;
   --c-info: #3B82F6;
-  --sidebar-w: 240px;
+  --sidebar-w: 215px;
   --topbar-h: 64px;
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   display: flex;
@@ -469,6 +444,7 @@ function handleLogout() {
 .crm-content {
   flex: 1;
   padding: 24px;
+
 }
 
 /* ===== RESPONSIVE ===== */

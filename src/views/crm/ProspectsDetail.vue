@@ -175,13 +175,40 @@
 
       <!-- COTIZACIONES -->
       <div v-if="activeTab === 'cotizaciones'" class="tab-panel">
-        <div class="empty-tab">
+        <div class="section-header">
+          <h3>Cotizaciones ({{ cotizaciones.length }})</h3>
+        </div>
+        <div v-if="cotizaciones.length > 0" class="quotes-table-wrap">
+          <table class="quotes-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Proyecto</th>
+                <th>Valor Total</th>
+                <th>Estado</th>
+                <th>Vigencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="cot in cotizaciones" :key="cot.id">
+                <td class="code-cell">{{ cot.code }}</td>
+                <td>{{ cot.project ? cot.project.code + ' - ' + cot.project.description : '-' }}</td>
+                <td class="amount-cell">{{ formatCurrency(cot.totalAmount) }}</td>
+                <td>
+                  <span class="status-badge" :class="'status-' + cot.status">{{ getStatusLabel(cot.status) }}</span>
+                </td>
+                <td>{{ cot.validUntil ? formatDate(cot.validUntil) : '-' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="cotizaciones.length === 0" class="empty-tab">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
           <h3>Cotizaciones</h3>
-          <p>Próximamente podrás gestionar cotizaciones desde aquí.</p>
+          <p>No hay cotizaciones registradas para este prospecto.</p>
         </div>
       </div>
 
@@ -276,15 +303,17 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCRM } from '@/composables/useCRM'
-import { projectService } from '@/services/api/projectMockService'
-import type { Cliente, Contacto, Proyecto, Seguimiento, Documento, EventoCronologia } from '@/types/crmTypes'
+import { projectService } from '@/services/api/projectService'
+import { quoteService } from '@/services/api/quoteService'
+import type { Cliente, Contacto, Proyecto, Seguimiento, Documento, EventoCronologia, ClientContact, Cotizacion, EstadoCotizacion } from '@/types/crmTypes'
 
 const route = useRoute()
-const { loading, fetchCliente, fetchContactos, fetchCronologia } = useCRM()
+const { loading, fetchCliente, fetchCronologia } = useCRM()
 
 const cliente = ref<Cliente | null>(null)
 const contactos = ref<Contacto[]>([])
 const proyectos = ref<Proyecto[]>([])
+const cotizaciones = ref<Cotizacion[]>([])
 const allSeguimientos = ref<Seguimiento[]>([])
 const allDocumentos = ref<Documento[]>([])
 const cronologia = ref<EventoCronologia[]>([])
@@ -293,7 +322,7 @@ const activeTab = ref('info')
 const tabs = computed(() => [
   { id: 'info', label: 'Información', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' },
   { id: 'contactos', label: 'Contactos', count: contactos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
-  { id: 'cotizaciones', label: 'Cotizaciones', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+  { id: 'cotizaciones', label: 'Cotizaciones', count: cotizaciones.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
   { id: 'seguimientos', label: 'Seguimientos', count: allSeguimientos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
   { id: 'documentos', label: 'Documentos', count: allDocumentos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
   { id: 'cronologia', label: 'Cronología', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
@@ -303,8 +332,24 @@ async function loadClientData(clienteId: number) {
   cliente.value = await fetchCliente(clienteId)
   if (!cliente.value) return
 
-  contactos.value = await fetchContactos(clienteId)
+  contactos.value = (cliente.value.contacts || []).map((c: ClientContact) => ({
+    id: c.id || 0,
+    clienteId,
+    nombre: c.name || '',
+    cargo: c.position || '',
+    celular: c.phone || '',
+    correo: c.email || '',
+    esPrincipal: c.isPrimary || false,
+    createdAt: new Date().toISOString(),
+  }))
   proyectos.value = await projectService.getByCliente(clienteId)
+
+  try {
+    const cotResponse = await quoteService.getByClient(clienteId)
+    cotizaciones.value = Array.isArray(cotResponse) ? cotResponse : []
+  } catch {
+    cotizaciones.value = []
+  }
 
   const allSegs: Seguimiento[] = []
   for (const p of proyectos.value) {
@@ -356,6 +401,26 @@ function capitalizeFirst(str: string): string {
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function getStatusLabel(status: EstadoCotizacion): string {
+  const map: Record<EstadoCotizacion, string> = {
+    pendiente: 'Pendiente',
+    enviada: 'Enviada',
+    aprobada: 'Aprobada',
+    rechazada: 'Rechazada',
+    vencida: 'Vencida',
+  }
+  return map[status] || status
 }
 
 function editContact(contacto: Contacto) {
@@ -925,6 +990,74 @@ onMounted(async () => {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== QUOTES TABLE ===== */
+.quotes-table-wrap {
+  overflow-x: auto;
+}
+
+.quotes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quotes-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--c-light);
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.quotes-table td {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.quotes-table tr:last-child td { border-bottom: none; }
+.quotes-table tr:hover td { background: rgba(249, 250, 251, 0.6); }
+
+.quotes-table .code-cell {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--c-primary);
+}
+
+.quotes-table .amount-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.quotes-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.quotes-table .status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.quotes-table .status-pendiente { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.quotes-table .status-enviada { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
+.quotes-table .status-aprobada { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.quotes-table .status-rechazada { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+.quotes-table .status-vencida { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
