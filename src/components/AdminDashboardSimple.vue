@@ -63,8 +63,8 @@
         </router-link>
 
         <div class="topbar-greeting">
-          <h1>¡Hola, Camila! 👋</h1>
-          <p>Bienvenida al Centro de Gestión ESG</p>
+          <h1>¡Hola, {{ currentUser?.name || 'Usuario' }}! 👋</h1>
+          <p>Bienvenido al Centro de Gestión ESG</p>
         </div>
 
         <div class="topbar-search">
@@ -77,11 +77,8 @@
 
         <div class="topbar-actions">
           <button class="action-btn" title="Notificaciones">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            <span class="badge">3</span>
+
+
           </button>
           <button class="export-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -94,7 +91,7 @@
           <div class="topbar-user">
             <div class="user-avatar-sm">
               <img v-if="userAvatar" :src="userAvatar" alt="Avatar" />
-              <span v-else>CR</span>
+              <span v-else>{{ getUserInitials(currentUser?.name || currentUser?.email || 'U') }}</span>
             </div>
           </div>
         </div>
@@ -104,6 +101,18 @@
       <main class="main-content">
         <!-- ========== DASHBOARD ========== -->
         <div v-if="currentSection === 'dashboard'">
+          <!-- Dashboard Title -->
+          <h2 class="dashboard-title">Panel de control</h2>
+
+          <!-- Month Filter -->
+          <div class="month-filter">
+            <label>Filtrar por mes:</label>
+            <select v-model="selectedMonth" class="month-select">
+              <option value="todos">Todos</option>
+              <option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
+            </select>
+          </div>
+
           <!-- Stats Cards -->
           <div class="stats-row">
             <div class="stat-card">
@@ -117,12 +126,12 @@
               </div>
               <div class="stat-content">
                 <span class="stat-label">Clientes</span>
-                <span class="stat-value">245</span>
-                <span class="stat-change up">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <span class="stat-value">{{ filteredClientes.length }}</span>
+                <span class="stat-change" :class="filteredClientes.length > 0 ? 'up' : ''">
+                  <svg v-if="filteredClientes.length > 0" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="18 15 12 9 6 15"/>
                   </svg>
-                  12 este mes
+                  {{ selectedMonth === 'todos' ? 'Total' : filteredClientes.length + ' este mes' }}
                 </span>
               </div>
               <div class="stat-sparkline">
@@ -140,8 +149,8 @@
               </div>
               <div class="stat-content">
                 <span class="stat-label">Proyectos</span>
-                <span class="stat-value">52</span>
-                <span class="stat-sub">En ejecución</span>
+                <span class="stat-value">{{ filteredProyectos.length }}</span>
+                <span class="stat-sub">{{ selectedMonth === 'todos' ? 'Total' : filteredProyectos.length + ' este mes' }}</span>
               </div>
               <div class="stat-sparkline">
                 <svg viewBox="0 0 80 30" class="sparkline-svg">
@@ -161,8 +170,8 @@
               </div>
               <div class="stat-content">
                 <span class="stat-label">Cotizaciones</span>
-                <span class="stat-value">18</span>
-                <span class="stat-sub">Pendientes</span>
+                <span class="stat-value">{{ filteredCotizaciones.length }}</span>
+                <span class="stat-sub">{{ filteredCotizaciones.filter(c => c.status === 'pendiente').length }} pendientes</span>
               </div>
               <div class="stat-sparkline">
                 <svg viewBox="0 0 80 30" class="sparkline-svg">
@@ -174,25 +183,15 @@
             <div class="stat-card">
               <div class="stat-icon green">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="16"/>
-                  <line x1="8" y1="12" x2="16" y2="12"/>
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
               </div>
               <div class="stat-content">
-                <span class="stat-label">Facturación</span>
-                <span class="stat-value">$235M</span>
-                <span class="stat-change up">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="18 15 12 9 6 15"/>
-                  </svg>
-                  18% este mes
-                </span>
-              </div>
-              <div class="stat-sparkline">
-                <svg viewBox="0 0 80 30" class="sparkline-svg">
-                  <polyline points="0,25 15,20 30,22 45,12 60,15 80,3" fill="none" stroke="#10B981" stroke-width="2"/>
-                </svg>
+                <span class="stat-label">Total Colaboradores</span>
+                <span class="stat-value">{{ colaboradores.length }}</span>
               </div>
             </div>
           </div>
@@ -203,7 +202,7 @@
             <div class="card activity-card">
               <div class="card-header">
                 <h3>Actividad reciente</h3>
-                <button class="link-btn">Ver todas</button>
+                <button class="link-btn" @click="setSection('adm-eventos')">Ver todas</button>
               </div>
               <div class="activity-list">
                 <div v-for="(activity, idx) in recentActivities" :key="idx" class="activity-item">
@@ -223,13 +222,13 @@
               <div class="card-header">
                 <h3>Calendario</h3>
                 <div class="calendar-nav">
-                  <span class="calendar-month">Mayo 2025</span>
-                  <button class="cal-nav-btn">
+                  <span class="calendar-month">{{ miniCalendarMonthName }} {{ miniCalendarYear }}</span>
+                  <button class="cal-nav-btn" @click="miniCalPrevMonth">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="15 18 9 12 15 6"/>
                     </svg>
                   </button>
-                  <button class="cal-nav-btn">
+                  <button class="cal-nav-btn" @click="miniCalNextMonth">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
@@ -241,47 +240,33 @@
                   <span>LUN</span><span>MAR</span><span>MIE</span><span>JUE</span><span>VIE</span><span>SAB</span><span>DOM</span>
                 </div>
                 <div class="cal-body">
-                  <span class="cal-day other">28</span>
-                  <span class="cal-day other">29</span>
-                  <span class="cal-day other">30</span>
-                  <span class="cal-day">1</span>
-                  <span class="cal-day">2</span>
-                  <span class="cal-day">3</span>
-                  <span class="cal-day">4</span>
-                  <span class="cal-day">5</span>
-                  <span class="cal-day">6</span>
-                  <span class="cal-day">7</span>
-                  <span class="cal-day">8</span>
-                  <span class="cal-day">9</span>
-                  <span class="cal-day">10</span>
-                  <span class="cal-day">11</span>
-                  <span class="cal-day">12</span>
-                  <span class="cal-day">13</span>
-                  <span class="cal-day">14</span>
-                  <span class="cal-day">15</span>
-                  <span class="cal-day">16</span>
-                  <span class="cal-day">17</span>
-                  <span class="cal-day">18</span>
-                  <span class="cal-day">19</span>
-                  <span class="cal-day">20</span>
-                  <span class="cal-day">21</span>
-                  <span class="cal-day today">22</span>
-                  <span class="cal-day">23</span>
-                  <span class="cal-day">24</span>
-                  <span class="cal-day">25</span>
-                  <span class="cal-day">26</span>
-                  <span class="cal-day">27</span>
-                  <span class="cal-day">28</span>
-                  <span class="cal-day">29</span>
-                  <span class="cal-day">30</span>
-                  <span class="cal-day">31</span>
-                  <span class="cal-day">1</span>
+                  <span
+                    v-for="(day, idx) in miniCalendarDays"
+                    :key="idx"
+                    class="cal-day"
+                    :class="{ 'other': day.otherMonth, 'today': day.isToday }"
+                  >
+                    {{ day.day }}
+                    <span v-if="day.events.length > 0" class="cal-day-dots-inline">
+                      <span
+                        v-for="(evt, eIdx) in day.eventTypes.slice(0, 3)"
+                        :key="eIdx"
+                        class="cal-dot-inline"
+                        :style="{ background: rawTypeColorMap[evt] || '#6B7280' }"
+                      ></span>
+                    </span>
+                  </span>
                 </div>
               </div>
               <div class="calendar-legend">
-                <span class="legend-item"><span class="legend-dot amber"></span> Auditorías</span>
-                <span class="legend-item"><span class="legend-dot blue"></span> Reuniones</span>
-                <span class="legend-item"><span class="legend-dot green"></span> Capacitaciones</span>
+                <span
+                  v-for="item in miniCalendarLegendItems"
+                  :key="item.rawType"
+                  class="legend-item"
+                >
+                  <span class="legend-dot" :style="{ background: item.color }"></span>
+                  {{ item.label }}
+                </span>
               </div>
             </div>
 
@@ -289,7 +274,7 @@
             <div class="card upcoming-card">
               <div class="card-header">
                 <h3>Próximas actividades</h3>
-                <button class="link-btn">Ver todas</button>
+                <button class="link-btn" @click="setSection('calendario')">Ver todas</button>
               </div>
               <div class="upcoming-list">
                 <div v-for="(event, idx) in upcomingEvents" :key="idx" class="upcoming-item">
@@ -298,11 +283,16 @@
                     <span class="day-month">{{ event.month }}</span>
                   </div>
                   <div class="upcoming-info">
-                    <span class="upcoming-title">{{ event.title }}</span>
+                    <div class="upcoming-title-row">
+                      <span class="upcoming-title">{{ event.title }}</span>
+                      <span class="upcoming-badge" :class="event.type">{{ event.typeLabel }}</span>
+                    </div>
                     <span class="upcoming-client">{{ event.client }}</span>
                     <span class="upcoming-time">{{ event.time }}</span>
                   </div>
-                  <span class="upcoming-badge" :class="event.type">{{ event.typeLabel }}</span>
+                </div>
+                <div v-if="upcomingEvents.length === 0" class="upcoming-empty">
+                  No hay próximas actividades
                 </div>
               </div>
             </div>
@@ -314,91 +304,67 @@
             <div class="card projects-card">
               <div class="card-header">
                 <h3>Proyectos por estado</h3>
-                <button class="link-btn">Ver reporte</button>
               </div>
               <div class="projects-chart-area">
                 <div class="donut-container">
                   <svg viewBox="0 0 120 120" class="donut-svg">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="#F59E0B" stroke-width="16" stroke-dasharray="144.5 166.5" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="#3B82F6" stroke-width="16" stroke-dasharray="94.2 216.8" stroke-dashoffset="-144.5" transform="rotate(-90 60 60)"/>
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="16" stroke-dasharray="56.5 254.5" stroke-dashoffset="-238.7" transform="rotate(-90 60 60)"/>
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="#EF4444" stroke-width="16" stroke-dasharray="22 289" stroke-dashoffset="-295.2" transform="rotate(-90 60 60)"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#F59E0B" stroke-width="16" :stroke-dasharray="donutDashEjecucion" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#3B82F6" stroke-width="16" :stroke-dasharray="donutDashFinalizados" :stroke-dashoffset="donutOffsetFinalizados" transform="rotate(-90 60 60)"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#10B981" stroke-width="16" :stroke-dasharray="donutDashCotizacion" :stroke-dashoffset="donutOffsetCotizacion" transform="rotate(-90 60 60)"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#8B5CF6" stroke-width="16" :stroke-dasharray="donutDashAprobados" :stroke-dashoffset="donutOffsetAprobados" transform="rotate(-90 60 60)"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#EF4444" stroke-width="16" :stroke-dasharray="donutDashCancelados" :stroke-dashoffset="donutOffsetCancelados" transform="rotate(-90 60 60)"/>
                   </svg>
                   <div class="donut-center">
-                    <span class="donut-value">52</span>
+                    <span class="donut-value">{{ totalProyectos }}</span>
                     <span class="donut-label">Total</span>
                   </div>
                 </div>
                 <div class="projects-legend">
                   <div class="legend-row">
                     <span class="legend-dot-rect amber"></span>
-                    <span class="legend-text">En ejecución</span>
-                    <span class="legend-count">24 (46%)</span>
+                    <span class="legend-text">En Ejecucion</span>
+                    <span class="legend-count">{{ proyectosEnEjecucion }} ({{ porcentajeEjecucion }}%)</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect blue"></span>
                     <span class="legend-text">Finalizados</span>
-                    <span class="legend-count">18 (35%)</span>
+                    <span class="legend-count">{{ proyectosFinalizadosCount }} ({{ porcentajeFinalizados }}%)</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect green"></span>
-                    <span class="legend-text">Pendientes</span>
-                    <span class="legend-count">6 (12%)</span>
+                    <span class="legend-text">Cotizacion</span>
+                    <span class="legend-count">{{ proyectosCotizacion }} ({{ porcentajeCotizacion }}%)</span>
+                  </div>
+                  <div class="legend-row">
+                    <span class="legend-dot-rect purple"></span>
+                    <span class="legend-text">Aprobados</span>
+                    <span class="legend-count">{{ proyectosAprobados }} ({{ porcentajeAprobados }}%)</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect red"></span>
-                    <span class="legend-text">Cancelados</span>
-                    <span class="legend-count">4 (7%)</span>
+                    <span class="legend-text">Suspendidos</span>
+                    <span class="legend-count">{{ proyectosCancelados }} ({{ porcentajeCancelados }}%)</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Cotizaciones Recientes -->
+            <!-- Proyectos creados por mes -->
             <div class="card quotes-card">
               <div class="card-header">
-                <h3>Cotizaciones recientes</h3>
+                <h3>Proyectos creados por mes</h3>
               </div>
-              <div class="quotes-table-wrap">
-                <table class="quotes-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Cliente</th>
-                      <th>Servicio</th>
-                      <th>Valor</th>
-                      <th>Estado</th>
-                      <th>Fecha</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="quote in recentQuotes" :key="quote.id">
-                      <td class="q-id">{{ quote.id }}</td>
-                      <td>{{ quote.client }}</td>
-                      <td>{{ quote.service }}</td>
-                      <td class="q-value">{{ quote.value }}</td>
-                      <td><span class="q-status" :class="quote.statusClass">{{ quote.status }}</span></td>
-                      <td class="q-date">{{ quote.date }}</td>
-                      <td>
-                        <button class="q-action" title="Ver">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="bar-chart-container">
+                <div class="bar-chart">
+                  <div v-for="(item, idx) in proyectosPorMes" :key="idx" class="bar-col">
+                    <span class="bar-value">{{ item.count }}</span>
+                    <div class="bar-wrapper">
+                      <div class="bar-fill" :style="{ height: barHeight(item.count) + '%' }"></div>
+                    </div>
+                    <span class="bar-label">{{ item.label }}</span>
+                  </div>
+                </div>
               </div>
-              <button class="card-footer-btn">
-                Ver todas las cotizaciones
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -412,14 +378,9 @@
                 </svg>
               </div>
               <div class="metric-info">
-                <span class="metric-label">Tasa de conversión</span>
-                <span class="metric-value">35%</span>
-                <span class="metric-sub">Este mes</span>
-              </div>
-              <div class="metric-sparkline">
-                <svg viewBox="0 0 60 24" class="sparkline-svg">
-                  <polyline points="0,20 10,18 20,15 30,18 40,10 50,12 60,5" fill="none" stroke="#3B82F6" stroke-width="1.5"/>
-                </svg>
+                <span class="metric-label">Total colaboradores</span>
+                <span class="metric-value">{{ colaboradores.length }}</span>
+                <span class="metric-sub">Registrados</span>
               </div>
             </div>
 
@@ -434,7 +395,7 @@
               </div>
               <div class="metric-info">
                 <span class="metric-label">Clientes nuevos</span>
-                <span class="metric-value">18</span>
+                <span class="metric-value">{{ clientesNuevosMes }}</span>
                 <span class="metric-sub">Este mes</span>
               </div>
             </div>
@@ -447,7 +408,7 @@
               </div>
               <div class="metric-info">
                 <span class="metric-label">Proyectos activos</span>
-                <span class="metric-value">24</span>
+                <span class="metric-value">{{ proyectosEnEjecucion }}</span>
                 <span class="metric-sub">Este mes</span>
               </div>
             </div>
@@ -455,13 +416,14 @@
             <div class="metric-card">
               <div class="metric-icon red">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
                 </svg>
               </div>
               <div class="metric-info">
-                <span class="metric-label">Satisfacción clientes</span>
-                <span class="metric-value">4.8 / 5</span>
-                <span class="metric-sub">Promedio</span>
+                <span class="metric-label">Licitaciones</span>
+                <span class="metric-value">{{ licitaciones.length }}</span>
+                <span class="metric-sub">Total</span>
               </div>
             </div>
           </div>
@@ -503,176 +465,95 @@
 
         <!-- ========== COTIZACIONES ========== -->
         <div v-if="currentSection === 'cotizaciones'">
-          <div class="section-top">
-            <div>
-              <h2 class="page-title">Cotizaciones</h2>
-              <p class="page-subtitle">Gestiona las cotizaciones por cliente y servicio.</p>
-            </div>
-            <button class="export-btn">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Nueva cotización
-            </button>
-          </div>
-
-          <!-- Filtros -->
-          <div class="coti-filters">
-            <div class="coti-filter-group">
-              <label>Estado</label>
-              <select v-model="cotiFilterStatus" class="coti-select">
-                <option value="">Todos</option>
-                <option value="Borrador">Borrador</option>
-                <option value="Enviada">Enviada</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobada">Aprobada</option>
-                <option value="Rechazada">Rechazada</option>
-              </select>
-            </div>
-            <div class="coti-filter-group">
-              <label>Buscar</label>
-              <input v-model="cotiSearch" type="text" class="coti-input" placeholder="Cliente o servicio..." />
-            </div>
-          </div>
-
-          <!-- Resumen -->
-          <div class="coti-summary-row">
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.length }}</span>
-              <span class="coti-summary-label">Total</span>
-            </div>
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Borrador').length }}</span>
-              <span class="coti-summary-label">Borradores</span>
-            </div>
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Enviada').length }}</span>
-              <span class="coti-summary-label">Enviadas</span>
-            </div>
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Pendiente').length }}</span>
-              <span class="coti-summary-label">Pendientes</span>
-            </div>
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Aprobada').length }}</span>
-              <span class="coti-summary-label">Aprobadas</span>
-            </div>
-            <div class="coti-summary-card">
-              <span class="coti-summary-value">{{ cotizaciones.filter(c => c.status === 'Rechazada').length }}</span>
-              <span class="coti-summary-label">Rechazadas</span>
-            </div>
-          </div>
-
-          <!-- Tabla -->
-          <div class="table-card">
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Servicio</th>
-                    <th>Valor</th>
-                    <th>Estado</th>
-                    <th>Fecha</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="q in cotizacionesFiltradas" :key="q.id">
-                    <td class="q-id">{{ q.id }}</td>
-                    <td>{{ q.client }}</td>
-                    <td>{{ q.service }}</td>
-                    <td class="q-value">{{ q.value }}</td>
-                    <td><span class="q-status" :class="q.statusClass">{{ q.status }}</span></td>
-                    <td class="q-date">{{ q.date }}</td>
-                    <td>
-                      <div class="q-actions">
-                        <button class="q-action" title="Ver" @click="verCotizacion(q)">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <button class="q-action" title="Editar" @click="editarCotizacion(q)">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                          </svg>
-                        </button>
-                        <button class="q-action danger" title="Eliminar" @click="eliminarCotizacion(q)">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"/>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            <line x1="10" y1="11" x2="10" y2="17"/>
-                            <line x1="14" y1="11" x2="14" y2="17"/>
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="cotizacionesFiltradas.length === 0">
-                    <td colspan="7" style="text-align:center; padding: 32px; color: var(--c-gray);">
-                      No se encontraron cotizaciones con los filtros seleccionados.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <QuotesList />
         </div>
+
+        <!-- ========== DOCUMENTOS ========== -->
+        <DocumentosList v-if="currentSection === 'documentos'" />
 
         <!-- ========== RECURSOS ========== -->
         <div v-if="currentSection === 'recursos'">
           <div class="section-top">
             <div>
               <h2 class="page-title">Recursos</h2>
-              <p class="page-subtitle">Proyectos realizados — {{ proyectosRecursos.length }} proyectos</p>
+              <p class="page-subtitle">Clientes con recursos visibles — {{ recursosClientes.length }} clientes</p>
             </div>
+
           </div>
-          <div class="table-card">
-            <div v-if="proyectosRecursos.length === 0" class="empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--c-gray-light); margin-bottom: 16px;">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-              </svg>
-              <h3>No hay proyectos para mostrar</h3>
-            </div>
-            <div v-else class="table-responsive">
+
+          <div v-if="recursoSuccessMessage" class="success-banner">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            {{ recursoSuccessMessage }}
+          </div>
+
+          <div v-if="loadingRecursos" class="empty-state">
+            <div class="btn-spinner"></div>
+            <p>Cargando recursos...</p>
+          </div>
+
+          <div v-else-if="recursosClientes.length === 0" class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--c-gray-light); margin-bottom: 16px;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <h3>No hay clientes con recursos visibles</h3>
+          </div>
+
+          <div v-else class="table-card">
+            <div class="table-responsive">
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Proyecto</th>
                     <th>Cliente</th>
-                    <th>Tipo de servicio</th>
-                    <th>Fotos</th>
+                    <th>NIT</th>
+                    <th>Ciudad</th>
+                    <th>Documentos</th>
+                    <th>Tipo</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="p in proyectosRecursos" :key="p.id">
-                    <td class="name-cell">{{ p.codigo }}</td>
-                    <td>{{ p.clienteRazonSocial }}</td>
-                    <td>{{ p.tipoServicioNombre }}</td>
-                    <td>
-                      <div class="url-input-wrapper">
-                        <svg class="url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                          <circle cx="8.5" cy="8.5" r="1.5"/>
-                          <polyline points="21 15 16 10 5 21"/>
-                        </svg>
-                        <input
-                          type="url"
-                          class="url-input"
-                          placeholder="https://..."
-                          :value="getFotoUrl(p.id)"
-                          @input="setFotoUrl(p.id, ($event.target as HTMLInputElement).value)"
-                        />
-                      </div>
-                    </td>
-                  </tr>
+                  <template v-for="cd in recursosClientes" :key="cd.cliente.id">
+                    <tr v-for="(doc, idx) in cd.documentos" :key="doc.id">
+                      <td class="name-cell" v-if="idx === 0" :rowspan="cd.documentos.length">{{ cd.cliente.razonSocial }}</td>
+                      <td v-if="idx === 0" :rowspan="cd.documentos.length">{{ cd.cliente.nit }}</td>
+                      <td v-if="idx === 0" :rowspan="cd.documentos.length">{{ cd.cliente.ciudad }}</td>
+                      <td>{{ doc.name }}</td>
+                      <td>
+                        <span class="type-badge" :class="'type-' + doc.type">{{ doc.type }}</span>
+                      </td>
+                      <td>
+                        <div class="actions-cell">
+                          <button class="action-btn" title="Ver" @click="viewRecursoDoc(doc)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </button>
+                          <button class="action-btn" title="Descargar" @click="downloadRecursoDoc(doc)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                          <button class="action-btn delete-btn" title="Eliminar" @click="deleteRecursoDoc(doc)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
                 </tbody>
               </table>
             </div>
           </div>
+
         </div>
 
         <!-- ========== CALENDARIO ========== -->
@@ -720,24 +601,19 @@
                   @click="calSelectDay(day)"
                 >
                   <span class="cal-day-number">{{ day.day }}</span>
-                  <div class="cal-day-dots" v-if="day.events.length > 0">
+                   <div class="cal-day-dots" v-if="day.events.length > 0">
                     <span
                       v-for="(evt, eIdx) in day.events.slice(0, 3)"
                       :key="eIdx"
                       class="cal-event-dot"
-                      :class="evt.type"
+                      :style="{ background: rawTypeColorMap[evt.rawType] || '#6B7280' }"
                     ></span>
                     <span v-if="day.events.length > 3" class="cal-more-events">+{{ day.events.length - 3 }}</span>
                   </div>
                 </div>
               </div>
 
-              <div class="calendar-legend-full">
-                <span class="legend-item"><span class="legend-dot amber"></span> Auditorías</span>
-                <span class="legend-item"><span class="legend-dot green"></span> Capacitaciones</span>
-                <span class="legend-item"><span class="legend-dot blue"></span> Reuniones</span>
-                <span class="legend-item"><span class="legend-dot purple"></span> Compromisos</span>
-              </div>
+
             </div>
 
             <!-- Panel lateral de eventos -->
@@ -763,13 +639,15 @@
                 </div>
 
                 <div v-else class="events-list">
-                  <div v-for="(evt, idx) in calSelectedDayEvents" :key="idx" class="event-card-item" :class="evt.type">
+                  <div v-for="(evt, idx) in calSelectedDayEvents" :key="idx" class="event-card-item" :style="{ borderLeftColor: rawTypeColorMap[evt.rawType] || '#6B7280' }">
                     <div class="event-card-header">
-                      <span class="event-type-badge" :class="evt.type">{{ evt.typeLabel }}</span>
+                      <span class="event-type-badge" :style="{ background: (rawTypeColorMap[evt.rawType] || '#6B7280') + '20', color: rawTypeColorMap[evt.rawType] || '#6B7280' }">{{ evt.rawType }}</span>
                       <span class="event-time-badge">{{ evt.time }}</span>
                     </div>
                     <h5 class="event-card-title">{{ evt.title }}</h5>
-                    <p class="event-card-client">{{ evt.client }}</p>
+                    <p class="event-card-meta"><strong>Cliente / Entidad:</strong> {{ evt.client || '-' }}</p>
+                    <p class="event-card-meta" v-if="evt.responsible"><strong>Responsable ESG:</strong> {{ evt.responsible }}</p>
+                    <p class="event-card-meta" v-if="evt.modalidad">Modalidad: {{ evt.modalidad }}</p>
                     <p class="event-card-desc" v-if="evt.description">{{ evt.description }}</p>
                   </div>
                 </div>
@@ -784,27 +662,32 @@
                   Resumen del mes
                 </h4>
                 <div class="summary-stats">
-                  <div class="summary-stat">
-                    <span class="summary-dot amber"></span>
-                    <span class="summary-label">Auditorías</span>
-                    <span class="summary-count">{{ calMonthStats.audits }}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-dot green"></span>
-                    <span class="summary-label">Capacitaciones</span>
-                    <span class="summary-count">{{ calMonthStats.trainings }}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-dot blue"></span>
-                    <span class="summary-label">Reuniones</span>
-                    <span class="summary-count">{{ calMonthStats.meetings }}</span>
-                  </div>
-                  <div class="summary-stat">
-                    <span class="summary-dot purple"></span>
-                    <span class="summary-label">Compromisos</span>
-                    <span class="summary-count">{{ calMonthStats.commitments }}</span>
+                  <div v-for="(item, idx) in calSummaryItems" :key="idx" class="summary-stat">
+                    <span class="summary-dot" :style="{ background: item.color }"></span>
+                    <span class="summary-label">{{ item.label }}</span>
+                    <span class="summary-count">{{ item.count }}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="calendar-text-summary" v-if="calMonthEventList.length > 0">
+            <div class="summary-header">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1"/>
+              </svg>
+              <span>{{ calMonthName }} {{ calYear }}</span>
+              <span class="summary-total-badge">{{ calMonthEventList.length }} eventos</span>
+            </div>
+            <div class="summary-events-list">
+              <div v-for="(ev, idx) in calMonthEventList" :key="idx" class="summary-event-row">
+                <span class="summary-event-date">{{ ev.startDate }}<template v-if="ev.endDate"> - {{ ev.endDate }}</template></span>
+                <span class="summary-event-dot" :style="{ background: ev.color }"></span>
+                <span class="summary-event-title">{{ ev.title }}</span>
+                <span class="summary-event-type" :style="{ background: ev.color + '18', color: ev.color }">{{ ev.rawType }}</span>
+                <span class="summary-event-time">{{ ev.time }}</span>
               </div>
             </div>
           </div>
@@ -825,40 +708,530 @@
         </div>
 
         <!-- ========== USUARIOS ========== -->
-        <div v-if="currentSection === 'usuarios'">
+        <UsuariosList v-if="currentSection === 'usuarios'" />
+
+        <!-- ========== ADM EVENTOS ========== -->
+        <div v-if="currentSection === 'adm-eventos'">
           <div class="section-top">
             <div>
-              <h2 class="page-title">Usuarios</h2>
-              <p class="page-subtitle">Equipo ESG — {{ usuarios.length }} usuarios registrados</p>
+              <h2 class="page-title">ADM Eventos</h2>
+              <p class="page-subtitle">{{ eventos.length }} eventos registrados</p>
+            </div>
+            <button class="export-btn" style="background: var(--c-primary); color: white; border: none;" @click="openEventModal()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Nuevo Evento
+            </button>
+          </div>
+
+          <!-- Filtros -->
+          <div class="coti-filters">
+            <div class="coti-filter-group coti-filter-search">
+              <label>Buscar</label>
+              <input v-model="eventoSearchTerm" type="text" class="coti-select" placeholder="Buscar por título, cliente, responsable..." />
+            </div>
+            <div class="coti-filter-group">
+              <label>Estado</label>
+              <select v-model="eventoFilterStatus" class="coti-select">
+                <option value="">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="terminado">Terminado</option>
+              </select>
             </div>
           </div>
+          <div class="coti-filters">
+            <div class="coti-filter-group">
+              <label>Tipo de entidad</label>
+              <select v-model="eventoFilterEntity" class="coti-select">
+                <option value="">Todas</option>
+                <option value="client">Cliente</option>
+                <option value="project">Proyecto</option>
+                <option value="quote">Cotización</option>
+                <option value="tender">Licitación</option>
+              </select>
+            </div>
+            <div class="coti-filter-group">
+              <label>Tipo de evento</label>
+              <select v-model="eventoFilterType" class="coti-select">
+                <option value="">Todos</option>
+                <option value="Auditoría Interna">Auditoría Interna</option>
+                <option value="Auditoría Interna Presencial">Auditoría Interna Presencial</option>
+                <option value="Capacitación">Capacitación</option>
+                <option value="Capacitación Presencial">Capacitación Presencial</option>
+                <option value="Implementación">Implementación</option>
+                <option value="Mantenimiento">Mantenimiento</option>
+                <option value="Asesoría Virtual">Asesoría Virtual</option>
+                <option value="Asesoría Presencial">Asesoría Presencial</option>
+                <option value="Diagnóstico Inicial">Diagnóstico Inicial</option>
+                <option value="Auditoría Interna Calidad">Auditoría Interna Calidad</option>
+                <option value="Paquete de Capacitación Anual">Paquete de Capacitación Anual</option>
+                <option value="Asesoría para la Implementación">Asesoría para la Implementación</option>
+                <option value="Pasantía">Pasantía</option>
+                <option value="Formación">Formación</option>
+                <option value="Director de Calidad">Director de Calidad</option>
+                <option value="Taller">Taller</option>
+                <option value="Taller de Servicio al Cliente">Taller de Servicio al Cliente</option>
+                <option value="Taller de Ventas y Negociación">Taller de Ventas y Negociación</option>
+                <option value="Taller de Habilidades Blandas">Taller de Habilidades Blandas</option>
+                <option value="Búsqueda de Personal">Búsqueda de Personal</option>
+                <option value="Búsqueda y Selección de Personal">Búsqueda y Selección de Personal</option>
+                <option value="Outsourcing In House">Outsourcing In House</option>
+                <option value="Asesoría Certificación de Producto">Asesoría Certificación de Producto</option>
+                <option value="Asesoría">Asesoría</option>
+                <option value="Gestión Ensayos de Aptitud">Gestión Ensayos de Aptitud</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="coti-filter-group">
+              <label>Responsable ESG</label>
+              <select v-model="eventoFilterUser" class="coti-select">
+                <option value="">Todos</option>
+                <option value="Camila Escobar">Camila Escobar</option>
+                <option value="Luis Eduardo Salcedo">Luis Eduardo Salcedo</option>
+                <option value="Paula Salcedo">Paula Salcedo</option>
+              </select>
+            </div>
+            <div class="coti-filter-group">
+              <label>Modalidad</label>
+              <select v-model="eventoFilterModalidad" class="coti-select">
+                <option value="">Todas</option>
+                <option value="Presencial">Presencial</option>
+                <option value="Virtual">Virtual</option>
+                <option value="Híbrida">Híbrida</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tabla -->
           <div class="table-card">
-            <div class="table-responsive">
+            <div v-if="loadingEventos" style="text-align:center; padding: 40px; color: var(--c-gray);">Cargando eventos...</div>
+            <div v-else-if="eventosFiltradas.length === 0" style="text-align:center; padding: 40px; color: var(--c-gray);">
+              No se encontraron eventos
+            </div>
+            <div v-else class="table-responsive">
               <table class="data-table">
+                <colgroup>
+                  <col style="width: 16%;" />
+                  <col style="width: 12%;" />
+                  <col style="width: 17%;" />
+                  <col style="width: 9%;" />
+                  <col style="width: 10%;" />
+                  <col style="width: 10%;" />
+                  <col style="width: 11%;" />
+                  <col style="width: 9%;" />
+                  <col style="width: 9%;" />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th>Nombre</th>
-                    <th>Rol</th>
-                    <th>Correo</th>
+                    <th>Título del Evento / <br> Servicio</th>
+                    <th>Tipo Evento</th>
+                    <th>Cliente / Entidad</th>
+                    <th>Modalidad</th>
+                    <th>Descripción</th>
+                    <th>Responsable <br>ESG</th>
+                    <th>Fecha</th>
                     <th>Estado</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="u in usuarios" :key="u.id">
+                  <tr v-for="ev in eventosFiltradas" :key="ev.id">
+                    <td>{{ ev.title || '-' }}</td>
+                    <td><span class="evento-type-badge" :class="'type-' + ev.type">{{ getEventoTypeLabel(ev.type, ev.typeOtro) }}</span></td>
                     <td>
-                      <div class="user-cell">
-                        <div class="user-avatar" :style="{ background: u.color }">
-                          <span>{{ u.iniciales }}</span>
-                        </div>
-                        <span class="user-name">{{ u.nombre }}</span>
+                      <span v-if="ev.entityType && ev.entityId" class="evento-entity-badge">{{ getEntityLabel(ev.entityType) }} — {{ getEntityName(ev) }}</span>
+                      <span v-else class="evento-entity-badge">{{ ev.client || '-' }}</span>
+                    </td>
+                    <td>{{ ev.modalidad || '-' }}</td>
+                    <td class="evento-desc">
+                      <button class="q-action" title="Ver descripción" @click="openDescModal(ev)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </button>
+                    </td>
+                    <td>{{ ev.user }}</td>
+                    <td>{{ formatEventDate(ev.date) }}</td>
+                    <td>
+                      <span class="status-badge" :class="isEventoTerminado(ev) ? 'status-inactive' : 'status-active'">
+                        {{ isEventoTerminado(ev) ? 'Terminado' : 'Activo' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="q-actions">
+                        <button class="q-action" title="Ver detalle" @click="openEventModal(ev, 'view')">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button class="q-action" title="Editar" @click="openEventModal(ev, 'edit')">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button class="q-action danger" title="Eliminar" @click="confirmDeleteEvent(ev)">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
                       </div>
                     </td>
-                    <td><span class="rol-badge" :class="u.rolClass">{{ u.rol }}</span></td>
-                    <td>{{ u.correo }}</td>
-                    <td><span class="estado-badge disponible">Activo</span></td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Crear/Editar Evento -->
+        <div v-if="showEventModal" class="modal-overlay" @click.self="showEventModal = false">
+          <div class="modal-card modal-lg">
+            <div class="modal-header">
+              <h3>{{ viewingEvento ? 'Ver Evento' : (editingEvento ? 'Editar Evento' : 'Nuevo Evento') }}</h3>
+              <button class="modal-close" @click="showEventModal = false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body" :class="{ 'view-mode': viewingEvento }">
+
+              <div class="section-grid">
+                <!-- SECCIÓN A: INFORMACIÓN GENERAL DEL EVENTO -->
+                <div class="section-card">
+                  <div class="section-header">
+                    <span class="section-badge">SECCIÓN A</span>
+                    <span class="section-title">INFORMACIÓN GENERAL DEL EVENTO</span>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-group">
+                      <label>Título del Evento / Servicio *</label>
+                      <input v-model="eventForm.title" type="text" class="form-input" placeholder="Ej: Auditoría Interna de Calidad ISO/IEC 17025" @input="clearFieldError('title')" />
+                      <span v-if="fieldErrors.title" class="field-error">{{ fieldErrors.title }}</span>
+                    </div>
+                    <div class="form-group">
+                      <label>Empresa / Cliente / Sede</label>
+                      <input v-model="eventForm.client" type="text" class="form-input" placeholder="Nombre del cliente" />
+                    </div>
+                    <div class="form-group">
+                      <label>Tipo de Evento / servicio *</label>
+                      <select v-model="eventForm.type" class="form-input" @change="clearFieldError('type')">
+                        <option value="">Seleccionar...</option>
+                        <option value="Auditoría Interna">Auditoría Interna</option>
+                        <option value="Auditoría Interna Presencial">Auditoría Interna Presencial</option>
+                        <option value="Capacitación">Capacitación</option>
+                        <option value="Capacitación Presencial">Capacitación Presencial</option>
+                        <option value="Implementación">Implementación</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                        <option value="Asesoría Virtual">Asesoría Virtual</option>
+                        <option value="Asesoría Presencial">Asesoría Presencial</option>
+                        <option value="Diagnóstico Inicial">Diagnóstico Inicial</option>
+                        <option value="Auditoría Interna Calidad">Auditoría Interna Calidad</option>
+                        <option value="Paquete de Capacitación Anual">Paquete de Capacitación Anual</option>
+                        <option value="Asesoría para la Implementación">Asesoría para la Implementación</option>
+                        <option value="Pasantía">Pasantía</option>
+                        <option value="Formación">Formación</option>
+                        <option value="Director de Calidad">Director de Calidad</option>
+                        <option value="Taller">Taller</option>
+                        <option value="Taller de Servicio al Cliente">Taller de Servicio al Cliente</option>
+                        <option value="Taller de Ventas y Negociación">Taller de Ventas y Negociación</option>
+                        <option value="Taller de Habilidades Blandas">Taller de Habilidades Blandas</option>
+                        <option value="Búsqueda de Personal">Búsqueda de Personal</option>
+                        <option value="Búsqueda y Selección de Personal">Búsqueda y Selección de Personal</option>
+                        <option value="Outsourcing In House">Outsourcing In House</option>
+                        <option value="Asesoría Certificación de Producto">Asesoría Certificación de Producto</option>
+                        <option value="Asesoría">Asesoría</option>
+                        <option value="Gestión Ensayos de Aptitud">Gestión Ensayos de Aptitud</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                      <input
+                        v-if="eventForm.type === 'Otro'"
+                        v-model="eventForm.typeOtro"
+                        type="text"
+                        class="form-input"
+                        placeholder="Especifique el tipo de evento..."
+                        style="margin-top: 8px;"
+                      />
+                      <span v-if="fieldErrors.type" class="field-error">{{ fieldErrors.type }}</span>
+                    </div>
+                    <div class="form-group">
+                      <label>Tipo de Entidad</label>
+                      <select v-model="eventForm.entityType" class="form-input">
+                        <option value="">Ninguna</option>
+                        <option value="client">Cliente</option>
+                        <option value="project">Proyecto</option>
+                        <option value="quote">Cotización</option>
+                        <option value="tender">Licitación</option>
+                      </select>
+                    </div>
+                    <div v-if="eventForm.entityType" class="form-group entity-search-group">
+                      <label>{{ entityLabel }}</label>
+                      <div class="entity-dropdown">
+                        <input
+                          type="text"
+                          class="form-input entity-dropdown-trigger"
+                          :placeholder="loadingEntities ? 'Cargando...' : 'Seleccionar...'"
+                          :value="entitySearchText"
+                          :disabled="loadingEntities"
+                          readonly
+                          @click.stop="showEntityDropdown = !showEntityDropdown"
+                        />
+                        <svg class="entity-dropdown-arrow" :class="{ open: showEntityDropdown }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                        <div v-if="showEntityDropdown" class="entity-dropdown-list">
+                          <div class="entity-dropdown-search" @click.stop>
+                            <input
+                              ref="entitySearchInput"
+                              v-model="entitySearchText"
+                              type="text"
+                              class="form-input"
+                              placeholder="Buscar..."
+                            />
+                          </div>
+                          <div
+                            v-for="opt in filteredEntityOptions"
+                            :key="opt.id"
+                            class="entity-dropdown-item"
+                            @click.stop="selectEntity(opt)"
+                          >
+                            {{ opt.label }}
+                          </div>
+                          <div v-if="filteredEntityOptions.length === 0" class="entity-dropdown-empty">
+                            No se encontraron resultados
+                          </div>
+                        </div>
+                      </div>
+                      <span v-if="loadingEntities" class="entity-loading">Cargando...</span>
+                    </div>
+                    <div class="form-group">
+                      <label>Descripción / Notas / Consecutivo Interno</label>
+                      <textarea v-model="eventForm.description" rows="3" class="form-input" placeholder="Descripción del evento..."></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN B: FECHAS Y LOGÍSTICA -->
+                <div class="section-card">
+                  <div class="section-header">
+                    <span class="section-badge">SECCIÓN B</span>
+                    <span class="section-title">FECHAS Y LOGÍSTICA</span>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-group">
+                      <label>Rango de Fechas *</label>
+                      <div class="date-range-grid">
+                        <div class="date-range-row">
+                          <div class="date-field">
+                            <input v-model="eventForm.startDate" type="date" class="form-input" @change="clearFieldError('startDate')" />
+                          </div>
+                          <div class="time-field">
+                            <input v-model="eventForm.startTime" type="time" class="form-input" />
+                          </div>
+                          <span class="date-separator">to</span>
+                        </div>
+                        <div class="date-range-row">
+                          <div class="date-field">
+                            <input v-model="eventForm.endDate" type="date" class="form-input" />
+                          </div>
+                          <div class="time-field">
+                            <input v-model="eventForm.endTime" type="time" class="form-input" />
+                          </div>
+                          <span class="date-estado-badge">
+                            <span class="date-estado-label">Estado</span>
+                            <span class="status-badge" :class="formEstadoLabel.cls">{{ formEstadoLabel.text }}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <span v-if="fieldErrors.startDate" class="field-error">{{ fieldErrors.startDate }}</span>
+                      <p class="form-hint">El estado se calcula automáticamente según la fecha de fin del evento.</p>
+                    </div>
+                    <div class="form-group">
+                      <label>Modalidad *</label>
+                      <select v-model="eventForm.modalidad" class="form-input" @change="clearFieldError('modalidad')">
+                        <option value="">Seleccionar...</option>
+                        <option value="Presencial">Presencial</option>
+                        <option value="Virtual">Virtual</option>
+                        <option value="Híbrida">Híbrida</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                      <input
+                        v-if="eventForm.modalidad === 'Otro'"
+                        v-model="eventForm.modalidadOtro"
+                        type="text"
+                        class="form-input"
+                        placeholder="Especifique la modalidad..."
+                        style="margin-top: 8px;"
+                      />
+                      <span v-if="fieldErrors.modalidad" class="field-error">{{ fieldErrors.modalidad }}</span>
+                    </div>
+                    <div class="form-group">
+                      <label>Ubicación</label>
+                      <input v-model="eventForm.location" type="text" class="form-input" placeholder="Ej: Calle 17A #12-34, Planta Fontibón" />
+                    </div>
+                    <div class="form-group">
+                      <label>Persona de Contacto</label>
+                      <input v-model="eventForm.personaContacto" type="text" class="form-input" placeholder="Nombre de la persona de contacto" />
+                    </div>
+                    <div class="form-group">
+                      <label>Responsable de Ejecución ESG *</label>
+                      <select v-model="eventForm.user" class="form-input" required @change="clearFieldError('user')">
+                        <option value="">Seleccionar...</option>
+                        <option value="Camila Escobar">Camila Escobar</option>
+                        <option value="Luis Eduardo Salcedo">Luis Eduardo Salcedo</option>
+                        <option value="Paula Salcedo">Paula Salcedo</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                      <input
+                        v-if="eventForm.user === 'Otro'"
+                        v-model="eventForm.userOtro"
+                        type="text"
+                        class="form-input"
+                        placeholder="Especifique el responsable..."
+                        style="margin-top: 8px;"
+                        @input="clearFieldError('userOtro')"
+                      />
+                      <span v-if="fieldErrors.user" class="field-error">{{ fieldErrors.user }}</span>
+                      <span v-if="fieldErrors.userOtro" class="field-error">{{ fieldErrors.userOtro }}</span>
+
+                      <input
+                        v-if="eventForm.modalidad === 'Otro'"
+                        v-model="eventForm.modalidadOtro"
+                        type="text"
+                        class="form-input"
+                        placeholder="Especifique la modalidad..."
+                        style="margin-top: 8px;"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-grid">
+                <!-- SECCIÓN C: ASIGNACIÓN DE EQUIPO -->
+                <div class="section-card">
+                  <div class="section-header">
+                    <span class="section-badge">SECCIÓN C</span>
+                    <span class="section-title">ASIGNACIÓN DE EQUIPO</span>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-group">
+                      <label>Colaborador</label>
+                      <input v-model="eventForm.leadAuditor" type="text" class="form-input" placeholder="Nombre del auditor líder" />
+                    </div>
+                    <div class="form-group">
+                      <label>Equipo Co-auditor <span class="label-hint">(separar con coma)</span></label>
+                      <input
+                        :value="eventForm.coAuditors.join(', ')"
+                        @input="eventForm.coAuditors = ($event.target as HTMLInputElement).value.split(',').map(s => s.trim()).filter(Boolean)"
+                        type="text"
+                        class="form-input"
+                        placeholder="Ej: Ing. Luis Gómez, Lic. Clara Sánchez"
+                      />
+                      <div v-if="eventForm.coAuditors.length" class="tags-container">
+                        <span v-for="(auditor, idx) in eventForm.coAuditors" :key="idx" class="tag-badge">
+                          {{ auditor }}
+                          <button type="button" class="tag-remove" @click="eventForm.coAuditors.splice(idx, 1)">×</button>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SECCIÓN D: NORMATIVA Y DOCUMENTOS -->
+                <div class="section-card">
+                  <div class="section-header">
+                    <span class="section-badge">SECCIÓN D</span>
+                    <span class="section-title">NORMATIVA / NOTAS</span>
+                  </div>
+                  <div class="section-body">
+                    <div class="form-group">
+                      <label>Normas Aplicables</label>
+                      <div class="normas-select-row">
+                        <select v-model="selectedNorma" class="form-input" style="flex:1;">
+                          <option value="">Seleccionar norma...</option>
+                          <option v-for="n in normasDisponibles" :key="n" :value="n">{{ n }}</option>
+                          <option value="Otro">Otro</option>
+                        </select>
+                        <button type="button" class="btn-add-norma" @click="addNorma">+</button>
+                      </div>
+                      <input
+                        v-if="selectedNorma === 'Otro'"
+                        v-model="normaOtra"
+                        type="text"
+                        class="form-input"
+                        placeholder="Especifique la norma..."
+                        style="margin-top: 8px;"
+                        @keyup.enter="addNorma"
+                      />
+                      <div v-if="eventForm.normas.length" class="tags-container">
+                        <span v-for="(norma, idx) in eventForm.normas" :key="idx" class="tag-badge norma-badge">
+                          [{{ norma }}]
+                          <button type="button" class="tag-remove" @click="eventForm.normas.splice(idx, 1)">×</button>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <template v-if="viewingEvento">
+                <button class="btn-primary" @click="showEventModal = false">Cerrar</button>
+              </template>
+              <template v-else>
+                <button class="btn-outline" @click="showEventModal = false">Cancelar</button>
+                <button class="btn-primary" :disabled="savingEvento" @click="handleSaveEvento">
+                  {{ savingEvento ? 'Guardando...' : (editingEvento ? 'Actualizar' : 'Crear Evento') }}
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Descripción -->
+        <div v-if="showDescModal" class="modal-overlay" @click.self="showDescModal = false">
+          <div class="modal-card" style="max-width: 420px;">
+            <div class="modal-header">
+              <h3>Descripción</h3>
+              <button class="modal-close" @click="showDescModal = false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p style="font-size: 0.9rem; color: var(--c-black); line-height: 1.6; white-space: pre-wrap;">{{ descModalText }}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-primary" @click="showDescModal = false">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Confirmar Eliminar Evento -->
+        <div v-if="showDeleteEventModal" class="modal-overlay" @click.self="showDeleteEventModal = false">
+          <div class="modal-card" style="max-width: 400px; text-align: center;">
+            <div class="modal-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+            </div>
+            <h3>¿Eliminar evento?</h3>
+            <p style="font-size: 0.88rem; color: var(--c-gray); margin-bottom: 24px; line-height: 1.5;">
+              Se eliminará el evento <strong>{{ eventoToDelete?.description }}</strong>. Esta acción no se puede deshacer.
+            </p>
+            <div class="modal-actions">
+              <button class="btn-outline" @click="showDeleteEventModal = false">Cancelar</button>
+              <button class="btn-primary" style="background: var(--c-danger);" :disabled="deletingEvento" @click="handleDeleteEvento">
+                {{ deletingEvento ? 'Eliminando...' : 'Eliminar' }}
+              </button>
             </div>
           </div>
         </div>
@@ -868,22 +1241,100 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '@/services/api/authService'
+import { useCRM } from '@/composables/useCRM'
+import { quoteService } from '@/services/api/quoteService'
+import { collaboratorService } from '@/services/api/collaboratorService'
+
+import type { Cotizacion, EstadoCotizacion } from '@/types/crmTypes'
+import { eventService } from '@/services/api/eventService'
+import { clientService } from '@/services/api/clientService'
+import { projectService } from '@/services/api/projectService'
+import { tenderService } from '@/services/api/tenderService'
+import { documentService } from '@/services/api/documentService'
+import type { Evento, CreateEventoRequest, EventEntityType, EventType, DocumentoEntity } from '@/types/crmTypes'
 import ProjectsList from '@/views/crm/ProjectsList.vue'
 import LicitacionesList from '@/views/crm/LicitacionesList.vue'
+import QuotesList from '@/views/crm/QuotesList.vue'
 import ProjectDetail from '@/views/crm/ProjectDetail.vue'
 import ColaboradoresList from '@/views/crm/ColaboradoresList.vue'
+import UsuariosList from '@/views/crm/UsuariosList.vue'
+import DocumentosList from '@/views/crm/DocumentosList.vue'
 import ColaboradorDetail from '@/views/crm/ColaboradorDetail.vue'
-import { mockProyectos } from '@/mock/proyectos'
 
 const router = useRouter()
+const { clientes, proyectos, fetchClientes, fetchProyectos } = useCRM()
 const currentSection = ref('dashboard')
 const sidebarOpen = ref(false)
 const userAvatar = ref<string | null>(null)
 const selectedProjectId = ref<number | null>(null)
 const selectedColaboradorId = ref<number | null>(null)
+const currentUser = authService.getCurrentUser()
+
+function getUserInitials(name: string): string {
+  if (!name) return 'U'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
+}
+
+const selectedMonth = ref('todos')
+
+const monthOptions = computed(() => {
+  const months = []
+  const now = new Date()
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+    months.push({ value, label })
+  }
+  return months
+})
+
+const filteredClientes = computed(() => {
+  if (selectedMonth.value === 'todos') return clientes.value
+  const [year, month] = selectedMonth.value.split('-').map(Number)
+  return clientes.value.filter(c => {
+    if (!c.createdAt) return false
+    const d = new Date(c.createdAt)
+    return d.getFullYear() === year && d.getMonth() === month - 1
+  })
+})
+
+const filteredProyectos = computed(() => {
+  if (selectedMonth.value === 'todos') return proyectos.value
+  const [year, month] = selectedMonth.value.split('-').map(Number)
+  return proyectos.value.filter(p => {
+    if (!p.createdAt) return false
+    const d = new Date(p.createdAt)
+    return d.getFullYear() === year && d.getMonth() === month - 1
+  })
+})
+
+const filteredCotizaciones = computed(() => {
+  if (selectedMonth.value === 'todos') return cotizaciones.value
+  const [year, month] = selectedMonth.value.split('-').map(Number)
+  return cotizaciones.value.filter(c => {
+    if (!c.createdAt) return false
+    const d = new Date(c.createdAt)
+    return d.getFullYear() === year && d.getMonth() === month - 1
+  })
+})
+
+const filteredUtilidad = computed(() => {
+  return filteredProyectos.value.reduce((sum, p) => {
+    if (!p.services || p.services.length === 0) return sum
+    return sum + p.services.reduce((sSum, svc) => {
+      const utilidad = (svc.totalPrice || 0) - (svc.providerTotalPrice || 0) - (svc.ica || 0) - (svc.simpleTax || 0)
+      return sSum + Math.max(0, utilidad)
+    }, 0)
+  }, 0)
+})
 
 function viewProject(id: number) {
   selectedProjectId.value = id
@@ -901,24 +1352,472 @@ function backToColaboradores() {
   selectedColaboradorId.value = null
 }
 
-const proyectosRecursos = mockProyectos.filter(p => p.estadoNombre === 'Finalizado' || p.estadoNombre === 'En ejecución')
+const recursosClientes = ref<Array<{ cliente: any; documentos: DocumentoEntity[] }>>([])
+const loadingRecursos = ref(false)
 
-const fotosUrls = ref<Record<number, string>>({})
+async function fetchRecursosClientes() {
+  loadingRecursos.value = true
+  try {
+    const result = await clientService.getAll({ page: 1, limit: 9999 })
+    const allClientes = Array.isArray(result.data) ? result.data : (result as any).data?.data || []
+    const clientesConRecursos = allClientes.filter((c: any) => c.showResources === true)
 
-function getFotoUrl(id: number): string {
-  return fotosUrls.value[id] || ''
+    const clientesDocs = await Promise.all(
+      clientesConRecursos.map(async (cliente: any) => {
+        try {
+          const docs = await documentService.getByEntity('client', cliente.id)
+          const docsFiltrados = docs.filter((d: any) => d.type === 'comunicaciones' || d.type === 'acta')
+          return { cliente, documentos: docsFiltrados }
+        } catch {
+          return { cliente, documentos: [] }
+        }
+      })
+    )
+
+    recursosClientes.value = clientesDocs.filter(cd => cd.documentos.length > 0)
+  } catch (e) {
+    console.error('Error fetching recursos clientes:', e)
+    recursosClientes.value = []
+  } finally {
+    loadingRecursos.value = false
+  }
 }
 
-function setFotoUrl(id: number, url: string) {
-  fotosUrls.value[id] = url
+function viewRecursoDoc(doc: DocumentoEntity) {
+  if (doc.url) window.open(doc.url, '_blank')
 }
 
-const usuarios = [
-  { id: 1, nombre: 'Camila', iniciales: 'CA', rol: 'Administrador ESG', rolClass: 'admin', correo: 'camila@consultopia.co', color: '#C89B2D' },
-  { id: 2, nombre: 'Luis Eduardo', iniciales: 'LE', rol: 'Gerente Técnico', rolClass: 'gerente', correo: 'luis@consultopia.co', color: '#3B82F6' },
-  { id: 3, nombre: 'María Paula', iniciales: 'MP', rol: 'Community Manager', rolClass: 'manager', correo: 'maria.paula@consultopia.co', color: '#8B5CF6' },
-  { id: 4, nombre: 'Felipe', iniciales: 'FE', rol: 'Colaborador', rolClass: 'colaborador', correo: 'felipe@consultopia.co', color: '#10B981' },
+function downloadRecursoDoc(doc: DocumentoEntity) {
+  if (doc.url) {
+    const a = document.createElement('a')
+    a.href = doc.url
+    a.download = doc.name || 'documento'
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  }
+}
+
+async function deleteRecursoDoc(doc: DocumentoEntity) {
+  if (!confirm(`¿Eliminar el documento "${doc.name}"?`)) return
+  try {
+    await documentService.delete(doc.id)
+    recursoSuccessMessage.value = 'Documento eliminado exitosamente'
+    setTimeout(() => { recursoSuccessMessage.value = '' }, 3000)
+    fetchRecursosClientes()
+  } catch (e) {
+    console.error('Error deleting doc:', e)
+  }
+}
+
+const recursoSuccessMessage = ref('')
+
+// ========== ADM EVENTOS ==========
+const eventos = ref<Evento[]>([])
+const loadingEventos = ref(false)
+const eventoFilterEntity = ref('')
+const eventoFilterType = ref('')
+const eventoFilterUser = ref('')
+const eventoFilterModalidad = ref('')
+const eventoFilterStatus = ref('')
+const eventoSearchTerm = ref('')
+const showEventModal = ref(false)
+const showDeleteEventModal = ref(false)
+const viewingEvento = ref(false)
+const editingEvento = ref<Evento | null>(null)
+const eventoToDelete = ref<Evento | null>(null)
+const showDescModal = ref(false)
+const descModalText = ref('')
+const savingEvento = ref(false)
+const deletingEvento = ref(false)
+const eventFormError = ref('')
+const fieldErrors = ref({
+  title: '',
+  type: '',
+  startDate: '',
+  modalidad: '',
+  user: '',
+  userOtro: '',
+})
+
+// ========== COLABORADORES & LICITACIONES ==========
+const colaboradores = ref<any[]>([])
+const licitaciones = ref<any[]>([])
+
+function validateFields() {
+  let valid = true
+  fieldErrors.value = { title: '', type: '', startDate: '', modalidad: '', user: '', userOtro: '' }
+  if (!eventForm.value.title.trim()) { fieldErrors.value.title = 'El título es obligatorio.'; valid = false }
+  if (!eventForm.value.type) { fieldErrors.value.type = 'El tipo de evento es obligatorio.'; valid = false }
+  if (!eventForm.value.startDate) { fieldErrors.value.startDate = 'La fecha de inicio es obligatoria.'; valid = false }
+  if (!eventForm.value.modalidad) { fieldErrors.value.modalidad = 'La modalidad es obligatoria.'; valid = false }
+  if (!eventForm.value.user.trim()) { fieldErrors.value.user = 'El responsable es obligatorio.'; valid = false }
+  if (eventForm.value.user === 'Otro' && !eventForm.value.userOtro.trim()) { fieldErrors.value.userOtro = 'Debe especificar el responsable.'; valid = false }
+  return valid
+}
+
+function clearFieldError(field: keyof typeof fieldErrors.value) {
+  fieldErrors.value[field] = ''
+}
+
+const eventForm = ref({
+  entityType: '' as EventEntityType | '',
+  entityId: '',
+  type: '',
+  typeOtro: '',
+  title: '',
+  client: '',
+  startDate: '',
+  startTime: '08:00',
+  endDate: '',
+  endTime: '17:00',
+  modalidad: '',
+  modalidadOtro: '',
+  location: '',
+  description: '',
+  user: '',
+  userOtro: '',
+  personaContacto: '',
+  leadAuditor: '',
+  coAuditors: [] as string[],
+  normas: [] as string[],
+  date: '',
+})
+
+interface EntityOption { id: number; label: string }
+const entityOptions = ref<EntityOption[]>([])
+const loadingEntities = ref(false)
+const showEntityDropdown = ref(false)
+const entitySearchText = ref('')
+
+const filteredEntityOptions = computed(() => {
+  if (!entitySearchText.value) return entityOptions.value
+  const term = entitySearchText.value.toLowerCase()
+  return entityOptions.value.filter(opt => opt.label.toLowerCase().includes(term))
+})
+
+const entityNameMap = ref<Record<string, string>>({})
+
+function getEntityName(ev: Evento): string {
+  if (!ev.entityType || !ev.entityId) return '-'
+  const key = `${ev.entityType}:${ev.entityId}`
+  return entityNameMap.value[key] || `ID: ${ev.entityId}`
+}
+
+async function loadEntityNames() {
+  const map: Record<string, string> = {}
+  try {
+    const [clients, projects, quotes, tenders] = await Promise.all([
+      clientService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+      projectService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+      quoteService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+      tenderService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+    ])
+    clients.data.forEach((c: any) => { map[`client:${c.id}`] = c.razonSocial || c.name || `Cliente ${c.id}` })
+    projects.data.forEach((p: any) => { map[`project:${p.id}`] = p.offer || p.code || `Proyecto ${p.id}` })
+    quotes.data.forEach((q: any) => { map[`quote:${q.id}`] = q.code || `Cotización ${q.id}` })
+    tenders.data.forEach((t: any) => { map[`tender:${t.id}`] = t.oferta || `Licitación ${t.id}` })
+  } catch {}
+  entityNameMap.value = map
+}
+
+function selectEntity(opt: EntityOption) {
+  eventForm.value.entityId = String(opt.id)
+  entitySearchText.value = opt.label
+  showEntityDropdown.value = false
+}
+
+async function fetchEntityOptions(entityType: EventEntityType) {
+  if (!entityType) { entityOptions.value = []; return }
+  loadingEntities.value = true
+  try {
+    if (entityType === 'client') {
+      const res = await clientService.getAll({ page: 1, limit: 9999 })
+      entityOptions.value = res.data.map(c => ({ id: c.id, label: `${c.razonSocial} — ${c.nit || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
+    } else if (entityType === 'project') {
+      const res = await projectService.getAll({ page: 1, limit: 9999 })
+      entityOptions.value = res.data.map(p => {
+        const offer = p.offer || (p as Record<string, unknown>).oferta || ''
+        const client = p.client?.name || (p as Record<string, unknown>).clienteRazonSocial || ''
+        return { id: p.id, label: `${offer} — ${client}` }
+      }).sort((a, b) => a.label.localeCompare(b.label))
+    } else if (entityType === 'quote') {
+      const res = await quoteService.getAll({ page: 1, limit: 9999 })
+      entityOptions.value = res.data.map(q => ({ id: q.id, label: `${q.code} — ${q.client?.name || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
+    } else if (entityType === 'tender') {
+      const res = await tenderService.getAll({ page: 1, limit: 9999 })
+      entityOptions.value = res.data.map(t => ({ id: t.id, label: `${t.oferta} — ${t.clienteNombre || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
+    }
+  } catch {
+    entityOptions.value = []
+  } finally {
+    loadingEntities.value = false
+  }
+}
+
+watch(() => eventForm.value.entityType, (val) => {
+  eventForm.value.entityId = ''
+  entitySearchText.value = ''
+  showEntityDropdown.value = false
+  fetchEntityOptions(val || null)
+})
+
+function handleEntitySelect(e: Event) {
+  const val = (e.target as HTMLSelectElement).value
+  eventForm.value.entityId = val
+}
+
+const entityLabel = computed(() => {
+  const map: Record<string, string> = {
+    client: 'Buscar Cliente',
+    project: 'Buscar Proyecto',
+    quote: 'Buscar Cotización',
+    tender: 'Buscar Licitación',
+  }
+  return map[eventForm.value.entityType || ''] || 'Buscar Entidad'
+})
+
+const selectedNorma = ref('')
+const normaOtra = ref('')
+
+const normasDisponibles = [
+  'ANAB',
+  'ASEGURAMIENTO METROLÓGICO',
+  'BPM',
+  'HABILIDADES BLANDAS',
+  'HACCP',
+  'ISO 14001:2015',
+  'ISO 22000:2018',
+  'ISO 27001:2022',
+  'ISO 31000:2018',
+  'ISO 45001:2018',
+  'ISO 9001:2015',
+  'ISO IEC 17020:2012',
+  'ISO IEC 17021:2015',
+  'ISO IEC 17024:2012',
+  'ISO IEC 17025:2017',
+  'ISO IEC 17043:2023',
+  'ISO IEC 17065:2012',
+  'PRESIÓN',
+  'RETIE',
+  'RETILAP',
+  'RITEL',
+  'RTE INEN 069',
+  'RUC',
+  'SERVICIO AL CLIENTE Y VENTAS',
+  'SG - SST',
+  'SG TRANSVERSAL',
+  'TRINORMA (ISO 9001:2015 - ISO 14001:2015 - ISO 45001:2018)',
+  'VARIABLES',
+  'Medición correcta de temperatura',
 ]
+
+function addNorma() {
+  const val = selectedNorma.value === 'Otro' ? normaOtra.value.trim() : selectedNorma.value
+  if (val && !eventForm.value.normas.includes(val)) {
+    eventForm.value.normas.push(val)
+  }
+  selectedNorma.value = ''
+  normaOtra.value = ''
+}
+
+const eventosFiltradas = computed(() => {
+  return eventos.value.filter(ev => {
+    const matchEntity = !eventoFilterEntity.value || ev.entityType === eventoFilterEntity.value
+    const matchType = !eventoFilterType.value || ev.type === eventoFilterType.value
+    const matchUser = !eventoFilterUser.value || ev.user === eventoFilterUser.value
+    const matchModalidad = !eventoFilterModalidad.value || ev.modalidad === eventoFilterModalidad.value
+    const matchSearch = !eventoSearchTerm.value || ev.title?.toLowerCase().includes(eventoSearchTerm.value.toLowerCase()) || ev.client?.toLowerCase().includes(eventoSearchTerm.value.toLowerCase()) || ev.description?.toLowerCase().includes(eventoSearchTerm.value.toLowerCase()) || ev.user?.toLowerCase().includes(eventoSearchTerm.value.toLowerCase())
+    const matchStatus = !eventoFilterStatus.value || (eventoFilterStatus.value === 'activo' ? !isEventoTerminado(ev) : isEventoTerminado(ev))
+    return matchEntity && matchType && matchUser && matchModalidad && matchSearch && matchStatus
+  })
+})
+
+function getEventoTypeLabel(type: string, typeOtro?: string): string {
+  if (type === 'Otro' && typeOtro) return typeOtro
+  return type || type
+}
+
+function getEntityLabel(entityType: string): string {
+  const map: Record<string, string> = { client: 'Cliente', project: 'Proyecto', quote: 'Cotización', tender: 'Licitación' }
+  return map[entityType] || entityType || '-'
+}
+
+function formatEventDate(dateStr: string): string {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('es-CO', {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+  })
+}
+
+function isEventoTerminado(ev: Evento): boolean {
+  if (!ev.endDate) return false
+  return new Date(ev.endDate) < new Date()
+}
+
+const formEstadoLabel = computed(() => {
+  const end = eventForm.value.endDate
+  if (!end) return { text: 'Activo', cls: 'status-active' }
+  return new Date(end) < new Date()
+    ? { text: 'Terminado', cls: 'status-inactive' }
+    : { text: 'Activo', cls: 'status-active' }
+})
+
+function openEventModal(ev?: Evento, mode: 'view' | 'edit' = 'edit') {
+  viewingEvento.value = mode === 'view'
+  if (ev) {
+    editingEvento.value = ev
+    eventForm.value = {
+      entityType: ev.entityType || '',
+      entityId: ev.entityId != null ? String(ev.entityId) : '',
+      type: ev.type,
+      typeOtro: ev.typeOtro || '',
+      title: ev.title || '',
+      client: ev.client || '',
+      startDate: ev.date ? ev.date.slice(0, 10) : '',
+      startTime: ev.date ? ev.date.slice(11, 16) : '08:00',
+      endDate: ev.endDate ? ev.endDate.slice(0, 10) : '',
+      endTime: ev.endDate ? ev.endDate.slice(11, 16) : '17:00',
+      modalidad: ev.modalidad || '',
+      modalidadOtro: ev.modalidadOtro || '',
+      location: ev.location || '',
+      description: ev.description,
+      user: ev.user,
+      userOtro: ev.userOtro || '',
+      personaContacto: ev.personaContacto || '',
+      leadAuditor: ev.leadAuditor || '',
+      coAuditors: ev.coAuditors ? ev.coAuditors.split(',').map(s => s.trim()).filter(Boolean) : [],
+      normas: ev.normas ? ev.normas.split(',').map(s => s.trim()).filter(Boolean) : [],
+      date: ev.date ? ev.date.slice(0, 16) : '',
+    }
+    if (ev.entityType) {
+      fetchEntityOptions(ev.entityType).then(() => {
+        const match = entityOptions.value.find(o => o.id === ev.entityId)
+        entitySearchText.value = match ? match.label : ''
+      })
+    }
+  } else {
+    editingEvento.value = null
+    eventForm.value = {
+      entityType: '', entityId: '', type: '', typeOtro: '', title: '', client: '',
+      startDate: '', startTime: '08:00', endDate: '', endTime: '17:00',
+      modalidad: '', modalidadOtro: '', location: '', description: '',
+      user: '', userOtro: '', personaContacto: '', leadAuditor: '', coAuditors: [], normas: [], date: ''
+    }
+  }
+  eventFormError.value = ''
+  showEventModal.value = true
+}
+
+async function fetchEventos() {
+  loadingEventos.value = true
+  try {
+    const response = await eventService.getAll({ pageSize: 9999 })
+    eventos.value = response.data
+    await loadEntityNames()
+    buildCalendarEvents()
+  } catch {
+    eventos.value = []
+  } finally {
+    loadingEventos.value = false
+  }
+}
+
+async function fetchColaboradores() {
+  try {
+    const response = await collaboratorService.getAll()
+    colaboradores.value = Array.isArray(response) ? response : []
+  } catch {
+    colaboradores.value = []
+  }
+}
+
+async function fetchLicitaciones() {
+  try {
+    const response = await tenderService.getAll({ page: 1, limit: 9999 })
+    licitaciones.value = response.data
+  } catch {
+    licitaciones.value = []
+  }
+}
+
+async function handleSaveEvento() {
+  eventFormError.value = ''
+  if (!validateFields()) return
+
+  if (eventForm.value.startDate && eventForm.value.endDate) {
+    const start = new Date(`${eventForm.value.startDate}T${eventForm.value.startTime}`)
+    const end = new Date(`${eventForm.value.endDate}T${eventForm.value.endTime}`)
+    if (end < start) { eventFormError.value = 'La fecha de fin no puede ser anterior a la fecha de inicio.'; return }
+  }
+
+  savingEvento.value = true
+  try {
+    const startISO = new Date(`${eventForm.value.startDate}T${eventForm.value.startTime}`).toISOString()
+    const endISO = eventForm.value.endDate
+      ? new Date(`${eventForm.value.endDate}T${eventForm.value.endTime}`).toISOString()
+      : startISO
+
+    const payload: CreateEventoRequest = {
+      entityType: eventForm.value.entityType && eventForm.value.entityId ? eventForm.value.entityType : null,
+      entityId: eventForm.value.entityType && eventForm.value.entityId ? (Number(eventForm.value.entityId) || null) : null,
+      type: eventForm.value.type,
+      typeOtro: eventForm.value.type === 'Otro' ? eventForm.value.typeOtro.trim() : undefined,
+      title: eventForm.value.title.trim(),
+      client: eventForm.value.client.trim(),
+      modalidad: eventForm.value.modalidad,
+      modalidadOtro: eventForm.value.modalidad === 'Otro' ? eventForm.value.modalidadOtro.trim() : undefined,
+      location: eventForm.value.location.trim(),
+      personaContacto: eventForm.value.personaContacto.trim(),
+      description: eventForm.value.description.trim(),
+      user: eventForm.value.user,
+      userOtro: eventForm.value.user === 'Otro' ? eventForm.value.userOtro.trim() : undefined,
+      date: startISO,
+      endDate: endISO,
+      leadAuditor: eventForm.value.leadAuditor.trim(),
+      coAuditors: eventForm.value.coAuditors.length > 0 ? eventForm.value.coAuditors.join(', ') : undefined,
+      normas: eventForm.value.normas.length > 0 ? eventForm.value.normas.join(', ') : undefined,
+    }
+
+    if (editingEvento.value) {
+      await eventService.update(editingEvento.value.id, payload)
+    } else {
+      await eventService.create(payload)
+    }
+    showEventModal.value = false
+    await fetchEventos()
+  } catch (e) {
+    eventFormError.value = e instanceof Error ? e.message : 'Error al guardar el evento'
+  } finally {
+    savingEvento.value = false
+  }
+}
+
+function openDescModal(ev: Evento) {
+  descModalText.value = ev.description || 'Sin descripción'
+  showDescModal.value = true
+}
+
+function confirmDeleteEvent(ev: Evento) {
+  eventoToDelete.value = ev
+  showDeleteEventModal.value = true
+}
+
+async function handleDeleteEvento() {
+  if (!eventoToDelete.value) return
+  deletingEvento.value = true
+  try {
+    await eventService.delete(eventoToDelete.value.id)
+    showDeleteEventModal.value = false
+    eventoToDelete.value = null
+    await fetchEventos()
+  } catch (e) {
+    alert(e instanceof Error ? e.message : 'Error al eliminar el evento')
+  } finally {
+    deletingEvento.value = false
+  }
+}
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
@@ -926,24 +1825,121 @@ const navItems = [
   { id: 'proyectos', label: 'Proyectos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' },
   { id: 'licitaciones', label: 'Licitaciones', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
   { id: 'cotizaciones', label: 'Cotizaciones', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
+  { id: 'documentos', label: 'Documentos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' },
   { id: 'recursos', label: 'Recursos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>' },
+  { id: 'adm-eventos', label: 'ADM Eventos', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   { id: 'calendario', label: 'Calendario', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
   { id: 'colaboradores', label: 'Colaboradores', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
   { id: 'usuarios', label: 'Usuarios', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
 ]
 
-const recentActivities = [
-  { text: 'Cotización enviada a EBM Metrology S.A.S.', time: 'Hace 10 minutos', type: 'blue', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-  { text: 'Nuevo cliente registrado: Laboratorio de Ensayos García S.A.S.', time: 'Hace 20 minutos', type: 'green', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>' },
-  { text: 'Auditoría programada ISO 45001:2017 – EBM Metrology S.A.S.', time: 'Hace 2 horas', type: 'amber', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
-  { text: 'Recurso descargado: Guía práctica ISO 9001:2015', time: 'Hace 3 horas', type: 'purple', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
-]
+const recentActivities = computed(() => {
+  const activities: Array<{ text: string; time: string; type: string; icon: string }> = []
 
-const upcomingEvents = [
-  { day: '23', month: 'MAY', title: 'Auditoría interna ISO 17025', client: 'EBM Metrology S.A.S.', time: '09:00 AM - 01:00 PM', type: 'audit', typeLabel: 'Auditoría' },
-  { day: '24', month: 'MAY', title: 'Reunión de seguimiento', client: 'Proyecto implementación SG', time: '10:00 AM - 11:00 AM', type: 'meeting', typeLabel: 'Reunión' },
-  { day: '27', month: 'MAY', title: 'Capacitación ISO 9001:2015', client: 'Fundamentos y requisitos', time: '02:00 PM - 05:00 PM', type: 'training', typeLabel: 'Capacitación' },
-]
+  const recentCotizaciones = [...cotizaciones.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3)
+  recentCotizaciones.forEach(c => {
+    activities.push({
+      text: `Cotización ${c.code} — ${c.client?.name || 'Cliente'}`,
+      time: formatTimeAgo(c.createdAt),
+      type: 'blue',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+    })
+  })
+
+  const recentClientes = [...clientes.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 2)
+  recentClientes.forEach(c => {
+    activities.push({
+      text: `Nuevo cliente registrado: ${c.razonSocial}`,
+      time: formatTimeAgo(c.createdAt),
+      type: 'green',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>'
+    })
+  })
+
+  const recentEventos = [...eventos.value]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 2)
+  recentEventos.forEach(e => {
+    activities.push({
+      text: `${e.type} — ${e.client || e.title || 'Evento'}`,
+      time: formatTimeAgo(e.date),
+      type: 'amber',
+      icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+    })
+  })
+
+  return activities.slice(0, 4)
+})
+
+function formatTimeAgo(dateStr: string): string {
+  if (!dateStr) return ''
+  const now = new Date()
+  const date = new Date(dateStr)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return 'Ahora mismo'
+  if (diffMin < 60) return `Hace ${diffMin} minutos`
+  const diffHrs = Math.floor(diffMin / 60)
+  if (diffHrs < 24) return `Hace ${diffHrs} horas`
+  const diffDays = Math.floor(diffHrs / 24)
+  if (diffDays === 1) return 'Ayer'
+  if (diffDays < 7) return `Hace ${diffDays} días`
+  return formatDate(dateStr)
+}
+
+const upcomingEvents = computed(() => {
+  const now = new Date()
+  const upcoming = eventos.value
+    .filter(e => e.date && new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 4)
+
+  return upcoming.map(e => {
+    const date = new Date(e.date)
+    const endDate = e.endDate ? new Date(e.endDate) : null
+
+    const typeCssMap: Record<string, string> = {
+      'Auditoría Interna': 'audit',
+      'Auditoría Interna Presencial': 'audit',
+      'Auditoría Interna Calidad': 'audit',
+      'Capacitación': 'training',
+      'Capacitación Presencial': 'training',
+      'Implementación': 'meeting',
+      'Mantenimiento': 'meeting',
+      'Asesoría Virtual': 'meeting',
+      'Asesoría Presencial': 'meeting',
+      'Diagnóstico Inicial': 'meeting',
+    }
+    const cssType = typeCssMap[e.type] || 'commitment'
+
+    let time: string
+    if (endDate && endDate.toDateString() !== date.toDateString()) {
+      if (endDate.getMonth() === date.getMonth() && endDate.getFullYear() === date.getFullYear()) {
+        time = `${date.getDate()}-${endDate.getDate()} ${monthNamesShort[date.getMonth()]}`
+      } else {
+        time = `${date.getDate()} ${monthNamesShort[date.getMonth()]} - ${endDate.getDate()} ${monthNamesShort[endDate.getMonth()]}`
+      }
+    } else {
+      const start = formatTime(e.date)
+      const end = e.endDate ? formatTime(e.endDate) : ''
+      time = end ? `${start} - ${end}` : start
+    }
+
+    return {
+      day: String(date.getDate()),
+      month: monthNamesShort[date.getMonth()],
+      title: e.title || e.type,
+      client: e.client || 'Sin cliente',
+      time,
+      type: cssType,
+      typeLabel: e.type,
+    }
+  })
+})
 
 // ========== CALENDARIO ==========
 interface CalEvent {
@@ -952,7 +1948,10 @@ interface CalEvent {
   time: string
   type: 'audit' | 'training' | 'meeting' | 'commitment'
   typeLabel: string
+  rawType: string
+  responsible?: string
   description?: string
+  modalidad?: string
 }
 
 interface CalDay {
@@ -966,28 +1965,85 @@ interface CalDay {
 const calCurrentDate = ref(new Date())
 const calSelectedDate = ref<string | null>(null)
 
-const calendarEvents = ref<Record<string, CalEvent[]>>({
-  '2026-08-03': [{ title: 'Auditoría interna ISO 9001', client: 'EBM Metrology S.A.S.', time: '09:00 - 13:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría interna del sistema de gestión de calidad' }],
-  '2026-08-05': [{ title: 'Capacitación ISO 14001', client: 'Personal de planta', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación', description: 'Fundamentos del sistema de gestión ambiental' }],
-  '2026-08-07': [{ title: 'Reunión de seguimiento', client: 'Proyecto implementación SG', time: '10:00 - 11:30', type: 'meeting', typeLabel: 'Reunión' }],
-  '2026-08-10': [{ title: 'Revisión de documentación', client: 'Laboratorio García S.A.S.', time: '09:00 - 12:00', type: 'commitment', typeLabel: 'Compromiso' }],
-  '2026-08-12': [{ title: 'Auditoría ISO 45001', client: 'Industrias del Norte S.A.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría de seguridad y salud en el trabajo' }],
-  '2026-08-14': [{ title: 'Capacitación ISO 17025', client: 'Personal de laboratorio', time: '09:00 - 12:00', type: 'training', typeLabel: 'Capacitación' }, { title: 'Reunión cliente', client: 'Energía Eléctrica S.A.S.', time: '14:00 - 15:00', type: 'meeting', typeLabel: 'Reunión' }],
-  '2026-08-18': [{ title: 'Auditoría interna ISO 17025', client: 'EBM Metrology S.A.S.', time: '09:00 - 17:00', type: 'audit', typeLabel: 'Auditoría', description: 'Auditoría completa de laboratorio' }],
-  '2026-08-20': [{ title: 'Capacitación ISO 9001:2015', client: 'Todos los colaboradores', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación', description: 'Actualización de requisitos de calidad' }],
-  '2026-08-22': [{ title: 'Reunión de cierre', client: 'Proyecto implementación SG', time: '16:00 - 17:30', type: 'meeting', typeLabel: 'Reunión' }],
-  '2026-08-25': [{ title: 'Compromiso auditoría', client: 'Farma Salud S.A.S.', time: '10:00 - 12:00', type: 'commitment', typeLabel: 'Compromiso', description: 'Entrega de plan de acción' }],
-  '2026-08-27': [{ title: 'Auditoría ISO 9001', client: 'Laboratorio García S.A.S.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría' }],
-  '2026-08-29': [{ title: 'Capacitación auditoría interna', client: 'Auditores internos', time: '09:00 - 13:00', type: 'training', typeLabel: 'Capacitación', description: 'Habilidades de auditoría' }],
-  '2026-09-02': [{ title: 'Reunión mensual', client: 'Todo el equipo', time: '09:00 - 10:00', type: 'meeting', typeLabel: 'Reunión' }],
-  '2026-09-05': [{ title: 'Auditoría ISO 45001', client: 'Industrias del Norte S.A.', time: '08:00 - 16:00', type: 'audit', typeLabel: 'Auditoría' }],
-  '2026-09-10': [{ title: 'Capacitación ISO 14001', client: 'Personal ambiental', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación' }],
-  '2026-07-08': [{ title: 'Auditoría ISO 17025', client: 'EBM Metrology', time: '09:00 - 13:00', type: 'audit', typeLabel: 'Auditoría' }],
-  '2026-07-15': [{ title: 'Capacitación ISO 9001', client: 'Nuevo personal', time: '14:00 - 17:00', type: 'training', typeLabel: 'Capacitación' }],
-  '2026-07-22': [{ title: 'Reunión de avance', client: 'Proyecto SG', time: '10:00 - 11:00', type: 'meeting', typeLabel: 'Reunión' }],
-})
+const calendarEvents = ref<Record<string, CalEvent[]>>({})
+
+function mapEventType(type: string): CalEvent['type'] {
+  const t = type.toLowerCase()
+  if (t.includes('auditor')) return 'audit'
+  if (t.includes('capacitación') || t.includes('capacitacion') || t.includes('formación') || t.includes('formacion') || t.includes('taller') || t.includes('pasantía') || t.includes('pasantia')) return 'training'
+  if (t.includes('reunión') || t.includes('reunion') || t.includes('asesoría') || t.includes('asesoria') || t.includes('diagnóstico') || t.includes('diagnostico')) return 'meeting'
+  return 'commitment'
+}
+
+function mapEventTypeLabel(type: string): string {
+  const calType = mapEventType(type)
+  if (calType === 'audit') return 'Auditoría'
+  if (calType === 'training') return 'Capacitación'
+  if (calType === 'meeting') return 'Reunión'
+  return 'Compromiso'
+}
+
+function formatTime(dateStr: string): string {
+  if (!dateStr) return ''
+  return new Date(dateStr).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
+function buildCalendarEvents() {
+  const map: Record<string, CalEvent[]> = {}
+  for (const ev of eventos.value) {
+    if (!ev.date) continue
+    const start = new Date(ev.date)
+    const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`
+    const startTime = formatTime(ev.date)
+    const endTime = ev.endDate ? formatTime(ev.endDate) : ''
+
+    const calEvent: CalEvent = {
+      title: ev.title || ev.type || 'Evento',
+      client: ev.client || getEntityName(ev),
+      time: startTime || 'Sin hora',
+      type: mapEventType(ev.type),
+      typeLabel: mapEventTypeLabel(ev.type),
+      rawType: ev.type || '',
+      responsible: ev.user || '',
+      description: ev.description || undefined,
+      modalidad: ev.modalidad || undefined,
+    }
+
+    if (!map[startStr]) map[startStr] = []
+    map[startStr].push(calEvent)
+
+    if (ev.endDate) {
+      const end = new Date(ev.endDate)
+      const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`
+      if (endStr === startStr) {
+        const last = map[startStr][map[startStr].length - 1]
+        if (last === calEvent) last.time = (startTime || '') + (endTime ? ` - ${endTime}` : '')
+      } else {
+        const current = new Date(start)
+        current.setDate(current.getDate() + 1)
+        const endDateOnly = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+        while (current < endDateOnly) {
+          const midStr = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}-${String(current.getDate()).padStart(2, '0')}`
+          if (!map[midStr]) map[midStr] = []
+          map[midStr].push({
+            ...calEvent,
+            time: '',
+          })
+          current.setDate(current.getDate() + 1)
+        }
+        if (!map[endStr]) map[endStr] = []
+        map[endStr].push({
+          ...calEvent,
+          time: endTime || '',
+        })
+      }
+    }
+  }
+  calendarEvents.value = map
+}
 
 const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const monthNamesShort = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
 
 const calMonthName = computed(() => monthNames[calCurrentDate.value.getMonth()])
 const calYear = computed(() => calCurrentDate.value.getFullYear())
@@ -1060,22 +2116,111 @@ const calSelectedDayEvents = computed(() => {
 const calMonthStats = computed(() => {
   const year = calCurrentDate.value.getFullYear()
   const month = calCurrentDate.value.getMonth()
-  const prefix = `${year}-${String(month + 1).padStart(2, '0')}-`
+  const monthStart = new Date(year, month, 1)
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
 
-  let audits = 0, trainings = 0, meetings = 0, commitments = 0
+  const counts: Record<string, number> = {}
+  const seenKeys = new Set<string>()
 
-  Object.keys(calendarEvents.value).forEach(key => {
-    if (key.startsWith(prefix)) {
-      calendarEvents.value[key].forEach(evt => {
-        if (evt.type === 'audit') audits++
-        else if (evt.type === 'training') trainings++
-        else if (evt.type === 'meeting') meetings++
-        else if (evt.type === 'commitment') commitments++
-      })
-    }
+  eventos.value.forEach(ev => {
+    if (!ev.date) return
+    const evStart = new Date(ev.date)
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evStart
+    if (evStart > monthEnd || evEnd < monthStart) return
+    const evtKey = `${ev.title}|${ev.client}|${ev.type}`
+    if (seenKeys.has(evtKey)) return
+    seenKeys.add(evtKey)
+    const label = ev.type || ''
+    if (!counts[label]) counts[label] = 0
+    counts[label]++
   })
 
-  return { audits, trainings, meetings, commitments }
+  const seenTypes: Record<string, string> = {}
+  eventos.value.forEach(ev => {
+    if (!ev.type) return
+    if (!seenTypes[ev.type]) seenTypes[ev.type] = ev.type
+  })
+
+  return { counts, seen: seenTypes }
+})
+
+const calTypeLabels = computed(() => {
+  const defaults: Record<string, string> = { audit: 'Auditorías', training: 'Capacitaciones', meeting: 'Reuniones', commitment: 'Compromisos' }
+  const labels: Record<string, string> = {}
+  for (const [k, v] of Object.entries(calMonthStats.value.seen)) {
+    labels[k] = v || defaults[k]
+  }
+  for (const k of Object.keys(defaults)) {
+    if (!labels[k]) labels[k] = defaults[k]
+  }
+  return labels
+})
+
+const rawTypeColorMap = computed(() => {
+  const typeFirstColor: Record<string, string> = { audit: '#F59E0B', training: '#10B981', meeting: '#3B82F6', commitment: '#8B5CF6' }
+  const extraColors = ['#EF4444', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#14B8A6']
+  const counts = calMonthStats.value.counts
+  const map: Record<string, string> = {}
+  const usedPerType: Record<string, number> = {}
+  let extraIdx = 0
+  for (const rawType of Object.keys(counts)) {
+    const calType = mapEventType(rawType)
+    const idx = usedPerType[calType] || 0
+    let color: string
+    if (idx === 0) {
+      color = typeFirstColor[calType] || extraColors[extraIdx % extraColors.length]
+    } else {
+      color = extraColors[extraIdx % extraColors.length]
+      extraIdx++
+    }
+    map[rawType] = color
+    usedPerType[calType] = idx + 1
+  }
+  return map
+})
+
+const calSummaryItems = computed(() => {
+  const counts = calMonthStats.value.counts
+  return Object.entries(counts)
+    .filter(([, c]) => c > 0)
+    .map(([rawType, count]) => ({ color: rawTypeColorMap.value[rawType] || '#6B7280', label: rawType, count }))
+})
+
+const calMonthEventList = computed(() => {
+  const year = calCurrentDate.value.getFullYear()
+  const month = calCurrentDate.value.getMonth()
+  const monthStart = new Date(year, month, 1)
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
+  const items: { startDate: string; endDate: string; title: string; rawType: string; color: string; time: string }[] = []
+  const seenKeys = new Set<string>()
+  const monthNames = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+  const fmtDate = (d: string) => { const dt = new Date(d); return `${dt.getDate()} ${monthNames[dt.getMonth()]}` }
+
+  eventos.value.forEach(ev => {
+    if (!ev.date) return
+    const evStart = new Date(ev.date)
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evStart
+    const overlaps = evStart <= monthEnd && evEnd >= monthStart
+    if (!overlaps) return
+    const evtKey = `${ev.title}|${ev.client}|${ev.type}`
+    if (seenKeys.has(evtKey)) return
+    seenKeys.add(evtKey)
+    const rawType = ev.type || ''
+    items.push({
+      startDate: fmtDate(ev.date),
+      endDate: ev.endDate ? fmtDate(ev.endDate) : '',
+      title: ev.title || ev.type || 'Evento',
+      rawType,
+      color: rawTypeColorMap.value[rawType] || '#6B7280',
+      time: formatTime(ev.date) + (ev.endDate ? ` - ${formatTime(ev.endDate)}` : ''),
+    })
+  })
+  items.sort((a, b) => {
+    const dA = parseInt(a.startDate)
+    const dB = parseInt(b.startDate)
+    return dA - dB
+  })
+  return items
 })
 
 function calPrevMonth() {
@@ -1100,53 +2245,39 @@ function calSelectDay(day: CalDay) {
   calSelectedDate.value = day.dateStr
 }
 
-const cotizaciones = ref([
-  { id: 'COT-2025-045', client: 'EBM Metrology S.A.S.', service: 'Auditoría ISO 17025', value: '$ 5.800.000', status: 'Enviada', statusClass: 'sent', date: '22 may 2025' },
-  { id: 'COT-2025-044', client: 'Laboratorio García S.A.S.', service: 'Implementación SG', value: '$ 12.500.000', status: 'Pendiente', statusClass: 'pending', date: '21 may 2025' },
-  { id: 'COT-2025-043', client: 'Industrias del Norte S.A.', service: 'Capacitación ISO 9001', value: '$ 4.200.000', status: 'Borrador', statusClass: 'draft', date: '20 may 2025' },
-  { id: 'COT-2025-042', client: 'Energía Eléctrica S.A.S.', service: 'Auditoría ISO 9001', value: '$ 6.750.000', status: 'Aprobada', statusClass: 'approved', date: '19 may 2025' },
-  { id: 'COT-2025-041', client: 'Farma Salud S.A.S.', service: 'Consultoría Regulatoria', value: '$ 8.900.000', status: 'Rechazada', statusClass: 'rejected', date: '18 may 2025' },
-  { id: 'COT-2025-040', client: 'EBM Metrology S.A.S.', service: 'Capacitación ISO 45001', value: '$ 3.200.000', status: 'Aprobada', statusClass: 'approved', date: '17 may 2025' },
-  { id: 'COT-2025-039', client: 'Laboratorio García S.A.S.', service: 'Auditoría ISO 9001', value: '$ 5.400.000', status: 'Enviada', statusClass: 'sent', date: '16 may 2025' },
-  { id: 'COT-2025-038', client: 'Industrias del Norte S.A.', service: 'Implementación ISO 14001', value: '$ 9.800.000', status: 'Pendiente', statusClass: 'pending', date: '15 may 2025' },
-  { id: 'COT-2025-037', client: 'Energía Eléctrica S.A.S.', service: 'Consultoría Ambiental', value: '$ 7.100.000', status: 'Borrador', statusClass: 'draft', date: '14 may 2025' },
-  { id: 'COT-2025-036', client: 'Farma Salud S.A.S.', service: 'Auditoría ISO 17025', value: '$ 6.300.000', status: 'Aprobada', statusClass: 'approved', date: '13 may 2025' },
-  { id: 'COT-2025-035', client: 'EBM Metrology S.A.S.', service: 'Implementación SG', value: '$ 11.000.000', status: 'Rechazada', statusClass: 'rejected', date: '12 may 2025' },
-  { id: 'COT-2025-034', client: 'Industrias del Norte S.A.', service: 'Auditoría ISO 45001', value: '$ 4.900.000', status: 'Enviada', statusClass: 'sent', date: '11 may 2025' },
-])
+const cotizaciones = ref<Cotizacion[]>([])
 
-const cotiFilterStatus = ref('')
-const cotiSearch = ref('')
-
-const cotizacionesFiltradas = computed(() => {
-  return cotizaciones.value.filter(q => {
-    const matchStatus = !cotiFilterStatus.value || q.status === cotiFilterStatus.value
-    const matchSearch = !cotiSearch.value || q.client.toLowerCase().includes(cotiSearch.value.toLowerCase()) || q.service.toLowerCase().includes(cotiSearch.value.toLowerCase())
-    return matchStatus && matchSearch
-  })
-})
-
-function verCotizacion(q: typeof cotizaciones.value[0]) {
-  alert(`Ver cotización ${q.id}\nCliente: ${q.client}\nServicio: ${q.service}\nValor: ${q.value}\nEstado: ${q.status}`)
-}
-
-function editarCotizacion(q: typeof cotizaciones.value[0]) {
-  alert(`Editar cotización ${q.id}`)
-}
-
-function eliminarCotizacion(q: typeof cotizaciones.value[0]) {
-  if (confirm(`¿Eliminar cotización ${q.id}?`)) {
-    cotizaciones.value = cotizaciones.value.filter(c => c.id !== q.id)
+async function fetchCotizacionesData() {
+  try {
+    const response = await quoteService.getAll({ page: 1, pageSize: 9999 })
+    cotizaciones.value = response.data
+  } catch {
+    cotizaciones.value = []
   }
 }
 
-const recentQuotes = [
-  { id: 'COT-2025-045', client: 'EBM Metrology S.A.S.', service: 'Auditoría ISO 17025', value: '$ 5.800.000', status: 'Enviada', statusClass: 'sent', date: '22 may 2025' },
-  { id: 'COT-2025-044', client: 'Laboratorio García S.A.S.', service: 'Implementación SG', value: '$ 12.500.000', status: 'Pendiente', statusClass: 'pending', date: '21 may 2025' },
-  { id: 'COT-2025-043', client: 'Industrias del Norte S.A.', service: 'Capacitación ISO 9001', value: '$ 4.200.000', status: 'Borrador', statusClass: 'draft', date: '20 may 2025' },
-  { id: 'COT-2025-042', client: 'Energía Eléctrica S.A.S.', service: 'Auditoría ISO 9001', value: '$ 6.750.000', status: 'Aprobada', statusClass: 'approved', date: '19 may 2025' },
-  { id: 'COT-2025-041', client: 'Farma Salud S.A.S.', service: 'Consultoría Regulatoria', value: '$ 8.900.000', status: 'Rechazada', statusClass: 'rejected', date: '18 may 2025' },
-]
+const proyectosPorMes = computed(() => {
+  const now = new Date()
+  const months: { label: string; count: number }[] = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const label = d.toLocaleDateString('es-CO', { month: 'short' })
+    const year = d.getFullYear()
+    const month = d.getMonth()
+    const count = proyectos.value.filter((p: any) => {
+      if (!p.createdAt) return false
+      const pd = new Date(p.createdAt)
+      return pd.getFullYear() === year && pd.getMonth() === month
+    }).length
+    months.push({ label, count })
+  }
+  return months
+})
+
+const barHeight = (count: number) => {
+  const max = Math.max(...proyectosPorMes.value.map(m => m.count), 1)
+  return (count / max) * 100
+}
 
 const setSection = (section: string) => {
   const item = navItems.find((n) => n.id === section)
@@ -1164,12 +2295,270 @@ const handleLogout = () => {
     router.push('/')
   }
 }
+
+const totalClientes = computed(() => clientes.value.length)
+
+const totalProyectos = computed(() => proyectos.value.length)
+
+function normalizeStr(s: string): string {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+}
+
+function matchStatus(status: string, target: string): boolean {
+  return normalizeStr(status).includes(normalizeStr(target))
+}
+
+const proyectosEnEjecucion = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'ejecucion')).length)
+const proyectosFinalizadosCount = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'finalizad')).length)
+const proyectosCotizacion = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'cotizacion')).length)
+const proyectosAprobados = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'aprobad')).length)
+const proyectosCancelados = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'suspendid')).length)
+
+function donutPercent(count: number): string {
+  if (totalProyectos.value === 0) return '0'
+  return (count / totalProyectos.value * 314.16).toFixed(1)
+}
+
+const donutDashEjecucion = computed(() => `${donutPercent(proyectosEnEjecucion.value)} ${314.16 - Number(donutPercent(proyectosEnEjecucion.value))}`)
+const donutDashFinalizados = computed(() => `${donutPercent(proyectosFinalizadosCount.value)} ${314.16 - Number(donutPercent(proyectosFinalizadosCount.value))}`)
+const donutOffsetFinalizados = computed(() => `-${donutPercent(proyectosEnEjecucion.value)}`)
+
+const donutDashCotizacion = computed(() => `${donutPercent(proyectosCotizacion.value)} ${314.16 - Number(donutPercent(proyectosCotizacion.value))}`)
+const donutOffsetCotizacion = computed(() => `-${Number(donutPercent(proyectosEnEjecucion.value)) + Number(donutPercent(proyectosFinalizadosCount.value))}`)
+
+const donutDashAprobados = computed(() => `${donutPercent(proyectosAprobados.value)} ${314.16 - Number(donutPercent(proyectosAprobados.value))}`)
+const donutOffsetAprobados = computed(() => `-${Number(donutPercent(proyectosEnEjecucion.value)) + Number(donutPercent(proyectosFinalizadosCount.value)) + Number(donutPercent(proyectosCotizacion.value))}`)
+
+const donutDashCancelados = computed(() => `${donutPercent(proyectosCancelados.value)} ${314.16 - Number(donutPercent(proyectosCancelados.value))}`)
+const donutOffsetCancelados = computed(() => `-${Number(donutPercent(proyectosEnEjecucion.value)) + Number(donutPercent(proyectosFinalizadosCount.value)) + Number(donutPercent(proyectosCotizacion.value)) + Number(donutPercent(proyectosAprobados.value))}`)
+
+function safePercent(count: number): number {
+  if (totalProyectos.value === 0) return 0
+  return Math.round(count / totalProyectos.value * 100)
+}
+
+const porcentajeEjecucion = computed(() => safePercent(proyectosEnEjecucion.value))
+const porcentajeFinalizados = computed(() => safePercent(proyectosFinalizadosCount.value))
+const porcentajeCotizacion = computed(() => safePercent(proyectosCotizacion.value))
+const porcentajeAprobados = computed(() => safePercent(proyectosAprobados.value))
+const porcentajeCancelados = computed(() => safePercent(proyectosCancelados.value))
+
+const totalFacturacion = computed(() => {
+  return proyectos.value.reduce((sum, p) => {
+    if (!p.services || p.services.length === 0) return sum
+    return sum + p.services.reduce((sSum, svc) => {
+      const utilidad = (svc.totalPrice || 0) - (svc.providerTotalPrice || 0) - (svc.ica || 0) - (svc.simpleTax || 0)
+      return sSum + Math.max(0, utilidad)
+    }, 0)
+  }, 0)
+})
+
+const facturacionMesActual = computed(() => {
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  return proyectos.value
+    .filter(p => new Date(p.createdAt) >= startOfMonth)
+    .reduce((sum, p) => {
+      if (!p.services || p.services.length === 0) return sum
+      return sum + p.services.reduce((sSum, svc) => {
+        const utilidad = (svc.totalPrice || 0) - (svc.providerTotalPrice || 0) - (svc.ica || 0) - (svc.simpleTax || 0)
+        return sSum + Math.max(0, utilidad)
+      }, 0)
+    }, 0)
+})
+
+const facturacionMesAnterior = computed(() => {
+  const now = new Date()
+  const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const endOfPrevMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+  return proyectos.value
+    .filter(p => {
+      const d = new Date(p.createdAt)
+      return d >= startOfPrevMonth && d <= endOfPrevMonth
+    })
+    .reduce((sum, p) => {
+      if (!p.services || p.services.length === 0) return sum
+      return sum + p.services.reduce((sSum, svc) => {
+        const utilidad = (svc.totalPrice || 0) - (svc.providerTotalPrice || 0) - (svc.ica || 0) - (svc.simpleTax || 0)
+        return sSum + Math.max(0, utilidad)
+      }, 0)
+    }, 0)
+})
+
+const facturacionChange = computed(() => {
+  if (facturacionMesAnterior.value === 0) return facturacionMesActual.value > 0 ? 100 : 0
+  return Math.round((facturacionMesActual.value - facturacionMesAnterior.value) / facturacionMesAnterior.value * 100)
+})
+
+const clientesNuevosMes = computed(() => {
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  return clientes.value.filter(c => new Date(c.createdAt) >= startOfMonth).length
+})
+
+const tasaConversion = computed(() => {
+  if (totalClientes.value === 0) return 0
+  return Math.round(proyectosEnEjecucion.value / totalClientes.value * 100)
+})
+
+const miniCalDate = ref(new Date())
+
+const miniCalendarMonthName = computed(() => monthNames[miniCalDate.value.getMonth()])
+const miniCalendarYear = computed(() => miniCalDate.value.getFullYear())
+
+interface MiniCalDay {
+  day: number
+  dateStr: string
+  otherMonth: boolean
+  isToday: boolean
+  events: CalEvent[]
+  eventTypes: string[]
+}
+
+const miniCalendarDays = computed<MiniCalDay[]>(() => {
+  const year = miniCalDate.value.getFullYear()
+  const month = miniCalDate.value.getMonth()
+  const today = new Date()
+
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+
+  let startDayOfWeek = firstDay.getDay()
+  if (startDayOfWeek === 0) startDayOfWeek = 7
+
+  const days: MiniCalDay[] = []
+
+  for (let i = startDayOfWeek - 1; i > 0; i--) {
+    const d = new Date(year, month, 1 - i)
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const evts = calendarEvents.value[dateStr] || []
+    days.push({
+      day: d.getDate(),
+      dateStr,
+      otherMonth: true,
+      isToday: false,
+      events: evts,
+      eventTypes: [...new Set(evts.map(e => e.rawType))]
+    })
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d
+    const evts = calendarEvents.value[dateStr] || []
+    days.push({
+      day: d,
+      dateStr,
+      otherMonth: false,
+      isToday,
+      events: evts,
+      eventTypes: [...new Set(evts.map(e => e.rawType))]
+    })
+  }
+
+  const remaining = 42 - days.length
+  for (let i = 1; i <= remaining; i++) {
+    const d = new Date(year, month + 1, i)
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const evts = calendarEvents.value[dateStr] || []
+    days.push({
+      day: d.getDate(),
+      dateStr,
+      otherMonth: true,
+      isToday: false,
+      events: evts,
+      eventTypes: [...new Set(evts.map(e => e.rawType))]
+    })
+  }
+
+  return days
+})
+
+function miniCalPrevMonth() {
+  const d = miniCalDate.value
+  miniCalDate.value = new Date(d.getFullYear(), d.getMonth() - 1, 1)
+}
+
+function miniCalNextMonth() {
+  const d = miniCalDate.value
+  miniCalDate.value = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+}
+
+const miniCalendarLegendItems = computed(() => {
+  const year = miniCalDate.value.getFullYear()
+  const month = miniCalDate.value.getMonth()
+  const monthStart = new Date(year, month, 1)
+  const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
+
+  const typeCounts: Record<string, number> = {}
+  eventos.value.forEach(ev => {
+    if (!ev.date || !ev.type) return
+    const evStart = new Date(ev.date)
+    const evEnd = ev.endDate ? new Date(ev.endDate) : evStart
+    if (evStart > monthEnd || evEnd < monthStart) return
+    if (!typeCounts[ev.type]) typeCounts[ev.type] = 0
+    typeCounts[ev.type]++
+  })
+
+  return Object.entries(typeCounts)
+    .filter(([, count]) => count > 0)
+    .map(([rawType, count]) => ({
+      rawType,
+      label: `${rawType} (${count})`,
+      color: rawTypeColorMap.value[rawType] || '#6B7280'
+    }))
+})
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function getStatusLabel(status: EstadoCotizacion): string {
+  const map: Record<EstadoCotizacion, string> = {
+    pendiente: 'Pendiente',
+    enviada: 'Enviada',
+    aprobada: 'Aprobada',
+    rechazada: 'Rechazada',
+    vencida: 'Vencida',
+  }
+  return map[status] || status
+}
+
+onMounted(() => {
+  fetchClientes({ page: 1, limit: 9999 })
+  fetchProyectos({ limit: 9999 })
+  fetchRecursosClientes()
+  fetchCotizacionesData()
+  fetchEventos()
+  fetchColaboradores()
+  fetchLicitaciones()
+
+  document.addEventListener('click', () => {
+    showEntityDropdown.value = false
+  })
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (showDescModal.value) showDescModal.value = false
+      else if (showDeleteEventModal.value) showDeleteEventModal.value = false
+      else if (showEventModal.value) showEventModal.value = false
+    }
+  })
+})
 </script>
 
 <style scoped>
 /* ===== RESET & VARIABLES ===== */
-.admin-layout, .admin-layout *, .admin-layout *::before, .admin-layout *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 .admin-layout {
   --c-primary: #C89B2D;
   --c-primary-hover: #B8892A;
@@ -1501,6 +2890,42 @@ const handleLogout = () => {
   color: var(--c-gray);
 }
 
+/* ===== MONTH FILTER ===== */
+.dashboard-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin: 0 0 16px 0;
+}
+
+.month-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.month-filter label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--c-gray);
+}
+
+.month-select {
+  padding: 8px 12px;
+  border: 1.5px solid var(--c-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  background: var(--c-white);
+  cursor: pointer;
+}
+
+.month-select:focus {
+  outline: none;
+  border-color: var(--c-primary);
+}
+
 /* ===== STATS ROW ===== */
 .stats-row {
   display: grid;
@@ -1755,24 +3180,46 @@ const handleLogout = () => {
   font-weight: 700;
 }
 
+.cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cal-day-dots-inline {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  min-height: 4px;
+}
+
+.cal-dot-inline {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 .calendar-legend {
   display: flex;
-  gap: 16px;
-  padding: 10px 20px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 16px;
   border-top: 1px solid var(--c-border);
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
+  gap: 4px;
+  font-size: 0.65rem;
   color: var(--c-gray);
 }
 
 .legend-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
 }
 
@@ -1821,6 +3268,13 @@ const handleLogout = () => {
   flex-direction: column;
   gap: 2px;
   flex: 1;
+  min-width: 0;
+}
+
+.upcoming-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .upcoming-title {
@@ -1837,6 +3291,7 @@ const handleLogout = () => {
 .upcoming-time {
   font-size: 0.7rem;
   color: var(--c-gray-light);
+  white-space: nowrap;
 }
 
 .upcoming-badge {
@@ -1850,6 +3305,14 @@ const handleLogout = () => {
 .upcoming-badge.audit { background: rgba(245, 158, 11, 0.1); color: #D97706; }
 .upcoming-badge.meeting { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
 .upcoming-badge.training { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.upcoming-badge.commitment { background: rgba(139, 92, 246, 0.1); color: #7C3AED; }
+
+.upcoming-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--c-gray-light);
+  font-size: 0.82rem;
+}
 
 /* ===== DASHBOARD BOTTOM ===== */
 .dashboard-bottom {
@@ -1910,175 +3373,100 @@ const handleLogout = () => {
 .legend-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .legend-dot-rect {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .legend-dot-rect.amber { background: #F59E0B; }
 .legend-dot-rect.blue { background: #3B82F6; }
 .legend-dot-rect.green { background: #10B981; }
+.legend-dot-rect.purple { background: #8B5CF6; }
 .legend-dot-rect.red { background: #EF4444; }
 
 .legend-text {
-  font-size: 0.82rem;
+  font-size: 0.72rem;
   color: var(--c-black);
   flex: 1;
 }
 
 .legend-count {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--c-black);
-}
-
-/* ===== QUOTES TABLE ===== */
-.quotes-table-wrap {
-  overflow-x: auto;
-}
-
-.quotes-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.quotes-table th {
-  text-align: left;
-  padding: 10px 16px;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--c-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  border-bottom: 1px solid var(--c-border);
-  white-space: nowrap;
-}
-
-.quotes-table td {
-  padding: 12px 16px;
-  font-size: 0.82rem;
   color: var(--c-black);
-  border-bottom: 1px solid var(--c-border);
 }
 
-.quotes-table tr:last-child td { border-bottom: none; }
-
-.q-id {
-  font-weight: 600;
-  color: var(--c-primary);
+/* ===== BAR CHART ===== */
+.bar-chart-container {
+  padding: 20px 24px 16px;
 }
 
-.q-value {
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 180px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+
+.bar-value {
+  font-size: 0.75rem;
   font-weight: 700;
+  color: var(--c-black);
 }
 
-.q-date {
-  color: var(--c-gray);
-  white-space: nowrap;
+.bar-wrapper {
+  flex: 1;
+  width: 100%;
+  max-width: 48px;
+  display: flex;
+  align-items: flex-end;
 }
 
-.q-status {
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.72rem;
+.bar-fill {
+  width: 100%;
+  background: var(--c-primary);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  min-height: 4px;
+}
+
+.bar-label {
+  font-size: 0.7rem;
   font-weight: 600;
-  white-space: nowrap;
-}
-
-.q-status.sent { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.q-status.pending { background: rgba(245, 158, 11, 0.1); color: #D97706; }
-.q-status.draft { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
-.q-status.approved { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.q-status.rejected { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
-
-.q-action {
-  background: none;
-  border: none;
-  padding: 6px;
-  cursor: pointer;
   color: var(--c-gray);
-  border-radius: 6px;
+  text-transform: capitalize;
 }
-.q-action:hover { background: var(--c-light); color: var(--c-black); }
-.q-action.danger:hover { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
 
+/* ===== TABLE ACTIONS ===== */
 .q-actions {
   display: flex;
   gap: 4px;
 }
 
-/* ===== COTIZACIONES ===== */
-.coti-filters {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.coti-filter-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.coti-filter-group label {
-  font-size: 0.72rem;
-  font-weight: 600;
+.q-action {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
   color: var(--c-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  border-radius: 4px;
 }
-
-.coti-select, .coti-input {
-  padding: 8px 12px;
-  border: 1px solid var(--c-border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: var(--c-black);
-  background: var(--c-white);
-  outline: none;
-  min-width: 200px;
-}
-
-.coti-select:focus, .coti-input:focus {
-  border-color: var(--c-primary);
-  box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.1);
-}
-
-.coti-summary-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.coti-summary-card {
-  background: var(--c-white);
-  border: 1px solid var(--c-border);
-  border-radius: 10px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.coti-summary-value {
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--c-black);
-}
-
-.coti-summary-label {
-  font-size: 0.72rem;
-  color: var(--c-gray);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+.q-action:hover { background: var(--c-light); color: var(--c-black); }
+.q-action.danger:hover { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
 
 .card-footer-btn {
   display: flex;
@@ -2176,6 +3564,21 @@ const handleLogout = () => {
   color: var(--c-black);
 }
 
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #DCFCE7;
+  color: #16A34A;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.recurso-form { display: flex; flex-direction: column; gap: 16px; }
+
 /* ===== EMPTY STATE ===== */
 .empty-state {
   text-align: center;
@@ -2234,28 +3637,64 @@ const handleLogout = () => {
   overflow: hidden;
 }
 .table-responsive { overflow-x: auto; }
-.data-table { width: 100%; border-collapse: collapse; }
+.data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .data-table th {
-  padding: 12px 14px;
+  padding: 8px 10px;
   text-align: left;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 600;
   color: var(--c-gray);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   background: var(--c-light);
   border-bottom: 1px solid var(--c-border);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .data-table td {
-  padding: 14px;
-  font-size: 0.85rem;
+  padding: 8px 10px;
+  font-size: 0.78rem;
   color: var(--c-black);
   border-bottom: 1px solid var(--c-border);
   vertical-align: middle;
+  word-break: break-word;
 }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tr:hover td { background: rgba(249, 250, 251, 0.5); }
+
+.type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+.type-comunicaciones { background: #FEF3C7; color: #D97706; }
+.type-acta { background: #FFF7ED; color: #C2410C; }
+.type-contrato { background: #EFF6FF; color: #2563EB; }
+.type-cotizacion { background: #F0FDF4; color: #16A34A; }
+.type-informe { background: #FEF3C7; color: #D97706; }
+.type-certificado { background: #FDF4FF; color: #9333EA; }
+.type-presentacion { background: #F0FDFA; color: #0D9488; }
+
+.actions-cell { display: flex; gap: 4px; }
+.action-btn {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  transition: all 0.15s;
+}
+.action-btn:hover { background: #F3F4F6; color: #111827; }
+.action-btn.delete-btn:hover { background: #FEE2E2; color: #DC2626; }
 
 .user-cell {
   display: flex;
@@ -2285,11 +3724,13 @@ const handleLogout = () => {
   font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
+  background: var(--c-light);
+  color: var(--c-gray);
 }
-.rol-badge.admin { background: #FEF3C7; color: #B45309; }
-.rol-badge.gerente { background: #EFF6FF; color: #1D4ED8; }
-.rol-badge.manager { background: #F3E8FF; color: #7C3AED; }
-.rol-badge.colaborador { background: #F0FDF4; color: #15803D; }
+.rol-badge.admin, .rol-badge.Administrador { background: #FEF3C7; color: #B45309; }
+.rol-badge.gerente, .rol-badge.Gerente { background: #EFF6FF; color: #1D4ED8; }
+.rol-badge.manager, .rol-badge.Community { background: #F3E8FF; color: #7C3AED; }
+.rol-badge.colaborador, .rol-badge.Colaborador { background: #F0FDF4; color: #15803D; }
 
 .estado-badge {
   display: inline-block;
@@ -2299,6 +3740,16 @@ const handleLogout = () => {
   font-weight: 600;
 }
 .estado-badge.disponible { background: #F0FDF4; color: #15803D; }
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.status-badge.status-active { background: #F0FDF4; color: #15803D; }
+.status-badge.status-inactive { background: #FEF2F2; color: #DC2626; }
 
 .url-input-wrapper {
   display: flex;
@@ -2510,6 +3961,93 @@ const handleLogout = () => {
   gap: 20px;
 }
 
+.calendar-text-summary {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-top: 4px;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  color: var(--c-text);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.summary-header svg {
+  color: var(--c-primary);
+  flex-shrink: 0;
+}
+
+.summary-total-badge {
+  margin-left: auto;
+  background: var(--c-primary);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.summary-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-event-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--c-bg);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.summary-event-date {
+  font-weight: 700;
+  color: var(--c-text);
+  min-width: 85px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.summary-event-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.summary-event-title {
+  color: var(--c-text);
+  font-weight: 500;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-event-type {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.summary-event-time {
+  color: var(--c-gray);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 .sidebar-events-card,
 .sidebar-summary-card {
   background: var(--c-white);
@@ -2606,6 +4144,12 @@ const handleLogout = () => {
   margin-bottom: 4px;
 }
 
+.event-card-meta {
+  font-size: 0.72rem;
+  color: var(--c-gray);
+  margin-bottom: 2px;
+}
+
 .event-card-desc {
   font-size: 0.72rem;
   color: var(--c-gray-light);
@@ -2655,7 +4199,6 @@ const handleLogout = () => {
   .dashboard-bottom { grid-template-columns: 1fr; }
   .metrics-row { grid-template-columns: repeat(2, 1fr); }
   .calendar-full-layout { grid-template-columns: 1fr; }
-  .coti-summary-row { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 768px) {
@@ -2691,8 +4234,461 @@ const handleLogout = () => {
   .main-content { padding: 16px; }
   .cal-day-cell { min-height: 60px; padding: 4px; }
   .calendar-legend-full { gap: 12px; }
-  .coti-summary-row { grid-template-columns: repeat(2, 1fr); }
-  .coti-filters { flex-direction: column; }
-  .coti-select, .coti-input { min-width: auto; width: 100%; }
+}
+
+/* ===== ADM EVENTOS ===== */
+.coti-filter-search { min-width: 280px; }
+.entity-loading { font-size: 0.75rem; color: var(--c-gray); margin-top: 4px; }
+.field-error { display: block; color: #DC2626; font-size: 0.78rem; margin-top: 4px; }
+.form-input.input-error { border-color: #DC2626; }
+
+.entity-search-group { position: relative; width: 100%; }
+.entity-dropdown { position: relative; width: 100%; }
+.entity-dropdown-arrow { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--c-gray); pointer-events: none; transition: transform 0.2s; }
+.entity-dropdown-arrow.open { transform: translateY(-50%) rotate(180deg); }
+.entity-dropdown-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--c-white); border: 1px solid var(--c-border); border-radius: 8px;
+  max-height: 260px; overflow-y: auto; z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.entity-dropdown-search { padding: 8px; border-bottom: 1px solid var(--c-border); }
+.entity-dropdown-search .form-input { padding: 8px 10px; font-size: 0.85rem; }
+.entity-dropdown-item {
+  padding: 10px 12px; font-size: 0.85rem; color: var(--c-black);
+  cursor: pointer; transition: background 0.15s;
+}
+.entity-dropdown-item:hover { background: var(--c-light); }
+.entity-dropdown-empty { padding: 12px; text-align: center; color: var(--c-gray); font-size: 0.85rem; }
+.entity-dropdown-trigger { cursor: pointer; padding-right: 32px !important; width: 100%; }
+.entity-select { width: 100%; max-width: 400px; }
+.entity-select option { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.evento-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  word-break: break-word;
+  background: var(--c-light);
+  color: var(--c-gray);
+}
+.evento-type-badge.type-llamada { background: #EFF6FF; color: #1D4ED8; }
+.evento-type-badge.type-correo { background: #F0FDF4; color: #15803D; }
+.evento-type-badge.type-reunion { background: #FEF3C7; color: #B45309; }
+.evento-type-badge.type-visita { background: #F3E8FF; color: #7C3AED; }
+.evento-type-badge.type-compromiso { background: #FEF2F2; color: #DC2626; }
+
+.evento-entity-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: var(--c-light);
+  border: 1px solid var(--c-border);
+  color: var(--c-gray);
+  text-transform: capitalize;
+  word-break: break-word;
+}
+
+.evento-desc {
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ===== MODAL GENERAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 44000;
+}
+.modal-content {
+  background: var(--c-white);
+  border-radius: 14px;
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-card {
+  background: var(--c-white);
+  border-radius: 14px;
+  padding: 32px;
+  max-width: 20px;
+  width: 100%;
+}
+.modal-card.modal-lg {
+  max-width: 1200px;
+  padding: 0;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--c-border);
+}
+.modal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin: 0;
+}
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--c-gray);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.modal-close:hover {
+  background: var(--c-light);
+  color: var(--c-black);
+}
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  max-height: calc(100vh - 160px);
+}
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid var(--c-border);
+}
+.modal-icon {
+  color: #dc2626;
+  margin-bottom: 16px;
+}
+.modal-card h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin-bottom: 8px;
+}
+.modal-card p {
+  font-size: 0.88rem;
+  color: var(--c-gray);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ===== FORM GRID ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-grid .full-width {
+  grid-column: 1 / -1;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--c-black);
+}
+.form-input {
+  padding: 10px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  color: var(--c-black);
+  background: var(--c-white);
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+.form-input:focus {
+  border-color: var(--c-primary);
+}
+
+/* ===== SECTION CARDS ===== */
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.section-grid:last-child {
+  margin-bottom: 0;
+}
+.section-card {
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  background: var(--c-white);
+}
+.section-card:last-child {
+  margin-bottom: 0;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--c-light);
+  border-bottom: 1px solid var(--c-border);
+  border-radius: 10px 10px 0 0;
+  white-space: nowrap;
+}
+.section-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #1E3A5F;
+  color: #fff;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.section-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--c-black);
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+.section-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ===== FORM ROWS ===== */
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* ===== DATE RANGE ===== */
+.date-range-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.date-range-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.date-field {
+  flex: 0 1 auto;
+  min-width: 140px;
+}
+.time-field {
+  width: 100px;
+  flex-shrink: 0;
+}
+.date-separator {
+  color: var(--c-gray);
+  font-size: 0.85rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  padding-left: 34px;
+}
+.date-estado-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  align-self: center;
+}
+.date-estado-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.date-estado-badge .status-badge {
+  font-size: 0.82rem;
+  padding: 4px 14px;
+}
+.form-hint {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--c-gray);
+  font-style: italic;
+}
+
+/* ===== TAGS / BADGES ===== */
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #EFF6FF;
+  color: #1D4ED8;
+}
+.tag-badge.norma-badge {
+  background: #FEF3C7;
+  color: #92400E;
+}
+.tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.tag-remove:hover {
+  opacity: 1;
+}
+.label-hint {
+  font-weight: 400;
+  color: var(--c-gray-light);
+  font-size: 0.75rem;
+}
+.normas-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.btn-add-norma {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  background: var(--c-white);
+  color: var(--c-primary);
+  font-size: 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.btn-add-norma:hover {
+  border-color: var(--c-primary);
+  background: var(--c-light);
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--c-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--c-primary-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-outline {
+  padding: 10px 20px;
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+  background: var(--c-white);
+  color: var(--c-gray);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-outline:hover { border-color: var(--c-gray-light); color: var(--c-black); }
+
+/* ===== FILTROS ===== */
+.coti-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.coti-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.coti-filter-group label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.coti-select, .coti-input {
+  padding: 8px 12px;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  background: var(--c-white);
+  outline: none;
+  min-width: 200px;
+}
+.coti-select:focus, .coti-input:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.1);
+}
+.coti-select::placeholder, .coti-input::placeholder {
+  color: var(--c-gray-light);
+  opacity: 1;
+}
+
+.view-mode input,
+.view-mode select,
+.view-mode textarea {
+  pointer-events: none;
+  opacity: 0.7;
+  background: var(--c-light);
+  cursor: default;
+}
+.view-mode .tag-remove,
+.view-mode .btn-add-norma,
+.view-mode .entity-dropdown {
+  display: none !important;
 }
 </style>

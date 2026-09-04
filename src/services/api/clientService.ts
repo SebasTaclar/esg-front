@@ -1,37 +1,52 @@
 import { apiClient } from './apiConfig'
 import type {
   Cliente,
+  Client,
+  ClientContact,
   CreateClienteRequest,
   UpdateClienteRequest,
-  Contacto,
-  CreateContactoRequest,
-  UpdateContactoRequest,
-  PaginationParams,
+  CreateClientRequest,
+  UpdateClientRequest,
   PaginatedResponse,
 } from '@/types/crmTypes'
+
+export interface ClientListParams {
+  page?: number
+  limit?: number
+  search?: string
+}
 
 class ClientService {
   private readonly endpoint = '/clients'
 
-  async getAll(params?: PaginationParams): Promise<PaginatedResponse<Cliente>> {
-    const query = this.buildQuery(params)
-    const response = await apiClient.get<Cliente[]>(`${this.endpoint}${query}`)
-    return this.normalizeResponse(response.data, response)
+  async getAll(params?: ClientListParams): Promise<PaginatedResponse<Cliente>> {
+    const query = this.buildListQuery(params)
+    const response = await apiClient.get<Client[] | { clients: Client[]; count: number }>(
+      `${this.endpoint}${query}`,
+    )
+    return this.normalizeListResponse(response.data, params)
   }
 
   async getById(id: number): Promise<Cliente> {
-    const response = await apiClient.get<Cliente>(`${this.endpoint}/${id}`)
-    return response.data as unknown as Cliente
+    const response = await apiClient.get<Client>(`${this.endpoint}/${id}`)
+    return this.mapClientToCliente(response.data as unknown as Client)
   }
 
   async create(data: CreateClienteRequest): Promise<Cliente> {
-    const response = await apiClient.post<Cliente>(this.endpoint, data)
-    return response.data as unknown as Cliente
+    const payload = this.mapClientePayloadToClient(data)
+    const response = await apiClient.post<Client>(this.endpoint, payload)
+    return this.mapClientToCliente(response.data as unknown as Client)
   }
 
   async update(id: number, data: UpdateClienteRequest): Promise<Cliente> {
-    const response = await apiClient.put<Cliente>(`${this.endpoint}/${id}`, data)
-    return response.data as unknown as Cliente
+    const payload = this.mapClientePayloadToClient(data)
+    const response = await apiClient.patch<Client>(`${this.endpoint}/${id}`, payload)
+    return this.mapClientToCliente(response.data as unknown as Client)
+  }
+
+  async patch(id: number, data: UpdateClientRequest): Promise<Cliente> {
+    const response = await apiClient.patch<Client>(`${this.endpoint}/${id}`, data)
+    return this.mapClientToCliente(response.data as unknown as Client)
   }
 
   async delete(id: number): Promise<void> {
@@ -40,36 +55,36 @@ class ClientService {
 
   // ====== CONTACTOS ======
 
-  async getContactos(clienteId: number): Promise<Contacto[]> {
-    const response = await apiClient.get<Contacto[]>(`${this.endpoint}/${clienteId}/contacts`)
+  async getContactos(clienteId: number): Promise<ClientContact[]> {
+    const response = await apiClient.get<ClientContact[]>(`${this.endpoint}/${clienteId}/contacts`)
     return Array.isArray(response.data) ? response.data : []
   }
 
-  async createContacto(clienteId: number, data: CreateContactoRequest): Promise<Contacto> {
-    const response = await apiClient.post<Contacto>(
+  async createContacto(clienteId: number, data: Omit<ClientContact, 'id'>): Promise<ClientContact> {
+    const response = await apiClient.post<ClientContact>(
       `${this.endpoint}/${clienteId}/contacts`,
-      { ...data, clienteId },
+      data,
     )
-    return response.data as unknown as Contacto
+    return response.data as unknown as ClientContact
   }
 
   async updateContacto(
     clienteId: number,
     contactoId: number,
-    data: UpdateContactoRequest,
-  ): Promise<Contacto> {
-    const response = await apiClient.put<Contacto>(
+    data: Partial<ClientContact>,
+  ): Promise<ClientContact> {
+    const response = await apiClient.put<ClientContact>(
       `${this.endpoint}/${clienteId}/contacts/${contactoId}`,
       data,
     )
-    return response.data as unknown as Contacto
+    return response.data as unknown as ClientContact
   }
 
   async deleteContacto(clienteId: number, contactoId: number): Promise<void> {
     await apiClient.delete(`${this.endpoint}/${clienteId}/contacts/${contactoId}`)
   }
 
-  // ====== DOCUMENTOS ======
+  // ====== DOCUMENTOS / RESOURCES ======
 
   async getDocumentos(clienteId: number): Promise<unknown[]> {
     const response = await apiClient.get<unknown[]>(`${this.endpoint}/${clienteId}/documents`)
@@ -95,41 +110,119 @@ class ClientService {
     return Array.isArray(response.data) ? response.data : []
   }
 
+  // ====== MAPPERS ======
+
+  private mapClientToCliente(client: Client): Cliente {
+    return {
+      id: client.id,
+      razonSocial: client.name || '',
+      nit: client.nit || '',
+      codigo: client.code,
+      tipoOrganizacion: client.organizationType,
+      norma: client.norm,
+      ciudad: client.city || '',
+      departamento: client.department || '',
+      direccion: client.address || '',
+      telefono: client.phone || '',
+      correo: client.email || '',
+      paginaWeb: client.website,
+      estado: client.isProspect
+        ? 'prospecto'
+        : client.isActive
+          ? 'activo'
+          : 'inactivo',
+      observaciones: client.observations,
+      isActive: client.isActive,
+      isProspect: client.isProspect,
+      showResources: client.showResources,
+      contacts: client.contacts,
+      resources: client.resources,
+      createdAt: client.createdAt || new Date().toISOString(),
+      updatedAt: client.updatedAt || new Date().toISOString(),
+    }
+  }
+
+  private mapClientePayloadToClient(
+    data: CreateClienteRequest | UpdateClienteRequest,
+  ): CreateClientRequest {
+    const payload: CreateClientRequest = {
+      name: (data as CreateClienteRequest).razonSocial || '',
+      nit: (data as CreateClienteRequest).nit,
+      code: (data as CreateClienteRequest).codigo,
+      organizationType: (data as CreateClienteRequest).tipoOrganizacion,
+      norm: (data as CreateClienteRequest).norma,
+      city: (data as CreateClienteRequest).ciudad,
+      department: (data as CreateClienteRequest).departamento,
+      address: (data as CreateClienteRequest).direccion,
+      phone: (data as CreateClienteRequest).telefono,
+      email: (data as CreateClienteRequest).correo,
+      website: (data as CreateClienteRequest).paginaWeb,
+      observations: (data as CreateClienteRequest).observaciones,
+      contacts: (data as CreateClienteRequest).contacts,
+    }
+
+    if ('estado' in data && data.estado) {
+      if (data.estado === 'prospecto') {
+        payload.isProspect = true
+        payload.isActive = false
+      } else if (data.estado === 'activo') {
+        payload.isActive = true
+        payload.isProspect = false
+      } else {
+        payload.isActive = false
+        payload.isProspect = false
+      }
+    }
+
+    if ('showResources' in data) {
+      (payload as Record<string, unknown>)['show_resources'] = data.showResources
+    }
+
+    return payload
+  }
+
   // ====== HELPERS ======
 
-  private buildQuery(params?: PaginationParams): string {
+  private buildListQuery(params?: ClientListParams): string {
     if (!params) return ''
     const parts: string[] = []
     if (params.page) parts.push(`page=${params.page}`)
-    if (params.pageSize) parts.push(`pageSize=${params.pageSize}`)
-    if (params.sortBy) parts.push(`sortBy=${params.sortBy}`)
-    if (params.sortOrder) parts.push(`sortOrder=${params.sortOrder}`)
+    if (params.limit) parts.push(`limit=${params.limit}`)
+    if (params.search) parts.push(`search=${encodeURIComponent(params.search)}`)
     return parts.length > 0 ? `?${parts.join('&')}` : ''
   }
 
-  private normalizeResponse(
+  private normalizeListResponse(
     data: unknown,
-    raw: { statusCode: number; message: string },
+    params?: ClientListParams,
   ): PaginatedResponse<Cliente> {
     if (Array.isArray(data)) {
       return {
-        data,
+        data: data.map((c) => this.mapClientToCliente(c as Client)),
         total: data.length,
-        page: 1,
-        pageSize: data.length,
-        totalPages: 1,
+        page: params?.page || 1,
+        pageSize: params?.limit || data.length,
+        totalPages: params?.limit ? Math.ceil(data.length / params.limit) : 1,
       }
     }
-    if (data && typeof data === 'object' && 'count' in (data as Record<string, unknown>)) {
+
+    if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
+
+      const clients = (obj['clients'] || obj['data'] || []) as Client[]
+      const count = (obj['count'] as number) || clients.length
+      const page = (obj['page'] as number) || params?.page || 1
+      const limit = (obj['limit'] as number) || params?.limit || count
+
       return {
-        data: (obj['clients'] || obj['data'] || []) as Cliente[],
-        total: (obj['count'] as number) || 0,
-        page: 1,
-        pageSize: (obj['count'] as number) || 0,
-        totalPages: 1,
+        data: clients.map((c) => this.mapClientToCliente(c)),
+        total: count,
+        page,
+        pageSize: limit,
+        totalPages: limit > 0 ? Math.ceil(count / limit) : 1,
       }
     }
+
     return { data: [], total: 0, page: 1, pageSize: 0, totalPages: 0 }
   }
 }

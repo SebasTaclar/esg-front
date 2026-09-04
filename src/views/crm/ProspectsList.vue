@@ -7,7 +7,7 @@
         <p class="page-subtitle">{{ filteredProspects.length }} prospectos registrados</p>
       </div>
       <div class="header-actions">
-        <router-link to="/admin/crm/clientes/nuevo" class="btn-primary">
+        <router-link to="/admin/crm/clientes/nuevo?isProspect=true" class="btn-primary">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -65,6 +65,7 @@
           <table class="data-table">
             <thead>
               <tr>
+                <th>Código</th>
                 <th @click="toggleSort('razonSocial')" class="sortable">
                   Cliente
                   <span v-if="sortField === 'razonSocial'" class="sort-icon">
@@ -73,7 +74,7 @@
                 </th>
                 <th>Tipo de organización</th>
                 <th>Norma</th>
-                <th>Observaciones</th>
+                <th>OBS</th>
                 <th @click="toggleSort('estado')" class="sortable">
                   Estado
                   <span v-if="sortField === 'estado'" class="sort-icon">
@@ -85,11 +86,9 @@
             </thead>
             <tbody>
               <tr v-for="prospecto in paginatedProspects" :key="prospecto.id">
+                <td class="code-cell">{{ prospecto.codigo || '-' }}</td>
                 <td>
                   <div class="client-info">
-                    <div class="client-avatar prospecto">
-                      {{ getInitials(prospecto.razonSocial) }}
-                    </div>
                     <div>
                       <router-link :to="`/admin/crm/prospectos/${prospecto.id}`" class="client-name">
                         {{ prospecto.razonSocial }}
@@ -138,6 +137,19 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </router-link>
+                    <button class="action-btn convert" title="Convertir a Cliente" @click="confirmConvert(prospecto)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <polyline points="16 11 18 13 22 9"/>
+                      </svg>
+                    </button>
+                    <button class="action-btn delete" title="Eliminar" @click="confirmDelete(prospecto)">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -162,6 +174,57 @@
             </div>
             <div class="modal-footer">
               <button class="btn-secondary" @click="closeObsModal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delete Confirmation Modal -->
+        <div v-if="showDeleteModal" class="modal-overlay" @click="showDeleteModal = false">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h3>Eliminar Prospecto</h3>
+              <button class="modal-close" @click="showDeleteModal = false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>¿Estás seguro de que deseas eliminar el prospecto <strong>{{ prospectoToDelete?.razonSocial }}</strong>?</p>
+              <p class="delete-warning">Esta acción no se puede deshacer.</p>
+              <p v-if="deleteError" class="delete-error">{{ deleteError }}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-secondary" @click="showDeleteModal = false">Cancelar</button>
+              <button class="btn-danger" :disabled="deleting" @click="handleDelete">
+                {{ deleting ? 'Eliminando...' : 'Eliminar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Convert Confirmation Modal -->
+        <div v-if="showConvertModal" class="modal-overlay" @click="showConvertModal = false">
+          <div class="modal-content" @click.stop>
+            <div class="modal-header">
+              <h3>Convertir a Cliente</h3>
+              <button class="modal-close" @click="showConvertModal = false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>¿Deseas convertir <strong>{{ prospectoToConvert?.razonSocial }}</strong> en un cliente activo?</p>
+              <p v-if="convertError" class="delete-error">{{ convertError }}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-secondary" @click="showConvertModal = false">Cancelar</button>
+              <button class="btn-success" :disabled="converting" @click="handleConvert">
+                {{ converting ? 'Convirtiendo...' : 'Convertir' }}
+              </button>
             </div>
           </div>
         </div>
@@ -204,7 +267,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useCRM } from '@/composables/useCRM'
 import type { Cliente } from '@/types/crmTypes'
 
-const { clientes, loading, fetchClientes } = useCRM()
+const { clientes, loading, fetchClientes, deleteCliente, convertProspecto, error } = useCRM()
 
 const searchTerm = ref('')
 const sortField = ref<string>('razonSocial')
@@ -287,12 +350,62 @@ function closeObsModal() {
   selectedProspecto.value = null
 }
 
+const showDeleteModal = ref(false)
+const prospectoToDelete = ref<Cliente | null>(null)
+const deleting = ref(false)
+const deleteError = ref<string | null>(null)
+
+function confirmDelete(prospecto: Cliente) {
+  prospectoToDelete.value = prospecto
+  deleteError.value = null
+  showDeleteModal.value = true
+}
+
+async function handleDelete() {
+  if (!prospectoToDelete.value) return
+  deleting.value = true
+  deleteError.value = null
+  const success = await deleteCliente(prospectoToDelete.value.id)
+  deleting.value = false
+  if (success) {
+    showDeleteModal.value = false
+    prospectoToDelete.value = null
+  } else {
+    deleteError.value = error.value || 'No se pudo eliminar el prospecto. Puede tener contactos o proyectos asociados.'
+  }
+}
+
+const showConvertModal = ref(false)
+const prospectoToConvert = ref<Cliente | null>(null)
+const converting = ref(false)
+const convertError = ref<string | null>(null)
+
+function confirmConvert(prospecto: Cliente) {
+  prospectoToConvert.value = prospecto
+  convertError.value = null
+  showConvertModal.value = true
+}
+
+async function handleConvert() {
+  if (!prospectoToConvert.value) return
+  converting.value = true
+  convertError.value = null
+  const result = await convertProspecto(prospectoToConvert.value.id)
+  converting.value = false
+  if (result) {
+    showConvertModal.value = false
+    prospectoToConvert.value = null
+  } else {
+    convertError.value = error.value || 'No se pudo convertir el prospecto.'
+  }
+}
+
 watch([searchTerm], () => {
   currentPage.value = 1
 })
 
 onMounted(() => {
-  fetchClientes()
+  fetchClientes({ page: 1, limit: 9999 })
 })
 </script>
 
@@ -488,6 +601,8 @@ onMounted(() => {
   color: var(--c-black);
   text-decoration: none;
   transition: color 0.15s;
+  max-width: 220px;
+  word-wrap: break-word;
 }
 .client-name:hover { color: var(--c-primary); }
 
@@ -496,11 +611,20 @@ onMounted(() => {
   font-size: 0.78rem;
   color: var(--c-gray);
   margin-top: 2px;
+  max-width: 220px;
+  word-wrap: break-word;
 }
 
 .nit-cell {
   font-family: 'Courier New', monospace;
   font-weight: 500;
+}
+
+.code-cell {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--c-primary);
+  min-width: 120px;
 }
 
 .org-type-text {
@@ -606,6 +730,14 @@ onMounted(() => {
   background: var(--c-light);
   color: var(--c-primary);
   transform: translateY(-1px);
+}
+.action-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+.action-btn.convert:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
 }
 
 /* ===== PAGINATION ===== */
@@ -744,6 +876,43 @@ onMounted(() => {
 .btn-secondary:hover {
   border-color: var(--c-gray-light);
   color: var(--c-black);
+}
+.btn-danger {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #dc2626;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-success {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #059669;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-success:hover:not(:disabled) { background: #047857; }
+.btn-success:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.delete-warning {
+  color: #b45309;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+.delete-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+  margin-top: 8px;
 }
 
 /* ===== LOADING & EMPTY ===== */

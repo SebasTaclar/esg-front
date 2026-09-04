@@ -83,7 +83,7 @@ const steps = [
   {
     number: '05',
     title: 'Mejora continua',
-    description: 'Promovemos la innovación y la mejora permanente para sostenir el éxito.',
+    description: 'Promovemos la innovación y la mejora permanente para sostener el éxito.',
     icon: 'fas fa-sync-alt'
   }
 ]

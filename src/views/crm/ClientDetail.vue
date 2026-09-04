@@ -10,13 +10,13 @@
           Clientes
         </router-link>
         <div class="client-title">
-          <div class="client-avatar" :class="cliente.estado">
+          <div class="client-avatar" :class="getAvatarClass()">
             {{ getInitials(cliente.razonSocial) }}
           </div>
           <div>
             <h1>{{ cliente.razonSocial }}</h1>
             <span class="client-meta">
-              <span class="status-badge" :class="cliente.estado">{{ capitalizeFirst(cliente.estado) }}</span>
+              <span class="status-badge" :class="getStatusClass()">{{ getStatusLabel() }}</span>
               · {{ cliente.nit }}
             </span>
           </div>
@@ -29,13 +29,6 @@
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
           Editar
-        </router-link>
-        <router-link to="/admin/crm/proyectos/nuevo" class="btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Nuevo Proyecto
         </router-link>
       </div>
     </div>
@@ -86,8 +79,8 @@
               <div class="info-row">
                 <span class="info-label">Estado</span>
                 <span class="info-value">
-                  <span class="status-badge" :class="cliente.estado">
-                    {{ capitalizeFirst(cliente.estado) }}
+                  <span class="status-badge" :class="getStatusClass()">
+                    {{ getStatusLabel() }}
                   </span>
                 </span>
               </div>
@@ -99,27 +92,33 @@
             <div class="info-rows">
               <div class="info-row">
                 <span class="info-label">Dirección</span>
-                <span class="info-value">{{ cliente.direccion }}</span>
+                <span class="info-value">{{ cliente.direccion || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Ciudad</span>
-                <span class="info-value">{{ cliente.ciudad }}</span>
+                <span class="info-value">{{ cliente.ciudad || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Departamento</span>
-                <span class="info-value">{{ cliente.departamento }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">Persona de Contacto</span>
-                <span class="info-value">{{ contactos.length > 0 ? contactos[0].nombre : '-' }}</span>
+                <span class="info-value">{{ cliente.departamento || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Teléfono</span>
-                <span class="info-value">{{ cliente.telefono }}</span>
+                <span class="info-value">{{ cliente.telefono || '-' }}</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Correo</span>
-                <span class="info-value">{{ cliente.correo }}</span>
+                <span class="info-value">{{ cliente.correo || '-' }}</span>
+              </div>
+              <div class="info-row" v-if="contactos.length > 0">
+                <span class="info-label">Contacto Principal</span>
+                <span class="info-value">{{ contactos.find(c => c.esPrincipal)?.nombre || contactos[0]?.nombre || '-' }}</span>
+              </div>
+              <div class="info-row" v-if="cliente.paginaWeb">
+                <span class="info-label">Página Web</span>
+                <span class="info-value link">
+                  <a :href="cliente.paginaWeb" target="_blank" rel="noopener">{{ cliente.paginaWeb }}</a>
+                </span>
               </div>
             </div>
           </div>
@@ -127,6 +126,41 @@
           <div class="info-card full-width" v-if="cliente.observaciones">
             <h3>Observaciones</h3>
             <p class="observaciones">{{ cliente.observaciones }}</p>
+          </div>
+
+          <div class="info-card full-width">
+            <h3>Contacto Principal</h3>
+            <div v-if="contactos.length > 0" class="contacts-inline">
+              <div v-for="(contacto, index) in contactos.filter(c => c.esPrincipal)" :key="index" class="contact-inline-card">
+                <div class="contact-inline-header">
+                  <span class="contact-inline-name">{{ contacto.nombre }}</span>
+                  <span v-if="contacto.esPrincipal" class="principal-badge">Principal</span>
+                </div>
+                <div class="contact-inline-details">
+                  <span v-if="contacto.cargo" class="contact-inline-detail">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    {{ contacto.cargo }}
+                  </span>
+                  <span v-if="contacto.celular" class="contact-inline-detail">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    {{ contacto.celular }}
+                  </span>
+                  <span v-if="contacto.correo" class="contact-inline-detail">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                      <polyline points="22,6 12,13 2,6"/>
+                    </svg>
+                    {{ contacto.correo }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <p v-else class="no-contacts">No hay contactos registrados.</p>
           </div>
 
           <div class="info-card full-width">
@@ -141,10 +175,6 @@
                 <span class="summary-label">Proyectos</span>
               </div>
               <div class="summary-stat">
-                <span class="summary-value">{{ proyectos.filter(p => p.estadoNombre === 'En ejecución').length }}</span>
-                <span class="summary-label">Activos</span>
-              </div>
-              <div class="summary-stat">
                 <span class="summary-value">{{ formatRelativeDate(cliente.createdAt) }}</span>
                 <span class="summary-label">Cliente desde</span>
               </div>
@@ -157,182 +187,340 @@
       <div v-if="activeTab === 'contactos'" class="tab-panel">
         <div class="section-header">
           <h3>Contactos ({{ contactos.length }})</h3>
-          <button class="btn-outline-sm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Agregar Contacto
-          </button>
         </div>
-        <div class="table-responsive">
+        <div v-if="contactos.length > 0" class="table-responsive">
           <table class="data-table">
             <thead>
               <tr>
                 <th>Nombre</th>
                 <th>Cargo</th>
-                <th>Celular</th>
+                <th>Teléfono</th>
                 <th>Correo</th>
+                <th>Principal</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="contacto in contactos" :key="contacto.id">
+              <tr v-for="(contacto, index) in contactos" :key="index">
                 <td class="contact-name">{{ contacto.nombre }}</td>
-                <td>{{ contacto.cargo }}</td>
-                <td class="mono">{{ contacto.celular }}</td>
-                <td>{{ contacto.correo }}</td>
+                <td>{{ contacto.cargo || '-' }}</td>
+                <td class="mono">{{ contacto.celular || '-' }}</td>
+                <td>{{ contacto.correo || '-' }}</td>
+                <td>
+                  <span v-if="contacto.esPrincipal" class="principal-badge">Principal</span>
+                  <span v-else class="secondary-text">-</span>
+                </td>
                 <td>
                   <div class="actions-cell">
-                    <button class="action-btn" title="Editar" @click="editContact(contacto)">
+                    <router-link :to="`/admin/crm/clientes/${cliente.id}/editar?section=contacts`" class="action-btn" title="Editar">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
-                    </button>
-                    <button class="action-btn delete" title="Eliminar" @click="deleteContact(contacto.id)">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
+                    </router-link>
                   </div>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-if="contactos.length === 0" class="empty-tab">
+        <div v-else class="empty-tab">
           <p>No hay contactos registrados para este cliente.</p>
         </div>
       </div>
 
       <!-- PROYECTOS -->
       <div v-if="activeTab === 'proyectos'" class="tab-panel">
-        <div class="section-header">
-          <h3>Proyectos ({{ proyectos.length }})</h3>
-          <router-link to="/admin/crm/proyectos/nuevo" class="btn-outline-sm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Nuevo Proyecto
-          </router-link>
+        <ProjectsList :client-id="cliente.id" />
+      </div>
+
+      <!-- RECURSOS -->
+      <div v-if="activeTab === 'recursos'" class="tab-panel">
+        <div v-if="uploadSuccessMessage" class="success-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          {{ uploadSuccessMessage }}
         </div>
-        <div class="table-responsive">
-          <table class="data-table">
+        <div class="section-header">
+          <h3>Documentación ({{ filteredResources.length }})</h3>
+          <button class="btn-upload" @click="openUploadModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Subir documento
+          </button>
+        </div>
+
+        <div class="filters-bar">
+          <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input v-model="resourceSearch" type="text" placeholder="Buscar por nombre..." class="search-input" />
+            <button v-if="resourceSearch" class="clear-btn" @click="resourceSearch = ''">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div v-if="uploading" class="upload-progress">
+          <div class="spinner-small"></div>
+          <span>Subiendo archivo...</span>
+        </div>
+
+        <div class="table-card">
+          <div v-if="filteredResources.length > 0" class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Tipo</th>
+                  <th>Visible</th>
+                  <th>Subido por</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(doc, index) in filteredResources" :key="doc.id || index">
+                  <td>
+                    <div class="doc-name-cell">
+                      <div class="doc-icon" :style="{ background: getDocColor(doc.type) }">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                      </div>
+                      <span class="doc-name">{{ doc.name }}</span>
+                    </div>
+                  </td>
+                  <td><span class="type-badge" :class="doc.type">{{ formatDocType(doc.type) }}</span></td>
+                  <td>
+                    <span class="visibility-badge" :class="doc.isVisible !== false ? 'visible' : 'hidden'">
+                      {{ doc.isVisible !== false ? 'Sí' : 'No' }}
+                    </span>
+                  </td>
+                  <td>{{ doc.user || currentUser?.name || '-' }}</td>
+                  <td>{{ formatDateShort(doc.uploadedAt || doc.createdAt) }}</td>
+                  <td>
+                    <div class="actions-cell">
+                      <a v-if="doc.url" :href="doc.url" target="_blank" class="action-btn" title="Descargar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7 10 12 15 17 10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                      </a>
+                      <button v-if="doc.id" class="action-btn" title="Actualizar" @click="openEditResource(doc)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button v-if="doc.id" class="action-btn delete-btn" title="Eliminar" @click="deleteResource(doc.id, doc.name)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div v-else class="empty-tab">
+            <p>No hay documentos asociados a este cliente.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Modal Recursos -->
+      <Teleport to="body">
+        <div v-if="showResourceUploadModal" class="modal-overlay" @click.self="showResourceUploadModal = false">
+          <div class="modal-content modal-sm" @click.stop>
+            <div class="modal-header">
+              <h3>Subir Documento</h3>
+              <button class="modal-close" @click="showResourceUploadModal = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-grid-modal">
+                <div class="form-group">
+                  <label>Tipo de documento *</label>
+                  <select v-model="resourceUploadForm.type" class="form-input" :class="{ 'field-error': resourceSubmitted && !resourceUploadForm.type }">
+                    <option value="">Seleccionar...</option>
+                    <option value="documentos_legales">Documentos Legales y Tributarios</option>
+                    <option value="comunicaciones">Comunicaciones y Actas</option>
+                    <option value="propuesta">Propuesta y Negociación</option>
+                    <option value="legalizacion">Legalización / Contrato</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                  <input v-if="resourceUploadForm.type === 'otro'" v-model="resourceUploadForm.customType" type="text" class="form-input" placeholder="Escribe el tipo de documento" style="margin-top: 8px;" :class="{ 'field-error': resourceSubmitted && resourceUploadForm.type === 'otro' && !resourceUploadForm.customType }" />
+                </div>
+                <div class="form-group">
+                  <label>Nombre del archivo</label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="resourceUploadForm.useOriginalName" />
+                    Usar nombre original del archivo
+                  </label>
+                  <input v-if="!resourceUploadForm.useOriginalName" v-model="resourceUploadForm.name" type="text" class="form-input" placeholder="Nombre del documento" />
+                  <span v-else class="file-original-name">{{ resourceUploadForm.file?.name || 'Selecciona un archivo primero' }}</span>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Archivo *</label>
+                  <div class="file-input-wrapper" :class="{ 'field-error': resourceSubmitted && !resourceUploadForm.file, 'has-file': resourceUploadForm.file }">
+                    <input type="file" class="file-input" @change="onResourceFileChange" />
+                    <div class="file-input-label" v-if="!resourceUploadForm.file">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                      </svg>
+                      Seleccionar archivo
+                    </div>
+                    <div class="file-selected" v-else>
+                      <span>{{ resourceUploadForm.file?.name }}</span>
+                      <button class="file-remove" @click="resourceUploadForm.file = null">✕</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="resourceUploadForm.isVisible" />
+                    Visible en Portal del Cliente
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" @click="showResourceUploadModal = false">Cancelar</button>
+              <button class="btn-save" :disabled="uploading" @click="handleResourceUpload">
+                <span v-if="uploading" class="btn-spinner"></span>
+                {{ uploading ? 'Subiendo...' : 'Subir Documento' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- Delete Confirmation Modal Recursos -->
+      <Teleport to="body">
+        <div v-if="showResourceDeleteModal" class="modal-overlay" @click.self="showResourceDeleteModal = false">
+          <div class="modal-content modal-sm" @click.stop>
+            <div class="delete-modal-body">
+              <div class="delete-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <h3 class="delete-title">Eliminar documento</h3>
+              <p class="delete-text">¿Estás seguro de eliminar <strong>{{ resourceDeleteName }}</strong>? Esta acción no se puede deshacer.</p>
+              <div class="delete-actions">
+                <button class="btn-cancel" @click="showResourceDeleteModal = false">Cancelar</button>
+                <button class="btn-delete" @click="confirmResourceDelete">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- Edit Modal Recursos -->
+      <Teleport to="body">
+        <div v-if="showResourceEditModal" class="modal-overlay" @click.self="showResourceEditModal = false">
+          <div class="modal-content modal-sm" @click.stop>
+            <div class="modal-header">
+              <h3>Actualizar Documento</h3>
+              <button class="modal-close" @click="showResourceEditModal = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="form-grid-modal">
+                <div class="form-group">
+                  <label>Tipo de documento *</label>
+                  <select v-model="resourceEditForm.type" class="form-input">
+                    <option value="">Seleccionar...</option>
+                    <option value="documentos_legales">Documentos Legales y Tributarios</option>
+                    <option value="comunicaciones">Comunicaciones y Actas</option>
+                    <option value="propuesta">Propuesta y Negociación</option>
+                    <option value="legalizacion">Legalización / Contrato</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                  <input v-if="resourceEditForm.type === 'otro'" v-model="resourceEditForm.customType" type="text" class="form-input" placeholder="Escribe el tipo de documento" style="margin-top: 8px;" />
+                </div>
+                <div class="form-group">
+                  <label>Nombre del archivo</label>
+                  <input v-model="resourceEditForm.name" type="text" class="form-input" placeholder="Nombre del documento" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label class="checkbox-label">
+                    <input type="checkbox" v-model="resourceEditForm.isVisible" />
+                    Visible en Portal del Cliente
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn-cancel" @click="showResourceEditModal = false">Cancelar</button>
+              <button class="btn-save" :disabled="savingResource" @click="handleResourceUpdate">
+                <span v-if="savingResource" class="btn-spinner"></span>
+                {{ savingResource ? 'Guardando...' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+
+      <!-- COTIZACIONES -->
+      <div v-if="activeTab === 'cotizaciones'" class="tab-panel">
+        <div class="section-header">
+          <h3>Cotizaciones ({{ cotizaciones.length }})</h3>
+        </div>
+        <div v-if="cotizaciones.length > 0" class="quotes-table-wrap">
+          <table class="quotes-table">
             <thead>
               <tr>
                 <th>Código</th>
-                <th>Tipo</th>
-                <th>Norma</th>
-                <th>Responsable</th>
+                <th>Proyecto</th>
+                <th>Valor Total</th>
                 <th>Estado</th>
-                <th>Inicio</th>
-                <th>Fin</th>
+                <th>Vigencia</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="proyecto in proyectos" :key="proyecto.id">
-                <td class="code-cell">{{ proyecto.codigo }}</td>
-                <td>{{ proyecto.tipoProyectoNombre }}</td>
-                <td>{{ proyecto.normaCodigo }}</td>
-                <td>{{ proyecto.responsable }}</td>
+              <tr v-for="cot in cotizaciones" :key="cot.id">
+                <td class="code-cell">{{ cot.code }}</td>
+                <td>{{ cot.project ? cot.project.code + ' - ' + cot.project.description : '-' }}</td>
+                <td class="amount-cell">{{ formatCurrency(cot.totalAmount) }}</td>
                 <td>
-                  <span class="status-badge" :style="{ background: proyecto.estadoColor + '15', color: proyecto.estadoColor }">
-                    {{ proyecto.estadoNombre }}
-                  </span>
+                  <span class="status-badge" :class="'status-' + cot.status">{{ getQuoteStatusLabel(cot.status) }}</span>
                 </td>
-                <td class="date-cell">{{ formatDate(proyecto.fechaInicio) }}</td>
-                <td class="date-cell">{{ proyecto.fechaFin ? formatDate(proyecto.fechaFin) : '-' }}</td>
+                <td>{{ cot.validUntil ? formatDate(cot.validUntil) : '-' }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-if="proyectos.length === 0" class="empty-tab">
-          <p>Este cliente aún no tiene proyectos.</p>
-        </div>
-      </div>
-
-      <!-- COTIZACIONES -->
-      <div v-if="activeTab === 'cotizaciones'" class="tab-panel">
-        <div class="empty-tab">
+        <div v-if="cotizaciones.length === 0" class="empty-tab">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
           <h3>Cotizaciones</h3>
-          <p>Próximamente podrás gestionar cotizaciones desde aquí.</p>
-        </div>
-      </div>
-
-      <!-- SEGUIMIENTOS -->
-      <div v-if="activeTab === 'seguimientos'" class="tab-panel">
-        <div class="section-header">
-          <h3>Seguimientos ({{ allSeguimientos.length }})</h3>
-        </div>
-        <div class="followup-list">
-          <div v-for="seg in allSeguimientos" :key="seg.id" class="followup-item">
-            <div class="followup-icon" :class="seg.tipo">
-              <span v-html="getSeguimientoIcon(seg.tipo)"></span>
-            </div>
-            <div class="followup-content">
-              <div class="followup-header">
-                <span class="followup-type">{{ capitalizeFirst(seg.tipo) }}</span>
-                <span class="followup-date">{{ formatDate(seg.fecha) }}</span>
-              </div>
-              <p class="followup-desc">{{ seg.descripcion }}</p>
-              <span class="followup-user">{{ seg.usuario }}</span>
-            </div>
-          </div>
-        </div>
-        <div v-if="allSeguimientos.length === 0" class="empty-tab">
-          <p>No hay seguimientos registrados para este cliente.</p>
-        </div>
-      </div>
-
-      <!-- DOCUMENTOS -->
-      <div v-if="activeTab === 'documentos'" class="tab-panel">
-        <div class="section-header">
-          <h3>Documentos ({{ allDocumentos.length }})</h3>
-          <button class="btn-outline-sm">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            Subir Documento
-          </button>
-        </div>
-        <div class="docs-grid">
-          <div v-for="doc in allDocumentos" :key="doc.id" class="doc-card">
-            <div class="doc-icon" :class="getDocColor(doc.tipo)">
-              <span v-html="getDocIcon(doc.tipo)"></span>
-            </div>
-            <div class="doc-info">
-              <span class="doc-name">{{ doc.nombre }}</span>
-              <span class="doc-meta">{{ formatFileSize(doc.tamano) }} · {{ formatDate(doc.createdAt) }}</span>
-            </div>
-          </div>
-        </div>
-        <div v-if="allDocumentos.length === 0" class="empty-tab">
-          <p>No hay documentos cargados para este cliente.</p>
-        </div>
-      </div>
-
-      <!-- CRONOLOGÍA -->
-      <div v-if="activeTab === 'cronologia'" class="tab-panel">
-        <div class="timeline">
-          <div v-for="evento in cronologia" :key="evento.id" class="timeline-item">
-            <div class="timeline-dot" :class="getEventColor(evento.tipo)"></div>
-            <div class="timeline-content">
-              <span class="timeline-text">{{ evento.descripcion }}</span>
-              <span class="timeline-meta">
-                {{ evento.usuario }} · {{ formatRelativeTime(evento.fecha) }}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div v-if="cronologia.length === 0" class="empty-tab">
-          <p>No hay eventos en la cronología.</p>
+          <p>No hay cotizaciones registradas para este cliente.</p>
         </div>
       </div>
     </div>
@@ -352,57 +540,155 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCRM } from '@/composables/useCRM'
-import { projectService } from '@/services/api/projectMockService'
-import type { Cliente, Contacto, Proyecto, Seguimiento, Documento, EventoCronologia } from '@/types/crmTypes'
+import { authService } from '@/services/api/authService'
+import { projectService } from '@/services/api/projectService'
+import { quoteService } from '@/services/api/quoteService'
+import { documentService } from '@/services/api/documentService'
+import { apiClient } from '@/services/api/apiConfig'
+import type { Cliente, Contacto, Proyecto, Seguimiento, ClientContact, ClientResource, Cotizacion, EstadoCotizacion, DocumentType } from '@/types/crmTypes'
+import ProjectsList from '@/views/crm/ProjectsList.vue'
+
+interface ResourceItem {
+  id?: number
+  name: string
+  url: string
+  type: string
+  size?: number
+  user?: string
+  isVisible?: boolean
+  uploadedAt?: string
+  createdAt?: string
+}
 
 const route = useRoute()
-const { loading, fetchCliente, fetchContactos, fetchCronologia } = useCRM()
+const { loading, fetchCliente } = useCRM()
 
 const cliente = ref<Cliente | null>(null)
 const contactos = ref<Contacto[]>([])
 const proyectos = ref<Proyecto[]>([])
+const cotizaciones = ref<Cotizacion[]>([])
 const allSeguimientos = ref<Seguimiento[]>([])
-const allDocumentos = ref<Documento[]>([])
-const cronologia = ref<EventoCronologia[]>([])
+const resources = ref<ResourceItem[]>([])
 const activeTab = ref('info')
+const uploading = ref(false)
+const currentUser = authService.getCurrentUser()
+
+const resourceSearch = ref('')
+const showResourceUploadModal = ref(false)
+const showResourceDeleteModal = ref(false)
+const showResourceEditModal = ref(false)
+const savingResource = ref(false)
+const resourceDeleteId = ref(0)
+const resourceDeleteName = ref('')
+const resourceSubmitted = ref(false)
+const resourceUploadForm = ref({ type: '' as DocumentType | 'otro' | '', name: '', customType: '', useOriginalName: true, isVisible: true, file: null as File | null })
+const resourceEditForm = ref({ id: 0, name: '', type: '' as string, customType: '', isVisible: true })
+const uploadSuccessMessage = ref('')
 
 const tabs = computed(() => [
   { id: 'info', label: 'Información', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' },
   { id: 'contactos', label: 'Contactos', count: contactos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
   { id: 'proyectos', label: 'Proyectos', count: proyectos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>' },
-  { id: 'cotizaciones', label: 'Cotizaciones', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-  { id: 'seguimientos', label: 'Seguimientos', count: allSeguimientos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
-  { id: 'documentos', label: 'Documentos', count: allDocumentos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
-  { id: 'cronologia', label: 'Cronología', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+  { id: 'recursos', label: 'Documentación', count: resources.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' },
+  { id: 'cotizaciones', label: 'Cotizaciones', count: cotizaciones.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
 ])
+
+function getAvatarClass(): string {
+  if (!cliente.value) return ''
+  if (cliente.value.isProspect) return 'prospect'
+  if (cliente.value.isActive) return 'active'
+  return 'inactive'
+}
+
+function getStatusClass(): string {
+  if (!cliente.value) return ''
+  if (cliente.value.isProspect) return 'prospect'
+  if (cliente.value.isActive) return 'active'
+  return 'inactive'
+}
+
+function getStatusLabel(): string {
+  if (!cliente.value) return ''
+  if (cliente.value.isProspect) return 'Prospecto'
+  if (cliente.value.isActive) return 'Cliente'
+  return 'Inactivo'
+}
 
 async function loadClientData(clienteId: number) {
   cliente.value = await fetchCliente(clienteId)
   if (!cliente.value) return
 
-  contactos.value = await fetchContactos(clienteId)
+  contactos.value = (cliente.value.contacts || []).map((c: ClientContact) => ({
+    id: c.id || 0,
+    clienteId,
+    nombre: c.name || '',
+    cargo: c.position || '',
+    celular: c.phone || '',
+    correo: c.email || '',
+    esPrincipal: c.isPrimary || false,
+    createdAt: new Date().toISOString(),
+  }))
+
+  // Ensure only one principal contact
+  const principals = contactos.value.filter(c => c.esPrincipal)
+  if (principals.length > 1) {
+    principals.forEach((c, i) => {
+      if (i > 0) c.esPrincipal = false
+    })
+  }
+
   proyectos.value = await projectService.getByCliente(clienteId)
+
+  try {
+    const cotResponse = await quoteService.getByClient(clienteId)
+    cotizaciones.value = Array.isArray(cotResponse) ? cotResponse : []
+  } catch {
+    cotizaciones.value = []
+  }
 
   // Load seguimientos for all projects
   const allSegs: Seguimiento[] = []
-  for (const p of proyectos.value) {
-    const segs = await projectService.getSeguimientos(p.id)
-    allSegs.push(...segs)
-  }
+  try {
+    for (const p of proyectos.value) {
+      try {
+        const segs = await projectService.getSeguimientos(p.id)
+        allSegs.push(...segs)
+      } catch { /* skip failed project */ }
+    }
+  } catch { /* skip seguimientos */ }
   allSeguimientos.value = allSegs.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 
-  // Load documentos for all projects
-  const allDocs: Documento[] = []
-  for (const p of proyectos.value) {
-    const docs = await projectService.getDocumentos(p.id)
-    allDocs.push(...docs)
-  }
-  allDocumentos.value = allDocs
+  resources.value = (cliente.value.resources || []).map((r: ClientResource) => ({
+    name: r.name,
+    url: r.url,
+    type: r.type,
+    isVisible: (r as any).isVisible !== false,
+    uploadedAt: r.uploadedAt,
+  }))
 
-  cronologia.value = await fetchCronologia('cliente', clienteId)
+  try {
+    const docs = await documentService.getByEntity('client', clienteId)
+    console.log('Documents fetched for client:', clienteId, docs)
+    const existingNames = new Set(resources.value.map(r => r.name))
+    for (const doc of docs) {
+      if (!existingNames.has(doc.name)) {
+        resources.value.push({
+          id: doc.id,
+          name: doc.name,
+          url: doc.url || '',
+          type: doc.type || 'other',
+          size: doc.size,
+          user: doc.user,
+          isVisible: doc.isVisible,
+          uploadedAt: doc.createdAt,
+        })
+      }
+    }
+  } catch (e) { console.error('Error fetching docs:', e) }
+
 }
 
 function formatDate(dateStr: string): string {
@@ -410,95 +696,167 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  if (diffDays === 0) return 'Hoy'
-  if (diffDays === 1) return 'Ayer'
-  if (diffDays < 7) return `Hace ${diffDays} días`
-  if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`
-  if (diffDays < 365) return `Hace ${Math.floor(diffDays / 30)} meses`
-  return `Hace ${Math.floor(diffDays / 365)} años`
-}
-
 function formatRelativeDate(dateStr: string): string {
   const date = new Date(dateStr)
   return date.toLocaleDateString('es-CO', { month: 'short', year: 'numeric' })
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1048576).toFixed(1)} MB`
 }
 
 function getInitials(name: string): string {
   return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase()
 }
 
-function capitalizeFirst(str: string): string {
-  return str.charAt(0).toUpperCase() + str.slice(1)
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
-function editContact(contacto: Contacto) {
-  alert(`Editar contacto: ${contacto.nombre}`)
-}
-
-function deleteContact(contactoId: number) {
-  if (confirm('¿Estás seguro de eliminar este contacto?')) {
-    alert(`Contacto ${contactoId} eliminado`)
+function getQuoteStatusLabel(status: EstadoCotizacion): string {
+  const map: Record<EstadoCotizacion, string> = {
+    pendiente: 'Pendiente',
+    enviada: 'Enviada',
+    aprobada: 'Aprobada',
+    rechazada: 'Rechazada',
+    vencida: 'Vencida',
   }
+  return map[status] || status
 }
 
-function getSeguimientoIcon(tipo: string): string {
-  const icons: Record<string, string> = {
-    llamada: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>',
-    correo: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
-    reunion: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
-    visita: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-    compromiso: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+const filteredResources = computed(() => {
+  let result = [...resources.value]
+  if (resourceSearch.value) {
+    const term = resourceSearch.value.toLowerCase()
+    result = result.filter(d => (d.name || '').toLowerCase().includes(term))
   }
-  return icons[tipo] || icons.compromiso
-}
+  return result
+})
 
-function getDocIcon(tipo: string): string {
-  const icons: Record<string, string> = {
-    contrato: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-    cotizacion: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-    informe: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-    certificado: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
-    acta: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-    presentacion: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
-  }
-  return icons[tipo] || icons.informe
-}
+watch([resourceSearch], () => {})
 
-function getDocColor(tipo: string): string {
+function getDocColor(type: string): string {
   const colors: Record<string, string> = {
-    contrato: 'blue',
-    cotizacion: 'amber',
-    informe: 'green',
-    certificado: 'purple',
-    acta: 'teal',
-    presentacion: 'orange',
+    documentos_legales: '#EFF6FF', comunicaciones: '#FEF3C7', propuesta: '#F0FDF4', legalizacion: '#FDF4FF',
+    contrato: '#EFF6FF', cotizacion: '#F0FDF4', informe: '#FEF3C7', certificado: '#FDF4FF',
+    acta: '#FFF7ED', presentacion: '#F0FDFA', hoja_de_vida: '#FEF2F2', soportes_estudio: '#F5F3FF',
   }
-  return colors[tipo] || 'gray'
+  return colors[type] || '#F3F4F6'
 }
 
-function getEventColor(tipo: string): string {
-  const colors: Record<string, string> = {
-    cliente_creado: 'green',
-    proyecto_creado: 'blue',
-    cotizacion_enviada: 'purple',
-    proyecto_aprobado: 'green',
-    reunion: 'amber',
-    documento_cargado: 'teal',
-    proyecto_finalizado: 'green',
-    visita: 'orange',
+function formatDocType(type: string): string {
+  const labels: Record<string, string> = {
+    documentos_legales: 'Doc. Legal/Tributario',
+    comunicaciones: 'Comunicación/Acta',
+    propuesta: 'Propuesta',
+    legalizacion: 'Legalización/Contrato',
+    contrato: 'Contrato', cotizacion: 'Cotización', informe: 'Informe', certificado: 'Certificado',
+    acta: 'Acta', presentacion: 'Presentación', hoja_de_vida: 'Hoja de vida', soportes_estudio: 'Soportes estudio',
   }
-  return colors[tipo] || 'gray'
+  return labels[type] || type
+}
+
+function formatDateShort(dateStr?: string): string {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+function openUploadModal() {
+  resourceUploadForm.value = { type: '', name: '', customType: '', useOriginalName: true, file: null }
+  resourceSubmitted.value = false
+  showResourceUploadModal.value = true
+}
+
+function onResourceFileChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0]
+    resourceUploadForm.value.file = file
+    if (!resourceUploadForm.value.name) {
+      resourceUploadForm.value.name = file.name.replace(/\.[^.]+$/, '')
+    }
+  }
+}
+
+async function handleResourceUpload() {
+  resourceSubmitted.value = true
+  if (!resourceUploadForm.value.type) return
+  if (!resourceUploadForm.value.file) return
+  if (!cliente.value) return
+
+  uploading.value = true
+  try {
+    const fileType = resourceUploadForm.value.type === 'otro'
+      ? resourceUploadForm.value.customType
+      : resourceUploadForm.value.type
+    const fileName = resourceUploadForm.value.useOriginalName
+      ? resourceUploadForm.value.file?.name.replace(/\.[^.]+$/, '')
+      : resourceUploadForm.value.name
+    await documentService.upload(resourceUploadForm.value.file, {
+      entityType: 'client',
+      entityId: cliente.value.id,
+      type: fileType as DocumentType,
+      name: fileName || undefined,
+      isVisible: resourceUploadForm.value.isVisible,
+    })
+    showResourceUploadModal.value = false
+    uploadSuccessMessage.value = 'Documento subido exitosamente'
+    setTimeout(() => { uploadSuccessMessage.value = '' }, 3000)
+    await loadClientData(cliente.value.id)
+  } catch (err) {
+    console.error('Error uploading:', err)
+  } finally {
+    uploading.value = false
+  }
+}
+
+function openEditResource(doc: ResourceItem) {
+  resourceEditForm.value = {
+    id: doc.id || 0,
+    name: doc.name,
+    type: doc.type || '',
+    customType: '',
+    isVisible: (doc as any).isVisible !== false,
+  }
+  showResourceEditModal.value = true
+}
+
+async function handleResourceUpdate() {
+  if (!resourceEditForm.value.id) return
+  savingResource.value = true
+  try {
+    const docType = resourceEditForm.value.type === 'otro'
+      ? resourceEditForm.value.customType
+      : resourceEditForm.value.type
+    await documentService.update(resourceEditForm.value.id, {
+      name: resourceEditForm.value.name,
+      type: docType as DocumentType,
+      isVisible: resourceEditForm.value.isVisible,
+    })
+    showResourceEditModal.value = false
+    if (cliente.value) await loadClientData(cliente.value.id)
+  } catch (err) {
+    console.error('Error updating:', err)
+  } finally {
+    savingResource.value = false
+  }
+}
+
+function deleteResource(id: number, name: string) {
+  resourceDeleteId.value = id
+  resourceDeleteName.value = name
+  showResourceDeleteModal.value = true
+}
+
+async function confirmResourceDelete() {
+  try {
+    await documentService.delete(resourceDeleteId.value)
+    showResourceDeleteModal.value = false
+    if (cliente.value) await loadClientData(cliente.value.id)
+  } catch (err) {
+    console.error('Error deleting:', err)
+  }
 }
 
 onMounted(async () => {
@@ -553,9 +911,9 @@ onMounted(async () => {
   font-weight: 700;
   flex-shrink: 0;
 }
-.client-avatar.activo { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.client-avatar.prospecto { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.client-avatar.inactivo { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
+.client-avatar.active { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.client-avatar.prospect { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.client-avatar.inactive { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 .client-title h1 {
   font-size: 1.3rem;
@@ -633,19 +991,10 @@ onMounted(async () => {
   border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 600;
-  text-transform: capitalize;
 }
-.status-badge.activo { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.status-badge.prospecto { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.status-badge.inactivo { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
-.status-badge.nuevo { background: rgba(234, 179, 8, 0.1); color: #CA8A04; }
-.status-badge.contactado { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
-.status-badge.en_diagnostico { background: rgba(139, 92, 246, 0.1); color: #7C3AED; }
-.status-badge.cotizacion_enviada { background: rgba(249, 115, 22, 0.1); color: #EA580C; }
-.status-badge.en_negociacion { background: rgba(180, 83, 9, 0.1); color: #B45309; }
-.status-badge.ganado { background: rgba(16, 185, 129, 0.1); color: #059669; }
-.status-badge.perdido { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
-.status-badge.en_pausa { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
+.status-badge.active { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.status-badge.prospect { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.status-badge.inactive { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 /* ===== TABS ===== */
 .tabs-bar {
@@ -739,7 +1088,8 @@ onMounted(async () => {
   color: var(--c-black);
 }
 .info-value.mono { font-family: 'Courier New', monospace; }
-.info-value.link { color: var(--c-primary); }
+.info-value.link a { color: var(--c-primary); text-decoration: none; }
+.info-value.link a:hover { text-decoration: underline; }
 
 .observaciones {
   font-size: 0.88rem;
@@ -768,7 +1118,71 @@ onMounted(async () => {
   margin-top: 4px;
 }
 
+/* ===== CONTACTS INLINE ===== */
+.contacts-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-inline-card {
+  padding: 14px;
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 10px;
+}
+
+.contact-inline-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.contact-inline-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--c-black);
+}
+
+.contact-inline-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.contact-inline-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  color: var(--c-gray);
+}
+
+.contact-inline-detail svg {
+  color: var(--c-gray-light);
+  flex-shrink: 0;
+}
+
+.no-contacts {
+  font-size: 0.88rem;
+  color: var(--c-gray);
+}
+
 /* ===== SECTION HEADER ===== */
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #DCFCE7;
+  color: #16A34A;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -780,6 +1194,48 @@ onMounted(async () => {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--c-black);
+}
+
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upload:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
 }
 
 /* ===== DATA TABLE ===== */
@@ -817,57 +1273,6 @@ onMounted(async () => {
 .principal-badge { background: rgba(200, 155, 45, 0.1); color: var(--c-primary); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
 .secondary-text { color: var(--c-gray-light); }
 
-/* ===== FOLLOW-UP LIST ===== */
-.followup-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.followup-item {
-  display: flex;
-  gap: 12px;
-  padding: 14px;
-  background: var(--c-light);
-  border-radius: 10px;
-}
-
-.followup-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.followup-icon.llamada { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
-.followup-icon.correo { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
-.followup-icon.reunion { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
-.followup-icon.visita { background: rgba(249, 115, 22, 0.1); color: #F97316; }
-.followup-icon.compromiso { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-
-.followup-content { flex: 1; min-width: 0; }
-
-.followup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.followup-type { font-weight: 600; font-size: 0.85rem; color: var(--c-black); }
-.followup-date { font-size: 0.78rem; color: var(--c-gray); }
-
-.followup-desc {
-  font-size: 0.85rem;
-  color: var(--c-gray);
-  line-height: 1.5;
-  margin-bottom: 4px;
-}
-
-.followup-user { font-size: 0.75rem; color: var(--c-gray-light); }
-
 /* ===== DOCS GRID ===== */
 .docs-grid {
   display: grid;
@@ -897,16 +1302,111 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .doc-icon.blue { background: rgba(59, 130, 246, 0.1); color: #3B82F6; }
-.doc-icon.amber { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+.doc-icon.red { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
 .doc-icon.green { background: rgba(16, 185, 129, 0.1); color: #10B981; }
-.doc-icon.purple { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; }
 .doc-icon.teal { background: rgba(20, 184, 166, 0.1); color: #14B8A6; }
-.doc-icon.orange { background: rgba(249, 115, 22, 0.1); color: #F97316; }
 .doc-icon.gray { background: rgba(107, 114, 128, 0.1); color: #6B7280; }
 
 .doc-info { flex: 1; min-width: 0; }
 .doc-name { display: block; font-size: 0.85rem; font-weight: 500; color: var(--c-black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .doc-meta { display: block; font-size: 0.75rem; color: var(--c-gray); margin-top: 2px; }
+
+/* ===== RESOURCES TABLE ===== */
+.table-card { background: var(--c-white); border: 1px solid var(--c-border); border-radius: 14px; overflow: hidden; }
+.table-card .empty-tab { padding: 40px; text-align: center; color: var(--c-gray); }
+
+.doc-name-cell { display: flex; align-items: center; gap: 10px; }
+.doc-name-cell .doc-icon { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; color: #6B7280; flex-shrink: 0; }
+.doc-name-cell .doc-name { font-weight: 600; }
+
+.type-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.type-badge.documentos_legales { background: #EFF6FF; color: #2563EB; }
+.type-badge.comunicaciones { background: #FEF3C7; color: #D97706; }
+.type-badge.propuesta { background: #F0FDF4; color: #16A34A; }
+.type-badge.legalizacion { background: #FDF4FF; color: #9333EA; }
+.type-badge.contrato { background: #EFF6FF; color: #2563EB; }
+.type-badge.cotizacion { background: #F0FDF4; color: #16A34A; }
+.type-badge.informe { background: #FEF3C7; color: #D97706; }
+.type-badge.certificado { background: #FDF4FF; color: #9333EA; }
+.type-badge.acta { background: #FFF7ED; color: #EA580C; }
+.type-badge.presentacion { background: #F0FDFA; color: #0D9488; }
+.type-badge.hoja_de_vida { background: #FEF2F2; color: #DC2626; }
+.type-badge.soportes_estudio { background: #F5F3FF; color: #7C3AED; }
+
+.visibility-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+.visibility-badge.visible { background: #DCFCE7; color: #16A34A; }
+.visibility-badge.hidden { background: #FEE2E2; color: #DC2626; }
+
+.actions-cell { display: flex; gap: 4px; }
+.action-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; background: none; color: var(--c-gray); border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
+.action-btn:hover { background: var(--c-light); color: var(--c-primary); }
+.action-btn.delete-btn:hover { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+/* ===== FILTERS BAR ===== */
+.filters-bar { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.search-box { position: relative; max-width: 400px; }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-gray-light); pointer-events: none; }
+.search-input { width: 100%; padding: 10px 14px 10px 42px; border: 1px solid var(--c-border); border-radius: 10px; font-size: 0.88rem; font-family: inherit; background: var(--c-white); color: var(--c-black); outline: none; transition: border-color 0.2s; }
+.search-input:focus { border-color: var(--c-primary); }
+.search-input::placeholder { color: var(--c-gray-light); }
+.filter-group { display: flex; gap: 8px; align-items: flex-end; }
+.filter-field { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 0.72rem; font-weight: 600; color: var(--c-gray); text-transform: uppercase; letter-spacing: 0.3px; }
+.form-select { padding: 11px 32px 11px 14px; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 0.88rem; font-family: inherit; background: var(--c-white); color: var(--c-black); outline: none; cursor: pointer; appearance: auto; width: 100%; box-sizing: border-box; transition: all 0.2s; }
+.form-select:hover { border-color: #9ca3af; }
+.form-select:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.12); }
+.clear-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: none; background: none; color: var(--c-gray-light); border-radius: 4px; cursor: pointer; transition: all 0.15s; }
+.clear-btn:hover { background: var(--c-light); color: var(--c-black); }
+
+/* ===== MODAL ===== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; backdrop-filter: blur(4px); }
+.modal-content { background: var(--c-white); border-radius: 16px; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid #e5e7eb; }
+.modal-content.modal-sm { max-width: 480px; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--c-border); background: #596983; }
+.modal-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--c-black); margin: 0; }
+.modal-close { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; background: none; color: var(--c-gray); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+.modal-close:hover { background: var(--c-light); color: var(--c-black); }
+.modal-body { padding: 24px; background: #f1f2f3; color: black;}
+.form-grid-modal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 0.78rem; font-weight: 600; color: var(--c-gray); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 2px; }
+.form-input { padding: 11px 14px; border: 1.5px solid #d1d5db; border-radius: 10px; font-size: 0.88rem; font-family: inherit; background: var(--c-white); color: var(--c-black); outline: none; transition: all 0.2s; width: 100%; box-sizing: border-box; }
+.form-input:hover { border-color: #9ca3af; }
+.form-input:focus { border-color: var(--c-primary); box-shadow: 0 0 0 3px rgba(200, 155, 45, 0.12); }
+.form-input::placeholder { color: #9ca3af; }
+.field-error { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important; }
+
+.checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--c-dark); cursor: pointer; margin-bottom: 6px; }
+.checkbox-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--c-primary); cursor: pointer; }
+.file-original-name { display: block; padding: 10px 14px; background: var(--c-light); border: 1px solid var(--c-border); border-radius: 10px; font-size: 0.85rem; color: var(--c-gray); }
+
+.file-input-wrapper { position: relative; border: 1.5px dashed #d1d5db; border-radius: 10px; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.file-input-wrapper:hover { border-color: var(--c-primary); border-style: solid; }
+.file-input-wrapper.has-file { border-style: solid; border-color: var(--c-primary); background: #F0FDF4; }
+.file-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.file-input-label { display: flex; align-items: center; gap: 8px; padding: 12px 14px; color: var(--c-gray); font-size: 0.85rem; }
+.file-selected { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; font-size: 0.85rem; color: var(--c-black); }
+.file-remove { border: none; background: none; color: var(--c-gray); cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 4px; }
+.file-remove:hover { background: #FEE2E2; color: #DC2626; }
+
+.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--c-border); color: black; background: #EFF6FF; }
+.btn-cancel { padding: 10px 20px; border: 1.5px solid #d1d5db; border-radius: 10px; background: #f9fafb; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.btn-cancel:hover { background: #7c9dbe; border-color: #9ca3af; }
+.btn-save { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #B8892A; color: rgb(250, 250, 250); border: none; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.btn-spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+/* ===== DELETE MODAL ===== */
+.delete-modal-body { padding: 32px 28px; text-align: center; background: #374151; }
+.delete-icon { color: var(--c-danger, #dc2626); margin-bottom: 12px; }
+.delete-title { font-size: 1.1rem; font-weight: 700; color: var(--c-black); margin: 0 0 8px; }
+.delete-text { font-size: 0.88rem; color: var(--c-gray); margin: 0 0 24px; line-height: 1.5; }
+.delete-actions { display: flex; gap: 10px; justify-content: center; }
+.btn-delete { padding: 10px 20px; border: none; border-radius: 10px; background: #dc2626; color: white; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-delete:hover { background: #b91c1c; transform: translateY(-1px); }
+
+.upload-progress { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 12px; color: #6b7280; font-size: 0.85rem; }
 
 /* ===== TIMELINE ===== */
 .timeline {
@@ -962,41 +1462,12 @@ onMounted(async () => {
   color: var(--c-gray-light);
 }
 
-/* ===== ACTIONS ===== */
-.actions-cell {
-  display: flex;
-  gap: 4px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: none;
-  color: var(--c-gray);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.action-btn:hover {
-  background: var(--c-light);
-  color: var(--c-primary);
-}
-.action-btn.delete:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
 /* ===== EMPTY & LOADING ===== */
 .empty-tab {
   text-align: center;
   padding: 40px 20px;
   color: var(--c-gray);
 }
-.empty-tab svg { color: var(--c-gray-light); margin-bottom: 12px; }
 .empty-tab h3 { font-size: 1rem; font-weight: 600; color: var(--c-black); margin-bottom: 6px; }
 
 .empty-state {
@@ -1024,6 +1495,76 @@ onMounted(async () => {
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-primary:hover { background: var(--c-primary-hover); }
+
+/* ===== QUOTES TABLE ===== */
+.quotes-table-wrap {
+  overflow-x: auto;
+}
+
+.quotes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quotes-table th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--c-light);
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+
+.quotes-table td {
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: var(--c-black);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.quotes-table tr:last-child td { border-bottom: none; }
+.quotes-table tr:hover td { background: rgba(249, 250, 251, 0.6); }
+
+.quotes-table .code-cell {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--c-primary);
+}
+
+.quotes-table .amount-cell {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.quotes-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.quotes-table .status-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.quotes-table .status-pendiente { background: rgba(245, 158, 11, 0.1); color: #D97706; }
+.quotes-table .status-enviada { background: rgba(59, 130, 246, 0.1); color: #2563EB; }
+.quotes-table .status-aprobada { background: rgba(16, 185, 129, 0.1); color: #059669; }
+.quotes-table .status-rechazada { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+.quotes-table .status-vencida { background: rgba(107, 114, 128, 0.1); color: #4B5563; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

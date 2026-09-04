@@ -47,6 +47,11 @@ export interface Cliente {
   observaciones?: string
   contactosCount?: number
   proyectosCount?: number
+  isActive?: boolean
+  isProspect?: boolean
+  showResources?: boolean
+  contacts?: ClientContact[]
+  resources?: ClientResource[]
   createdAt: string
   updatedAt: string
 }
@@ -54,6 +59,9 @@ export interface Cliente {
 export interface CreateClienteRequest {
   razonSocial: string
   nit: string
+  codigo?: string
+  tipoOrganizacion?: string
+  norma?: string
   ciudad: string
   departamento: string
   direccion: string
@@ -61,10 +69,81 @@ export interface CreateClienteRequest {
   correo: string
   paginaWeb?: string
   estado?: 'activo' | 'inactivo' | 'prospecto'
+  showResources?: boolean
   observaciones?: string
+  contacts?: Array<{
+    name: string
+    position?: string
+    phone?: string
+    email?: string
+    isPrimary?: boolean
+  }>
 }
 
 export interface UpdateClienteRequest extends Partial<CreateClienteRequest> {}
+
+// ====== CLIENTE API (backend) ======
+
+export interface ClientContact {
+  id?: number
+  name: string
+  position?: string
+  phone?: string
+  email?: string
+  isPrimary?: boolean
+}
+
+export interface ClientResource {
+  id?: number
+  name: string
+  url: string
+  type: string
+  uploadedAt?: string
+}
+
+export interface Client {
+  id: number
+  name: string
+  nit?: string
+  code?: string
+  organizationType?: string
+  norm?: string
+  city?: string
+  department?: string
+  address?: string
+  phone?: string
+  email?: string
+  website?: string
+  isActive: boolean
+  isProspect: boolean
+  observations?: string
+  showResources?: boolean
+  contacts?: ClientContact[]
+  resources?: ClientResource[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface CreateClientRequest {
+  name: string
+  nit?: string
+  code?: string
+  organizationType?: string
+  norm?: string
+  city?: string
+  department?: string
+  address?: string
+  phone?: string
+  email?: string
+  website?: string
+  isActive?: boolean
+  isProspect?: boolean
+  observations?: string
+  showResources?: boolean
+  contacts?: Omit<ClientContact, 'id'>[]
+}
+
+export interface UpdateClientRequest extends Partial<CreateClientRequest> {}
 
 // ====== CONTACTO ======
 
@@ -92,44 +171,88 @@ export interface UpdateContactoRequest extends Partial<Omit<CreateContactoReques
 
 // ====== PROYECTO ======
 
+export interface ServicioProyecto {
+  name: string
+  customName?: string
+  norm: string
+  customNorm?: string
+  quantity: number
+  unitPrice: number
+  discount: number
+  subtotal: number
+  subtotalWithDiscount: number
+  iva: number
+  totalPrice: number
+  collaborator: string
+  applyIva?: boolean
+  providerRole?: string
+  providerCollaborator?: string
+  providerBillingAccount?: string
+  providerUnitPrice?: number
+  providerTotalPrice?: number
+  pretaxProfit?: number
+  ica?: number
+  simpleTax?: number
+  entryDate?: string
+  billingDate?: string
+  purchaseOrderDate?: string
+  purchaseOrderNumber?: string
+  _showCost?: boolean
+  _showProvider?: boolean
+  _showTaxes?: boolean
+  _showUtilities?: boolean
+  _collapsed?: boolean
+}
+
+export interface ProjectClient {
+  id: number
+  name: string
+  code?: string
+  email?: string
+  phone?: string
+  nit?: string
+}
+
 export interface Proyecto {
   id: number
-  consecutivo: number
-  abreviatura: string
-  codigo: string
-  clienteId: number
-  clienteRazonSocial?: string
-  tipoProyectoId: number
-  tipoProyectoNombre?: string
-  tipoServicioId?: number
-  tipoServicioNombre?: string
-  normaId: number
-  normaCodigo?: string
-  estadoId: number
-  estadoNombre?: string
-  estadoColor?: string
-  responsable: string
-  fechaInicio: string
-  fechaFin?: string
-  descripcion: string
-  observaciones?: string
-  oferta?: string
-  costoTotal?: number
+  consecutive: number
+  abbreviation: string
+  code: string
+  clientId: number
+  client?: ProjectClient
+  projectType: string
+  serviceType?: string
+  norm: string
+  status: string
+  responsible: string
+  startDate: string
+  endDate?: string
+  description: string
+  observations?: string
+  offer?: string
+  totalCost?: number
+  services?: ServicioProyecto[]
   createdAt: string
   updatedAt: string
 }
 
 export interface CreateProyectoRequest {
-  clienteId: number
-  tipoProyectoId: number
-  tipoServicioId?: number
-  normaId: number
-  estadoId: number
-  responsable: string
-  fechaInicio: string
-  fechaFin?: string
-  descripcion: string
-  observaciones?: string
+  clientId: number
+  consecutive?: number
+  abbreviation?: string
+  code?: string
+  projectType: string
+  serviceType?: string
+  norm: string
+  status?: string
+  responsible: string
+  startDate: string
+  endDate?: string
+  description: string
+  observations?: string
+  offer?: string
+  totalCost?: number
+  services?: ServicioProyecto[]
 }
 
 export interface UpdateProyectoRequest extends Partial<CreateProyectoRequest> {}
@@ -223,49 +346,61 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc'
 }
 
-// ====== SERVICIOS DE PROYECTO ======
-
-export interface ServicioProyecto {
-  id: number
-  proyectoId: number
-  nombre: string
-  norma: string
-  cantidad: number
-  valorUnitario: number
-  valorTotal: number
-  colaborador: string
-}
-
-// ====== CONTACTOS DE PROYECTO ======
-
-export interface ContactoProyecto {
-  id: number
-  proyectoId: number
-  clienteId: number
-  nombre: string
-  cargo: string
-  telefono: string
-  correo: string
-  esPrincipal: boolean
-}
-
-// ====== DOCUMENTOS DE PROYECTO ======
-
-export interface DocumentoProyecto {
-  id: number
-  proyectoId: number
-  nombre: string
-  tipo: 'oferta' | 'contrato' | 'informe' | 'certificado' | 'acta' | 'presentacion'
-  fecha: string
-  usuario: string
-  tamano: number
-}
-
 // ====== LICITACIONES ======
 
-export type TipoLicitacion = 'minima_cuantia' | 'solicitud_informacion' | 'contratacion_especial'
+export type TipoLicitacion = 'publica' | 'minima_cuantia' | 'solicitud_informacion' | 'contratacion_especial'
 
 export type EstadoLicitacion = 'publicada' | 'en_curso' | 'cerrada' | 'adjudicada' | 'desierta' | 'cancelada'
+
+export interface TenderServiceItem {
+  name: string
+  norm: string
+  rol?: string
+  quantity: number
+  unitPrice: number
+  discount: number
+  subtotal: number
+  subtotalWithDiscount: number
+  iva: number
+  totalPrice: number
+  collaborator?: string
+  collaboratorUnitPrice?: number
+  collaboratorTotalPrice?: number
+  ica: number
+  simpleTax: number
+  netProfit: number
+  pretaxProfit: number
+  finalProfit?: number
+  entryDate?: string
+  billingDate?: string
+  purchaseOrderDate?: string
+  purchaseOrderNumber?: string
+  billingAccountNumber?: string
+  bonds?: number
+  stamps?: number
+  otherFees?: number
+  travelExpenses?: number
+  withholdingTax?: number
+  observations?: string
+}
+
+export interface Tender {
+  id: number
+  offerCode: string
+  type: string
+  processNumber: string
+  clientName: string
+  service: string
+  norm: string
+  status: string
+  publicationDate: string
+  closingDate?: string
+  estimatedValue?: number
+  observations?: string
+  services?: TenderServiceItem[]
+  createdAt: string
+  updatedAt?: string
+}
 
 export interface Licitacion {
   id: number
@@ -281,7 +416,194 @@ export interface Licitacion {
   fechaCierre?: string
   valorEstimado?: number
   observaciones?: string
+  servicios?: TenderServiceItem[]
   createdAt: string
+}
+
+export interface CreateTenderRequest {
+  offerCode: string
+  type: string
+  processNumber: string
+  clientName: string
+  service: string
+  norm: string
+  status?: string
+  publicationDate: string
+  closingDate?: string
+  estimatedValue?: number
+  observations?: string
+  services?: TenderServiceItem[]
+}
+
+export type UpdateTenderRequest = Partial<CreateTenderRequest>
+
+// ====== COTIZACIONES ======
+
+export type EstadoCotizacion = 'pendiente' | 'enviada' | 'aprobada' | 'rechazada' | 'vencida'
+
+export interface CotizacionServicio {
+  name: string
+  quantity: number
+  billingType: 'ONETIME' | 'MONTHLY'
+  description?: string
+  value: number
+}
+
+export interface Cotizacion {
+  id: number
+  code: string
+  clientId: number
+  client?: { id: number; name: string; email?: string; phone?: string; nit?: string }
+  clientName?: string
+  projectId?: number
+  project?: { id: number; code: string; description?: string }
+  status: EstadoCotizacion
+  totalAmount: number
+  validUntil?: string
+  observations?: string
+  services?: CotizacionServicio[]
+  isVisible?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateCotizacionRequest {
+  code: string
+  clientId: number
+  clientName?: string
+  projectId?: number
+  status?: EstadoCotizacion
+  totalAmount: number
+  validUntil?: string
+  observations?: string
+  services?: CotizacionServicio[]
+  isVisible?: boolean
+}
+
+export interface UpdateCotizacionRequest extends Partial<CreateCotizacionRequest> {}
+
+// ====== EVENTOS ======
+
+export type EventEntityType = 'client' | 'project' | 'quote' | 'tender' | null
+export type EventType = string
+
+export interface Evento {
+  id: number
+  entityType: EventEntityType
+  entityId: number | null
+  type: EventType
+  typeOtro?: string
+  title?: string
+  client?: string
+  modalidad?: string
+  modalidadOtro?: string
+  location?: string
+  personaContacto?: string
+  description: string
+  user: string
+  userOtro?: string
+  date: string
+  endDate?: string
+  leadAuditor?: string
+  coAuditors?: string
+  normas?: string
+  createdAt?: string
+}
+
+export interface CreateEventoRequest {
+  entityType: EventEntityType
+  entityId: number | null
+  type: EventType
+  typeOtro?: string
+  title?: string
+  client?: string
+  modalidad?: string
+  modalidadOtro?: string
+  location?: string
+  personaContacto?: string
+  description: string
+  user: string
+  userOtro?: string
+  date: string
+  endDate?: string
+  leadAuditor?: string
+  coAuditors?: string
+  normas?: string
+}
+
+// ====== DOCUMENTOS ======
+
+export type DocumentEntityType = 'client' | 'project' | 'quote' | 'tender' | 'collaborator'
+export type DocumentType = 'contrato' | 'cotizacion' | 'informe' | 'certificado' | 'acta' | 'presentacion' | 'hoja_de_vida' | 'soportes_estudio'
+
+export interface DocumentoEntity {
+  id: number
+  entityType: DocumentEntityType
+  entityId: number
+  name: string
+  type: DocumentType
+  url: string
+  size: number
+  user: string
+  isVisible?: boolean
+  createdAt: string
+}
+
+export interface CreateDocumentoRequest {
+  entityType: DocumentEntityType
+  entityId: number
+  type: DocumentType
+  file: File
+}
+
+// ====== ÓRDENES ======
+
+export type EstadoOrden = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
+
+export interface OrdenItem {
+  productId: number
+  quantity: number
+  selectedColor?: string
+  price: number
+}
+
+export interface Orden {
+  id: number
+  userId: number
+  items: OrdenItem[]
+  totalAmount: number
+  status: EstadoOrden
+  shippingAddress: string
+  paymentId?: number
+  createdAt: string
+  updatedAt: string
+}
+
+// ====== PAGOS ======
+
+export type EstadoPago = 'pending' | 'approved' | 'declined' | 'error'
+
+export interface Pago {
+  id: number
+  transactionId: string
+  reference: string
+  amount: number
+  status: EstadoPago
+  buyerEmail: string
+  buyerName: string
+  paymentMethod?: string
+  orderId?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreatePagoRequest {
+  buyerEmail: string
+  buyerName: string
+  buyerIdentificationNumber: string
+  buyerContactNumber?: string
+  shippingAddress: string
+  items: { productId: number; quantity: number; selectedColor?: string }[]
 }
 
 // ====== ACTIVIDADES DE PROYECTO ======
@@ -326,3 +648,16 @@ export interface DocumentoColaborador {
   tipo: 'hoja_de_vida' | 'soportes_estudio' | 'soportes_experiencia' | 'certificado'
   estado: 'completo' | 'pendiente' | 'faltante'
 }
+
+export interface CreateColaboradorRequest {
+  name: string
+  studies: string
+  mainArea: string
+  city: string
+  phone: string
+  email: string
+  status: 'available' | 'assigned' | 'unavailable' | 'pending_docs' | 'inactive'
+  competencies: { area: string; norm: string; description: string }[]
+}
+
+export interface UpdateColaboradorRequest extends Partial<CreateColaboradorRequest> {}

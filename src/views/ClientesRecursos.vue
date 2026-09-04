@@ -99,16 +99,33 @@
           </div>
         </div>
 
-        <div class="cards-grid">
+        <div v-if="loadingCards" class="cards-grid" style="text-align:center; padding:60px 0; color:#999;">
+          <p>Cargando recursos...</p>
+        </div>
+
+        <div v-else-if="filteredCards.length === 0" class="cards-grid" style="text-align:center; padding:60px 0; color:#999;">
+          <p>No hay fotos de recursos para mostrar</p>
+        </div>
+
+        <div v-else class="cards-grid">
           <div
             v-for="(card, index) in filteredCards"
             :key="card.title"
-            class="acompanamiento-card"
-            @click="openLightbox(index)"
+            class="acompanamiento-card doc-card"
           >
-            <div class="card-image">
-              <img :src="card.image" :alt="card.description" />
-            </div>
+            <a :href="card.image" target="_blank" class="doc-card-link">
+              <div class="doc-card-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C89B2D" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+              </div>
+              <div class="doc-card-info">
+                <h4>{{ card.title }}</h4>
+                <p>{{ card.description }}</p>
+                <span class="doc-card-date">{{ card.date }}</span>
+              </div>
+            </a>
           </div>
         </div>
 
@@ -182,6 +199,65 @@ defineOptions({
   name: 'ClientesRecursos'
 })
 
+interface Card {
+  title: string
+  description: string
+  date: string
+  category: string
+  image: string
+}
+
+const API_BASE = 'https://esg-back-cve6gyd9fgfnh5f3.centralus-01.azurewebsites.net/api/v1'
+
+const cards = ref<Card[]>([])
+const loadingCards = ref(false)
+
+async function fetchCards() {
+  loadingCards.value = true
+  try {
+    const clientsRes = await fetch(`${API_BASE}/clients?limit=9999`)
+    if (!clientsRes.ok) return
+    const clientsData = await clientsRes.json()
+    const allClientes = Array.isArray(clientsData.data) ? clientsData.data : (clientsData.data?.data || [])
+    const clientesConRecursos = allClientes.filter((c: any) => c.showResources === true)
+
+    const allCards: Card[] = []
+
+    await Promise.all(
+      clientesConRecursos.map(async (cliente: any) => {
+        try {
+          const docsRes = await fetch(`${API_BASE}/documents?entityType=client&entityId=${cliente.id}`)
+          if (!docsRes.ok) return
+          const docsData = await docsRes.json()
+          const docs = Array.isArray(docsData.data) ? docsData.data : (docsData.data?.documents || docsData.data || [])
+          const docsFiltrados = docs.filter((d: any) => d.type === 'comunicaciones' || d.type === 'acta')
+
+          docsFiltrados.forEach((doc: any) => {
+            if (doc.url) {
+              allCards.push({
+                title: doc.name,
+                description: `${cliente.razonSocial} — ${doc.type === 'comunicaciones' ? 'Comunicación' : 'Acta'}`,
+                date: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }) : '',
+                category: doc.type,
+                image: doc.url,
+              })
+            }
+          })
+        } catch {
+          // skip failed fetch
+        }
+      })
+    )
+
+    cards.value = allCards
+  } catch (e) {
+    console.error('Error fetching cards:', e)
+    cards.value = []
+  } finally {
+    loadingCards.value = false
+  }
+}
+
 const lightboxOpen = ref(false)
 const lightboxIndex = ref(0)
 
@@ -242,61 +318,19 @@ const empresas = [
   { name: 'Fazenda', logo: 'https://via.placeholder.com/120x50/ffffff/333333?text=Fazenda' }
 ]
 
-const tabs = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'auditorias', label: 'Auditorías' },
-  { id: 'capacitacion', label: 'Capacitación' },
-  { id: 'implementacion', label: 'Implementación' },
-  { id: 'laboratorios', label: 'Laboratorios' },
-  { id: 'metrologia', label: 'Metrología' }
-]
+const tabs = computed(() => {
+  const cats = new Set(cards.value.map(c => c.category))
+  const result = [{ id: 'todos', label: 'Todos' }]
+  if (cats.has('comunicaciones')) result.push({ id: 'comunicaciones', label: 'Comunicaciones' })
+  if (cats.has('acta')) result.push({ id: 'acta', label: 'Actas' })
+  return result
+})
 
 const activeTab = ref('todos')
 
-const cards = [
-  {
-    title: 'Implementación SG-SST',
-    description: 'Implementación del Sistema de Gestión de Seguridad y Salud en el Trabajo para empresa del sector Industrial.',
-    date: 'Febrero 2024',
-    category: 'implementacion',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839230/14_20251125_170301_0013_jpndk4.png'
-  },
-  {
-    title: 'Auditoría ISO 9001',
-    description: 'Auditoría interna de Sistema de Gestión de Calidad para laboratorio de ensayos.',
-    date: 'Enero 2024',
-    category: 'auditorias',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839229/5_20251125_170300_0004_iskcay.png'
-  },
-  {
-    title: 'Capacitación ISO 17025',
-    description: 'Programa de capacitación en requisitos de la norma para personal de laboratorio.',
-    date: 'Diciembre 2023',
-    category: 'capacitacion',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839230/8_20251125_170301_0007_qj1qbn.png'
-  },
-  {
-    title: 'Calibración de Equipos',
-    description: 'Programa de calibración y trazabilidad metrológica para empresa farmacéutica.',
-    date: 'Noviembre 2023',
-    category: 'metrologia',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839230/15_20251125_170301_0014_pwra6h.png'
-  },
-  {
-    title: 'Implementación ISO 14001',
-    description: 'Sistema de Gestión Ambiental para empresa del sector energía.',
-    date: 'Octubre 2023',
-    category: 'implementacion',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839020/1_20250317_093039_0000_1_bzedo2.png'
-  },
-  {
-    title: 'Auditoría ISO 45001',
-    description: 'Auditoría de segunda parte para proveedor del sector automotriz.',
-    date: 'Septiembre 2023',
-    category: 'auditorias',
-    image: 'https://res.cloudinary.com/dlwzazojt/image/upload/v1784839021/3_20251125_170300_0002_kqjalj.png'
-  }
-]
+onMounted(() => {
+  fetchCards()
+})
 
 const filteredCards = computed(() => {
   if (activeTab.value === 'todos') return cards
@@ -710,6 +744,52 @@ const filteredRecursos = computed(() => {
 .acompanamiento-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+.doc-card .doc-card-link {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.doc-card-icon {
+  flex-shrink: 0;
+  width: 56px;
+  height: 56px;
+  background: rgba(200,155,45,0.08);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doc-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-card-info h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1A1A1A;
+  line-height: 1.3;
+}
+
+.doc-card-info p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.doc-card-date {
+  font-size: 12px;
+  color: #999;
+  text-transform: capitalize;
 }
 
 .card-image {

@@ -7,8 +7,10 @@ import type {
   EventoCronologia,
   PaginationParams,
   PaginatedResponse,
+  ServicioProyecto,
 } from '@/types/crmTypes'
 import { mockProyectos } from '@/mock/proyectos'
+import { mockClientes } from '@/mock/clientes'
 import { mockSeguimientos } from '@/mock/seguimientos'
 import { mockDocumentos } from '@/mock/documentos'
 import { mockCronologia } from '@/mock/cronologia'
@@ -16,10 +18,41 @@ import { mockCronologia } from '@/mock/cronologia'
 let nextProyectoId = mockProyectos.length + 1
 let nextSeguimientoId = mockSeguimientos.length + 1
 
+function mapMockToProyecto(raw: Record<string, unknown>): Proyecto {
+  const clienteId = (raw.clientId as number) || (raw.clienteId as number) || 0
+  const cliente = mockClientes.find(c => c.id === clienteId)
+  return {
+    id: raw.id as number,
+    consecutive: (raw.consecutive as number) || (raw.consecutivo as number) || 0,
+    abbreviation: (raw.abbreviation as string) || (raw.abreviatura as string) || '',
+    code: (raw.code as string) || (raw.codigo as string) || '',
+    clientId: clienteId,
+    client: {
+      id: clienteId,
+      name: (raw.client?.name as string) || (raw.clienteRazonSocial as string) || '',
+      code: (raw.client?.code as string) || cliente?.codigo || '',
+    },
+    projectType: (raw.projectType as string) || (raw.tipoProyectoNombre as string) || '',
+    serviceType: (raw.serviceType as string) || (raw.tipoServicioNombre as string) || '',
+    norm: (raw.norm as string) || (raw.normaCodigo as string) || '',
+    status: (raw.status as string) || (raw.estadoNombre as string) || '',
+    responsible: (raw.responsible as string) || (raw.responsable as string) || '',
+    startDate: (raw.startDate as string) || (raw.fechaInicio as string) || '',
+    endDate: (raw.endDate as string) || (raw.fechaFin as string) || '',
+    description: (raw.description as string) || (raw.descripcion as string) || '',
+    observations: (raw.observations as string) || (raw.observaciones as string) || '',
+    offer: (raw.offer as string) || (raw.oferta as string) || '',
+    totalCost: (raw.totalCost as number) || (raw.costoTotal as number) || 0,
+    services: (raw.services as ServicioProyecto[]) || [],
+    createdAt: (raw.createdAt as string) || '',
+    updatedAt: (raw.updatedAt as string) || '',
+  }
+}
+
 class ProjectMockService {
   async getAll(params?: PaginationParams): Promise<PaginatedResponse<Proyecto>> {
     await this.delay()
-    let data = [...mockProyectos]
+    let data = mockProyectos.map(mapMockToProyecto)
 
     if (params?.sortBy) {
       const key = params.sortBy as keyof Proyecto
@@ -50,41 +83,48 @@ class ProjectMockService {
     await this.delay()
     const proyecto = mockProyectos.find((p) => p.id === id)
     if (!proyecto) throw new Error('Proyecto no encontrado')
-    return { ...proyecto }
+    return mapMockToProyecto(proyecto as unknown as Record<string, unknown>)
   }
 
   async getByCliente(clienteId: number): Promise<Proyecto[]> {
     await this.delay()
-    return mockProyectos.filter((p) => p.clienteId === clienteId)
+    return mockProyectos.filter((p) => p.clienteId === clienteId).map(mapMockToProyecto)
   }
 
   async create(data: CreateProyectoRequest): Promise<Proyecto> {
     await this.delay()
 
-    const tipoProyecto = await this.getTipoProyecto(data.tipoProyectoId)
-    const consecutivo = mockProyectos.filter((p) => p.abreviatura === tipoProyecto.abreviatura).length + 1
-    const codigo = `${String(consecutivo).padStart(4, '0')}-${tipoProyecto.abreviatura}`
+    const cliente = mockClientes.find(c => c.id === data.clientId)
+    const consecutive = mockProyectos.length + 1
+    const code = `${String(consecutive).padStart(4, '0')}-PRJ`
 
     const proyecto: Proyecto = {
       id: nextProyectoId++,
-      consecutivo,
-      abreviatura: tipoProyecto.abreviatura,
-      codigo,
-      clienteId: data.clienteId,
-      tipoProyectoId: data.tipoProyectoId,
-      tipoProyectoNombre: tipoProyecto.nombre,
-      tipoServicioId: data.tipoServicioId,
-      normaId: data.normaId,
-      estadoId: data.estadoId,
-      responsable: data.responsable,
-      fechaInicio: data.fechaInicio,
-      fechaFin: data.fechaFin,
-      descripcion: data.descripcion,
-      observaciones: data.observaciones,
+      consecutive,
+      abbreviation: 'PRJ',
+      code,
+      clientId: data.clientId,
+      client: {
+        id: data.clientId,
+        name: cliente?.razonSocial || '',
+        code: cliente?.codigo || '',
+      },
+      projectType: data.projectType || '',
+      serviceType: data.serviceType || '',
+      norm: data.norm || '',
+      status: data.status || 'Cotización',
+      responsible: data.responsible,
+      startDate: data.startDate,
+      endDate: data.endDate || '',
+      description: data.description || '',
+      observations: data.observations || '',
+      offer: data.offer || '',
+      totalCost: data.totalCost || 0,
+      services: data.services || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    mockProyectos.push(proyecto)
+    mockProyectos.push(proyecto as any)
     return proyecto
   }
 
@@ -92,8 +132,26 @@ class ProjectMockService {
     await this.delay()
     const index = mockProyectos.findIndex((p) => p.id === id)
     if (index === -1) throw new Error('Proyecto no encontrado')
-    mockProyectos[index] = { ...mockProyectos[index], ...data, updatedAt: new Date().toISOString() }
-    return mockProyectos[index]
+    const existing = mockProyectos[index] as any
+    const updated = {
+      ...existing,
+      clientId: data.clientId ?? existing.clientId,
+      projectType: data.projectType ?? existing.projectType,
+      serviceType: data.serviceType ?? existing.serviceType,
+      norm: data.norm ?? existing.norm,
+      status: data.status ?? existing.status,
+      responsible: data.responsible ?? existing.responsible,
+      startDate: data.startDate ?? existing.fechaInicio,
+      endDate: data.endDate ?? existing.fechaFin,
+      description: data.description ?? existing.descripcion,
+      observations: data.observations ?? existing.observaciones,
+      offer: data.offer ?? existing.oferta,
+      totalCost: data.totalCost ?? existing.costoTotal,
+      services: data.services ?? existing.services,
+      updatedAt: new Date().toISOString(),
+    }
+    mockProyectos[index] = updated
+    return mapMockToProyecto(updated as unknown as Record<string, unknown>)
   }
 
   async delete(id: number): Promise<void> {

@@ -10,6 +10,11 @@
         <p class="login-subtitle">Ingrese sus credenciales para acceder al sistema</p>
 
         <form @submit.prevent="handleLogin" class="login-form">
+          <div v-if="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+
           <div class="input-group">
             <label for="email">Correo electrónico</label>
             <div class="input-wrapper">
@@ -82,18 +87,14 @@ const password = ref('')
 const showPassword = ref(false)
 const rememberMe = ref(false)
 const loading = ref(false)
+const errorMessage = ref('')
 const router = useRouter()
 
 const handleLogin = async () => {
+  errorMessage.value = ''
   loading.value = true
-  try {
-    // Login temporal quemado (desarrollo)
-    if (email.value === 'admin@esg.com' && password.value === 'admin123') {
-      authService.temporaryAdminLogin()
-      router.push('/admin/products')
-      return
-    }
 
+  try {
     const credentials: LoginCredentials = {
       email: email.value,
       password: password.value
@@ -103,18 +104,24 @@ const handleLogin = async () => {
 
     if (response.success) {
       const userInfo = authService.getCurrentUser()
+      if (userInfo?.role === 'user') {
+        errorMessage.value = 'Esta cuenta es de cliente. Use el Portal de Clientes para acceder.'
+        authService.logout()
+        return
+      }
       if (userInfo?.role === 'admin') {
         router.push('/admin/products')
       } else {
         router.push('/')
       }
     } else {
-      alert(response.message || 'Credenciales inválidas')
+      errorMessage.value = response.message || 'Credenciales inválidas. Verifique su email y contraseña.'
     }
   } catch (error: unknown) {
-    console.error('Login error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Error en el servidor. Intente nuevamente.'
-    alert('Error: ' + errorMessage)
+    if (error instanceof Error && error.message === 'Sesión expirada') {
+      return
+    }
+    errorMessage.value = 'Credenciales inválidas. Verifique su email y contraseña.'
   } finally {
     loading.value = false
   }
@@ -180,6 +187,24 @@ const handleLogin = async () => {
   flex-direction: column;
   gap: 20px;
   text-align: left;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.error-message i {
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .input-group label {

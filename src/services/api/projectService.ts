@@ -3,7 +3,6 @@ import type {
   Proyecto,
   CreateProyectoRequest,
   UpdateProyectoRequest,
-  PaginationParams,
   PaginatedResponse,
   Seguimiento,
   CreateSeguimientoRequest,
@@ -11,13 +10,22 @@ import type {
   EventoCronologia,
 } from '@/types/crmTypes'
 
+export interface ProjectListParams {
+  page?: number
+  limit?: number
+  search?: string
+  clientId?: number
+}
+
 class ProjectService {
   private readonly endpoint = '/projects'
 
-  async getAll(params?: PaginationParams): Promise<PaginatedResponse<Proyecto>> {
+  async getAll(params?: ProjectListParams): Promise<PaginatedResponse<Proyecto>> {
     const query = this.buildQuery(params)
-    const response = await apiClient.get<Proyecto[]>(`${this.endpoint}${query}`)
-    return this.normalizeResponse(response.data, response)
+    const response = await apiClient.get<Proyecto[] | { projects: Proyecto[]; count: number }>(
+      `${this.endpoint}${query}`,
+    )
+    return this.normalizeResponse(response.data, params)
   }
 
   async getById(id: number): Promise<Proyecto> {
@@ -26,8 +34,16 @@ class ProjectService {
   }
 
   async getByCliente(clienteId: number): Promise<Proyecto[]> {
-    const response = await apiClient.get<Proyecto[]>(`${this.endpoint}?clientId=${clienteId}`)
-    return Array.isArray(response.data) ? response.data : []
+    const response = await apiClient.get<Proyecto[] | { projects: Proyecto[]; count: number }>(
+      `${this.endpoint}?clientId=${clienteId}`,
+    )
+    const data = response.data
+    if (Array.isArray(data)) return data
+    if (data && typeof data === 'object') {
+      const obj = data as Record<string, unknown>
+      return (obj['projects'] || obj['data'] || []) as Proyecto[]
+    }
+    return []
   }
 
   async create(data: CreateProyectoRequest): Promise<Proyecto> {
@@ -36,7 +52,7 @@ class ProjectService {
   }
 
   async update(id: number, data: UpdateProyectoRequest): Promise<Proyecto> {
-    const response = await apiClient.put<Proyecto>(`${this.endpoint}/${id}`, data)
+    const response = await apiClient.patch<Proyecto>(`${this.endpoint}/${id}`, data)
     return response.data as unknown as Proyecto
   }
 
@@ -103,37 +119,41 @@ class ProjectService {
 
   // ====== HELPERS ======
 
-  private buildQuery(params?: PaginationParams): string {
+  private buildQuery(params?: ProjectListParams): string {
     if (!params) return ''
     const parts: string[] = []
     if (params.page) parts.push(`page=${params.page}`)
-    if (params.pageSize) parts.push(`pageSize=${params.pageSize}`)
-    if (params.sortBy) parts.push(`sortBy=${params.sortBy}`)
-    if (params.sortOrder) parts.push(`sortOrder=${params.sortOrder}`)
+    if (params.limit) parts.push(`limit=${params.limit}`)
+    if (params.search) parts.push(`search=${encodeURIComponent(params.search)}`)
+    if (params.clientId) parts.push(`clientId=${params.clientId}`)
     return parts.length > 0 ? `?${parts.join('&')}` : ''
   }
 
   private normalizeResponse(
     data: unknown,
-    raw: { statusCode: number; message: string },
+    params?: ProjectListParams,
   ): PaginatedResponse<Proyecto> {
     if (Array.isArray(data)) {
       return {
         data,
         total: data.length,
-        page: 1,
-        pageSize: data.length,
-        totalPages: 1,
+        page: params?.page || 1,
+        pageSize: params?.limit || data.length,
+        totalPages: params?.limit ? Math.ceil(data.length / params.limit) : 1,
       }
     }
-    if (data && typeof data === 'object' && 'count' in (data as Record<string, unknown>)) {
+    if (data && typeof data === 'object') {
       const obj = data as Record<string, unknown>
+      const projects = (obj['projects'] || obj['data'] || []) as Proyecto[]
+      const count = (obj['count'] as number) || projects.length
+      const page = (obj['page'] as number) || params?.page || 1
+      const limit = (obj['limit'] as number) || params?.limit || count
       return {
-        data: (obj['projects'] || obj['data'] || []) as Proyecto[],
-        total: (obj['count'] as number) || 0,
-        page: 1,
-        pageSize: (obj['count'] as number) || 0,
-        totalPages: 1,
+        data: projects,
+        total: count,
+        page,
+        pageSize: limit,
+        totalPages: limit > 0 ? Math.ceil(count / limit) : 1,
       }
     }
     return { data: [], total: 0, page: 1, pageSize: 0, totalPages: 0 }

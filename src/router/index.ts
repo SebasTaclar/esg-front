@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { authService } from '@/services/api'
+import { authService, clientAuthService } from '@/services/api'
 import Home from '@/views/Home.vue'
 
 declare module 'vue-router' {
@@ -60,6 +60,7 @@ const router = createRouter({
       component: () => import('../views/ClientPortal.vue'),
       meta: {
         requiresAuth: true,
+        requiredRole: 'user',
       },
     },
 
@@ -171,6 +172,16 @@ const router = createRouter({
           component: () => import('../views/crm/FollowUpsList.vue'),
         },
         {
+          path: 'cotizaciones',
+          name: 'crm-quotes',
+          component: () => import('../views/crm/QuotesList.vue'),
+        },
+        {
+          path: 'licitaciones',
+          name: 'crm-licitaciones',
+          component: () => import('../views/crm/LicitacionesList.vue'),
+        },
+        {
           path: 'colaboradores',
           name: 'crm-colaboradores',
           component: () => import('../views/crm/ColaboradoresList.vue'),
@@ -199,6 +210,30 @@ const router = createRouter({
 
 // Guard de navegación global
 router.beforeEach((to, from, next) => {
+  const isClientRoute = to.path === '/portal-clientes'
+  const isLoginClientRoute = to.path === '/login-clientes'
+
+  // Para rutas del portal de clientes, usar clientAuthService
+  if (isClientRoute) {
+    if (!clientAuthService.isAuthenticated()) {
+      next('/login-clientes')
+      return
+    }
+    next()
+    return
+  }
+
+  // Para login de clientes, verificar si ya esta autenticado como cliente
+  if (isLoginClientRoute) {
+    if (clientAuthService.isAuthenticated()) {
+      next('/portal-clientes')
+      return
+    }
+    next()
+    return
+  }
+
+  // Para el resto de rutas, usar authService (admin)
   const isAuthenticated = authService.isAuthenticated()
   const userRole = authService.getUserRole()
 
@@ -211,25 +246,18 @@ router.beforeEach((to, from, next) => {
   // Si la ruta requiere estar autenticado
   if (to.meta.requiresAuth) {
     if (!isAuthenticated) {
-      // Redirigir al login si no está autenticado
-      if (to.path === '/portal-clientes') {
-        next('/login-clientes')
-      } else {
-        next('/login')
-      }
+      next('/login')
       return
     }
 
     // Verificar rol específico si se requiere
     if (to.meta.requiredRole && userRole !== to.meta.requiredRole) {
-      // Redirigir a home si no tiene el rol requerido
       next('/')
       return
     }
 
     // Verificar múltiples roles si se requiere
     if (to.meta.requiredRoles && (!userRole || !to.meta.requiredRoles.includes(userRole))) {
-      // Redirigir a home si no tiene ninguno de los roles requeridos
       next('/')
       return
     }
@@ -237,11 +265,10 @@ router.beforeEach((to, from, next) => {
 
   // Si la ruta requiere ser invitado (no autenticado)
   if (to.meta.requiresGuest && isAuthenticated) {
-    // Si es invitado y autenticado: si es admin va a panel, si no al portal
     if (userRole === 'admin') {
       next('/admin/products')
     } else {
-      next('/portal-clientes')
+      next('/')
     }
     return
   }
