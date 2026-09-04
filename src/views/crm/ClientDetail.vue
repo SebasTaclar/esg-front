@@ -763,7 +763,7 @@ function formatDateShort(dateStr?: string): string {
 }
 
 function openUploadModal() {
-  resourceUploadForm.value = { type: '', name: '', customType: '', useOriginalName: true, file: null }
+  resourceUploadForm.value = { type: '' as DocumentType | 'otro' | '', name: '', customType: '', useOriginalName: true, isVisible: true, file: null }
   resourceSubmitted.value = false
   showResourceUploadModal.value = true
 }

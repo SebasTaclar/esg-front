@@ -175,7 +175,7 @@ class ClientService {
     }
 
     if ('showResources' in data) {
-      (payload as Record<string, unknown>)['show_resources'] = data.showResources
+      (payload as unknown as Record<string, unknown>)['showResources'] = data.showResources
     }
 
     return payload

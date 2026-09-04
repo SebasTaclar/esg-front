@@ -1,9 +1,9 @@
 import type { Proyecto } from '@/types/crmTypes'
 
-export const mockProyectos: Proyecto[] = [
+export const mockProyectos = [
   {
     id: 1,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'SG',
     codigo: '0001-SG',
     clienteId: 1,
@@ -29,7 +29,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 2,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'LAB',
     codigo: '0001-LAB',
     clienteId: 2,
@@ -55,7 +55,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 3,
-    consecutivo: 2,
+    consecutive: 2,
     abreviatura: 'LAB',
     codigo: '0002-LAB',
     clienteId: 4,
@@ -81,7 +81,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 4,
-    consecutivo: 3,
+    consecutive: 3,
     abreviatura: 'LAB',
     codigo: '0003-LAB',
     clienteId: 9,
@@ -107,7 +107,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 5,
-    consecutivo: 4,
+    consecutive: 4,
     abreviatura: 'LAB',
     codigo: '0004-LAB',
     clienteId: 3,
@@ -132,7 +132,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 6,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'LAC',
     codigo: '0001-LAC',
     clienteId: 2,
@@ -158,7 +158,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 7,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'CPR',
     codigo: '0001-CPR',
     clienteId: 11,
@@ -184,7 +184,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 8,
-    consecutivo: 2,
+    consecutive: 2,
     abreviatura: 'SG',
     codigo: '0002-SG',
     clienteId: 6,
@@ -210,7 +210,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 9,
-    consecutivo: 3,
+    consecutive: 3,
     abreviatura: 'SG',
     codigo: '0003-SG',
     clienteId: 8,
@@ -236,7 +236,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 10,
-    consecutivo: 5,
+    consecutive: 5,
     abreviatura: 'LAB',
     codigo: '0005-LAB',
     clienteId: 12,
@@ -261,7 +261,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 11,
-    consecutivo: 2,
+    consecutive: 2,
     abreviatura: 'CPR',
     codigo: '0002-CPR',
     clienteId: 5,
@@ -287,7 +287,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 12,
-    consecutivo: 4,
+    consecutive: 4,
     abreviatura: 'SG',
     codigo: '0004-SG',
     clienteId: 10,
@@ -313,7 +313,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 13,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'LCA',
     codigo: '0001-LCA',
     clienteId: 13,
@@ -339,7 +339,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 14,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'OCE',
     codigo: '0001-OCE',
     clienteId: 14,
@@ -365,7 +365,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 15,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'LAB',
     codigo: '0002-LAB',
     clienteId: 15,
@@ -391,7 +391,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 16,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'CAV',
     codigo: '0001-CAV',
     clienteId: 16,
@@ -417,7 +417,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 17,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'SIP',
     codigo: '0001-SIP',
     clienteId: 17,
@@ -443,7 +443,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 18,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'IMN',
     codigo: '0001-IMN',
     clienteId: 18,
@@ -469,7 +469,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 19,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'CID',
     codigo: '0001-CID',
     clienteId: 19,
@@ -495,7 +495,7 @@ export const mockProyectos: Proyecto[] = [
   },
   {
     id: 20,
-    consecutivo: 1,
+    consecutive: 1,
     abreviatura: 'OIN',
     codigo: '0003-OIN',
     clienteId: 20,

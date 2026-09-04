@@ -1509,10 +1509,10 @@ async function loadEntityNames() {
   const map: Record<string, string> = {}
   try {
     const [clients, projects, quotes, tenders] = await Promise.all([
-      clientService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+      clientService.getAll({ page: 1, limit: 9999 } as any).catch(() => ({ data: [] })),
       projectService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
-      quoteService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
-      tenderService.getAll({ page: 1, limit: 9999 }).catch(() => ({ data: [] })),
+      quoteService.getAll({ page: 1, pageSize: 9999 } as any).catch(() => ({ data: [] })),
+      tenderService.getAll({ page: 1, pageSize: 9999 } as any).catch(() => ({ data: [] })),
     ])
     clients.data.forEach((c: any) => { map[`client:${c.id}`] = c.razonSocial || c.name || `Cliente ${c.id}` })
     projects.data.forEach((p: any) => { map[`project:${p.id}`] = p.offer || p.code || `Proyecto ${p.id}` })
@@ -1533,20 +1533,20 @@ async function fetchEntityOptions(entityType: EventEntityType) {
   loadingEntities.value = true
   try {
     if (entityType === 'client') {
-      const res = await clientService.getAll({ page: 1, limit: 9999 })
+      const res = await clientService.getAll({ page: 1, limit: 9999 } as any)
       entityOptions.value = res.data.map(c => ({ id: c.id, label: `${c.razonSocial} — ${c.nit || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
     } else if (entityType === 'project') {
       const res = await projectService.getAll({ page: 1, limit: 9999 })
       entityOptions.value = res.data.map(p => {
-        const offer = p.offer || (p as Record<string, unknown>).oferta || ''
-        const client = p.client?.name || (p as Record<string, unknown>).clienteRazonSocial || ''
+        const offer = p.offer || (p as unknown as Record<string, unknown>).oferta || ''
+        const client = p.client?.name || (p as unknown as Record<string, unknown>).clienteRazonSocial || ''
         return { id: p.id, label: `${offer} — ${client}` }
       }).sort((a, b) => a.label.localeCompare(b.label))
     } else if (entityType === 'quote') {
-      const res = await quoteService.getAll({ page: 1, limit: 9999 })
+      const res = await quoteService.getAll({ page: 1, pageSize: 9999 } as any)
       entityOptions.value = res.data.map(q => ({ id: q.id, label: `${q.code} — ${q.client?.name || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
     } else if (entityType === 'tender') {
-      const res = await tenderService.getAll({ page: 1, limit: 9999 })
+      const res = await tenderService.getAll({ page: 1, pageSize: 9999 } as any)
       entityOptions.value = res.data.map(t => ({ id: t.id, label: `${t.oferta} — ${t.clienteNombre || ''}` })).sort((a, b) => a.label.localeCompare(b.label))
     }
   } catch {
@@ -1735,7 +1735,7 @@ async function fetchColaboradores() {
 
 async function fetchLicitaciones() {
   try {
-    const response = await tenderService.getAll({ page: 1, limit: 9999 })
+    const response = await tenderService.getAll({ page: 1, pageSize: 9999 } as any)
     licitaciones.value = response.data
   } catch {
     licitaciones.value = []

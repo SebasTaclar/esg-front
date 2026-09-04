@@ -11,7 +11,7 @@ class QuoteService {
   private readonly endpoint = '/quotes'
 
   async getAll(params?: PaginationParams & { clientId?: number; projectId?: number; search?: string }): Promise<PaginatedResponse<Cotizacion>> {
-    const query = this.buildQuery(params)
+    const query = this.buildQuery(params as Record<string, unknown>)
     const response = await apiClient.get<Cotizacion[]>(`${this.endpoint}${query}`)
     return this.normalizeResponse(response.data)
   }

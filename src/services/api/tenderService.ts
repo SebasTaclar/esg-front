@@ -49,7 +49,7 @@ class TenderService {
   private readonly endpoint = '/tenders'
 
   async getAll(params?: PaginationParams & { search?: string }): Promise<PaginatedResponse<Licitacion>> {
-    const query = this.buildQuery(params)
+    const query = this.buildQuery(params as Record<string, unknown>)
     const response = await apiClient.get<Tender[]>(`${this.endpoint}${query}`)
     const raw = response.data as unknown
 

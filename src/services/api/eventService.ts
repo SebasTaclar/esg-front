@@ -11,7 +11,7 @@ class EventService {
   private readonly endpoint = '/events'
 
   async getAll(params?: PaginationParams & { entityType?: EventEntityType; entityId?: number }): Promise<PaginatedResponse<Evento>> {
-    const query = this.buildQuery(params)
+    const query = this.buildQuery(params as Record<string, unknown>)
     const response = await apiClient.get<Evento[]>(`${this.endpoint}${query}`)
     return this.normalizeResponse(response.data)
   }

@@ -25,6 +25,7 @@ import type {
   Cotizacion,
   CreateCotizacionRequest,
   UpdateCotizacionRequest,
+  ClientContact,
 } from '@/types/crmTypes'
 
 // Estado global compartido
@@ -268,7 +269,7 @@ export function useCRM() {
     loading.value = true
     error.value = null
     try {
-      const updated = await clientService.updateContacto(clienteId, contactoId, data)
+      const updated = await clientService.updateContacto(clienteId, contactoId, data as Partial<ClientContact>)
       return {
         id: updated.id || 0,
         clienteId,

@@ -390,6 +390,11 @@ const agrupadoPorNorma = computed((): CompetenciaColaborador[] => {
   return colaborador.value.competencias
 })
 
+const documentosCompletos = computed(() => {
+  if (!colaborador.value) return 0
+  return colaborador.value.documentos.filter(d => d.estado === 'completo').length
+})
+
 async function fetchColaborador() {
   const id = props.colaboradorId
   if (!id) return

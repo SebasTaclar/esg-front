@@ -606,6 +606,31 @@ export interface CreatePagoRequest {
   items: { productId: number; quantity: number; selectedColor?: string }[]
 }
 
+// ====== CONTACTO PROYECTO ======
+
+export interface ContactoProyecto {
+  id: number
+  proyectoId: number
+  clienteId: number
+  nombre: string
+  cargo: string
+  telefono: string
+  correo: string
+  esPrincipal: boolean
+}
+
+// ====== DOCUMENTO PROYECTO ======
+
+export interface DocumentoProyecto {
+  id: number
+  proyectoId: number
+  nombre: string
+  tipo: string
+  fecha: string
+  usuario: string
+  tamano: number
+}
+
 // ====== ACTIVIDADES DE PROYECTO ======
 
 export interface ActividadProyecto {

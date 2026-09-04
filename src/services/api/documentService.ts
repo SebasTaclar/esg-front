@@ -11,7 +11,7 @@ class DocumentService {
   private readonly endpoint = '/documents'
 
   async getAll(params?: PaginationParams & { entityType?: DocumentEntityType; entityId?: number }): Promise<PaginatedResponse<DocumentoEntity>> {
-    const query = this.buildQuery(params)
+    const query = this.buildQuery(params as Record<string, unknown>)
     const response = await apiClient.get<DocumentoEntity[]>(`${this.endpoint}${query}`)
     return this.normalizeResponse(response.data)
   }
@@ -76,7 +76,7 @@ class DocumentService {
       }
       return {
         data: Array.isArray(items) ? items : [],
-        total: (obj['total'] || obj['count'] as number) || 0,
+        total: (obj['total'] as number) || (obj['count'] as number) || 0,
         page: (obj['page'] as number) || 1,
         pageSize: (obj['limit'] as number) || 0,
         totalPages: (obj['totalPages'] as number) || 1,

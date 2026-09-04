@@ -29,8 +29,8 @@ function mapMockToProyecto(raw: Record<string, unknown>): Proyecto {
     clientId: clienteId,
     client: {
       id: clienteId,
-      name: (raw.client?.name as string) || (raw.clienteRazonSocial as string) || '',
-      code: (raw.client?.code as string) || cliente?.codigo || '',
+      name: ((raw.client as Record<string, unknown>)?.name as string) || (raw.clienteRazonSocial as string) || '',
+      code: ((raw.client as Record<string, unknown>)?.code as string) || cliente?.codigo || '',
     },
     projectType: (raw.projectType as string) || (raw.tipoProyectoNombre as string) || '',
     serviceType: (raw.serviceType as string) || (raw.tipoServicioNombre as string) || '',
@@ -52,7 +52,7 @@ function mapMockToProyecto(raw: Record<string, unknown>): Proyecto {
 class ProjectMockService {
   async getAll(params?: PaginationParams): Promise<PaginatedResponse<Proyecto>> {
     await this.delay()
-    let data = mockProyectos.map(mapMockToProyecto)
+    let data = mockProyectos.map((p) => mapMockToProyecto(p as unknown as Record<string, unknown>))
 
     if (params?.sortBy) {
       const key = params.sortBy as keyof Proyecto
@@ -88,7 +88,7 @@ class ProjectMockService {
 
   async getByCliente(clienteId: number): Promise<Proyecto[]> {
     await this.delay()
-    return mockProyectos.filter((p) => p.clienteId === clienteId).map(mapMockToProyecto)
+    return mockProyectos.filter((p: any) => p.clienteId === clienteId).map((p) => mapMockToProyecto(p as unknown as Record<string, unknown>))
   }
 
   async create(data: CreateProyectoRequest): Promise<Proyecto> {
@@ -237,7 +237,7 @@ class ProjectMockService {
 
   async getClienteCronologia(clienteId: number): Promise<EventoCronologia[]> {
     await this.delay()
-    const proyectoIds = mockProyectos.filter((p) => p.clienteId === clienteId).map((p) => p.id)
+    const proyectoIds = mockProyectos.filter((p: any) => p.clienteId === clienteId).map((p) => p.id)
     return mockCronologia
       .filter(
         (e) =>

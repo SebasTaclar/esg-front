@@ -333,8 +333,8 @@ onMounted(() => {
 })
 
 const filteredCards = computed(() => {
-  if (activeTab.value === 'todos') return cards
-  return cards.filter(card => card.category === activeTab.value)
+  if (activeTab.value === 'todos') return cards.value
+  return cards.value.filter((card: Card) => card.category === activeTab.value)
 })
 
 const recursosTabs = [

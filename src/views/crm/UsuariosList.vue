@@ -437,7 +437,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { userService } from '@/services/api/userService'
-import type { User } from '@/services/api/userService'
+import type { User, CreateUserRequest, UpdateUserRequest } from '@/services/api/userService'
 import { useCRM } from '@/composables/useCRM'
 
 const { clientes, fetchClientes } = useCRM()
