@@ -145,7 +145,7 @@ class AuthService {
    * Verifica si el usuario es administrador
    */
   isAdmin(): boolean {
-    return this.hasRole('admin')
+    return this.hasRole('admin') || this.hasRole('superadmin')
   }
 
   /**

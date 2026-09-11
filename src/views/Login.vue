@@ -109,7 +109,7 @@ const handleLogin = async () => {
         authService.logout()
         return
       }
-      if (userInfo?.role === 'admin') {
+      if (userInfo?.role === 'admin' || userInfo?.role === 'superadmin') {
         router.push('/admin/products')
       } else {
         router.push('/')

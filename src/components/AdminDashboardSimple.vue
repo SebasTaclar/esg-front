@@ -1644,6 +1644,14 @@ function getEntityLabel(entityType: string): string {
   return map[entityType] || entityType || '-'
 }
 
+function utcToLocal(utcStr: string): { date: string; time: string } {
+  const d = new Date(utcStr)
+  return {
+    date: d.toLocaleDateString('sv-SE'),
+    time: d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+  }
+}
+
 function formatEventDate(dateStr: string): string {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('es-CO', {
@@ -1675,10 +1683,10 @@ function openEventModal(ev?: Evento, mode: 'view' | 'edit' = 'edit') {
       typeOtro: ev.typeOtro || '',
       title: ev.title || '',
       client: ev.client || '',
-      startDate: ev.date ? ev.date.slice(0, 10) : '',
-      startTime: ev.date ? ev.date.slice(11, 16) : '08:00',
-      endDate: ev.endDate ? ev.endDate.slice(0, 10) : '',
-      endTime: ev.endDate ? ev.endDate.slice(11, 16) : '17:00',
+      startDate: ev.date ? utcToLocal(ev.date).date : '',
+      startTime: ev.date ? utcToLocal(ev.date).time : '08:00',
+      endDate: ev.endDate ? utcToLocal(ev.endDate).date : '',
+      endTime: ev.endDate ? utcToLocal(ev.endDate).time : '17:00',
       modalidad: ev.modalidad || '',
       modalidadOtro: ev.modalidadOtro || '',
       location: ev.location || '',

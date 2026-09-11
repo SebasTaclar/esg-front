@@ -14,7 +14,7 @@ export interface User {
 }
 
 export interface CreateUserRequest {
-  clientId?: number
+  clientId?: number | null
   password: string
   email?: string
   name?: string

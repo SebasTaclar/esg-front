@@ -88,7 +88,7 @@ const router = createRouter({
       component: () => import('../views/AdminDashboardNew.vue'),
       meta: {
         requiresAuth: true,
-        requiredRole: 'admin', // Solo accesible para administradores
+        requiredRoles: ['admin', 'superadmin'],
       },
     },
 
@@ -103,7 +103,7 @@ const router = createRouter({
       component: () => import('../views/crm/CRMMain.vue'),
       meta: {
         requiresAuth: true,
-        requiredRole: 'admin',
+        requiredRoles: ['admin', 'superadmin'],
       },
       children: [
         {
@@ -238,7 +238,7 @@ router.beforeEach((to, from, next) => {
   const userRole = authService.getUserRole()
 
   // Redirigir admins autenticados que intenten ir al login
-  if (to.path === '/login' && isAuthenticated && userRole === 'admin') {
+  if (to.path === '/login' && isAuthenticated && (userRole === 'admin' || userRole === 'superadmin')) {
     next('/admin/products')
     return
   }
@@ -265,7 +265,7 @@ router.beforeEach((to, from, next) => {
 
   // Si la ruta requiere ser invitado (no autenticado)
   if (to.meta.requiresGuest && isAuthenticated) {
-    if (userRole === 'admin') {
+    if (userRole === 'admin' || userRole === 'superadmin') {
       next('/admin/products')
     } else {
       next('/')
