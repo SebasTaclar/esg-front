@@ -14,7 +14,7 @@
             </svg>
           </div>
           <div class="summary-info">
-            <span class="summary-count">{{ usuarios.length }}</span>
+            <span class="summary-count">{{ usuarios.filter(u => u.role !== 'superadmin').length }}</span>
             <span class="summary-label">Usuarios</span>
           </div>
         </div>
@@ -550,7 +550,7 @@ onUnmounted(() => {
 })
 
 const filteredUsuarios = computed(() => {
-  let result = [...usuarios.value]
+  let result = usuarios.value.filter((u) => u.role !== 'superadmin')
   if (searchTerm.value) {
     const term = searchTerm.value.toLowerCase()
     result = result.filter((u) => {
@@ -636,6 +636,7 @@ async function handleCreate() {
       payload.clientId = createForm.value.clientId!
       payload.email = createForm.value.email
     } else {
+      payload.clientId = null!
       payload.name = createForm.value.name
       payload.email = createForm.value.email
     }
