@@ -382,6 +382,18 @@
     :payload="certPreviewPayload"
     @close="certPreviewPayload = null"
   />
+
+  <!-- Certificados por participante del servicio -->
+  <ServiceCertificatesModal
+    v-if="certServiceModal && certBase"
+    :servicio="certServiceModal.servicio"
+    :service-index="certServiceModal.index"
+    :base="certBase"
+    :saving="savingParticipants"
+    :error-message="certModalError"
+    @save="guardarParticipantes"
+    @close="cerrarModalCertificados"
+  />
 </template>
 
 <script setup lang="ts">
@@ -391,14 +403,22 @@ import { useCRM } from '@/composables/useCRM'
 import { mockServicios } from '@/mock/services'
 import { mockContactosProyecto } from '@/mock/contacts'
 import { mockDocumentosProyecto } from '@/mock/documents'
-import { type CertificatePayload } from '@/utils/certificatePdf'
+import { type CertificateBaseData, type CertificatePayload } from '@/utils/certificatePdf'
 import CertificatePreviewModal from '@/components/CertificatePreviewModal.vue'
-import type { Proyecto, Cliente, ServicioProyecto, ContactoProyecto, DocumentoProyecto } from '@/types/crmTypes'
+import ServiceCertificatesModal from '@/components/ServiceCertificatesModal.vue'
+import type {
+  Proyecto,
+  Cliente,
+  ServicioProyecto,
+  ServicioParticipante,
+  ContactoProyecto,
+  DocumentoProyecto,
+} from '@/types/crmTypes'
 
 const props = defineProps<{ projectId?: number }>()
 
 const route = useRoute()
-const { loading, fetchCliente, fetchProyecto } = useCRM()
+const { loading, fetchCliente, fetchProyecto, updateProyecto } = useCRM()
 
 const proyecto = ref<Proyecto | null>(null)
 const cliente = ref<Cliente | null>(null)
@@ -407,6 +427,9 @@ const contactos = ref<ContactoProyecto[]>([])
 const documentos = ref<DocumentoProyecto[]>([])
 const activeTab = ref('informacion')
 const certPreviewPayload = ref<CertificatePayload | null>(null)
+const certServiceModal = ref<{ servicio: ServicioProyecto; index: number } | null>(null)
+const savingParticipants = ref(false)
+const certModalError = ref('')
 
 const tabs = computed(() => [
   { id: 'informacion', label: 'Información', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' },
@@ -594,14 +617,63 @@ function prepararCertificadoProyecto() {
 }
 
 function prepararCertificadoServicio(servicio: ServicioProyecto, index: number) {
+  certServiceModal.value = { servicio, index }
+}
+
+const certBase = computed<CertificateBaseData | null>(() => {
   const base = buildCertificateBase()
-  if (!base) return
+  if (!base) return null
   const { _scopeProject, ...rest } = base
-  certPreviewPayload.value = {
-    ...rest,
-    scope: servicio.name || 'Servicio',
-    certificateNumber: `CERT-${rest.projectCode}-${index + 1}-${Date.now()}`,
+  void _scopeProject
+  return rest
+})
+
+function limpiarServicioParaGuardar(servicio: ServicioProyecto): ServicioProyecto {
+  const data: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(servicio)) {
+    if (!key.startsWith('_')) data[key] = value
   }
+  return data as unknown as ServicioProyecto
+}
+
+async function guardarParticipantes(participants: ServicioParticipante[]) {
+  if (!proyecto.value || !certServiceModal.value) return
+  const index = certServiceModal.value.index
+  certModalError.value = ''
+  savingParticipants.value = true
+  try {
+    const serviciosParaGuardar = servicios.value.map((s, i) => {
+      const limpio = limpiarServicioParaGuardar(s)
+      if (i === index) limpio.participants = participants
+      return limpio
+    })
+    const actualizado = await updateProyecto(proyecto.value.id, {
+      services: serviciosParaGuardar,
+    })
+    if (!actualizado) {
+      certModalError.value = 'No se pudo guardar los participantes. Intenta de nuevo.'
+      return
+    }
+    const serviciosResp = actualizado.services
+    if (serviciosResp && serviciosResp[index]?.participants) {
+      servicios.value = serviciosResp.map((s) => ({ ...s }))
+    } else {
+      servicios.value = serviciosParaGuardar.map((s) => ({ ...s }))
+      if (participants.length > 0) {
+        certModalError.value =
+          'El proyecto se guardó, pero el backend no devolvió los participantes. Verifica al recargar la página.'
+      }
+    }
+  } catch (e) {
+    certModalError.value = e instanceof Error ? e.message : 'Error al guardar los participantes'
+  } finally {
+    savingParticipants.value = false
+  }
+}
+
+function cerrarModalCertificados() {
+  certServiceModal.value = null
+  certModalError.value = ''
 }
 
 onMounted(async () => {

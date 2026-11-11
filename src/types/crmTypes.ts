@@ -171,6 +171,11 @@ export interface UpdateContactoRequest extends Partial<Omit<CreateContactoReques
 
 // ====== PROYECTO ======
 
+export interface ServicioParticipante {
+  name: string
+  documentId: string
+}
+
 export interface ServicioProyecto {
   name: string
   customName?: string
@@ -202,6 +207,12 @@ export interface ServicioProyecto {
   _showTaxes?: boolean
   _showUtilities?: boolean
   _collapsed?: boolean
+  participants?: ServicioParticipante[]
+  modality?: string
+  hoursIntensity?: number
+  activityDescription?: string
+  implementationDate?: string
+  signatureUrl?: string
 }
 
 export interface ProjectClient {

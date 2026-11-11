@@ -233,6 +233,31 @@
                 <label class="form-label">Total</label>
                 <input :value="formatCurrency(calcTotal(svc))" type="text" class="form-input" readonly />
               </div>
+              <div class="form-group">
+                <label class="form-label">Modalidad (Diploma)</label>
+                <select v-model="svc.modality" class="form-input">
+                  <option value="">Seleccionar modalidad...</option>
+                  <option value="Virtual">Virtual</option>
+                  <option value="Presencial">Presencial</option>
+                  <option value="Mixta">Mixta</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Intensidad de horas (Diploma)</label>
+                <input v-model.number="svc.hoursIntensity" type="number" class="form-input" placeholder="0" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha implementación (Diploma)</label>
+                <input v-model="svc.implementationDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Firma colaborador (URL)</label>
+                <input v-model="svc.signatureUrl" type="url" class="form-input" placeholder="https://...png/jpg" />
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label">Descripción actividad (Diploma)</label>
+                <textarea v-model="svc.activityDescription" class="form-input svc-desc-input" rows="2" placeholder="Describe la actividad del servicio..."></textarea>
+              </div>
             </div>
           </div>
         </div>
@@ -519,6 +544,11 @@ function addService() {
     iva: 0,
     totalPrice: 0,
     collaborator: '',
+    modality: '',
+    hoursIntensity: 0,
+    activityDescription: '',
+    implementationDate: '',
+    signatureUrl: '',
   })
 }
 
@@ -635,6 +665,12 @@ async function handleSubmit() {
         iva: calcIVA(s),
         totalPrice: calcTotal(s),
         collaborator: s.collaborator,
+        participants: s.participants,
+        modality: (s.modality || '').trim() || undefined,
+        hoursIntensity: s.hoursIntensity ? Number(s.hoursIntensity) : undefined,
+        activityDescription: (s.activityDescription || '').trim() || undefined,
+        implementationDate: (s.implementationDate || '').trim() || undefined,
+        signatureUrl: (s.signatureUrl || '').trim() || undefined,
       }))
 
     const mergedExtraData: Record<string, unknown> = { ...loadedExtraData.value }
@@ -848,6 +884,12 @@ onMounted(async () => {
   transition: border-color 0.2s;
 }
 .form-input:focus { border-color: var(--c-primary); }
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+}
 
 .form-textarea {
   resize: vertical;
