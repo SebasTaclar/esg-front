@@ -25,7 +25,11 @@ class ProjectService {
     const response = await apiClient.get<Proyecto[] | { projects: Proyecto[]; count: number }>(
       `${this.endpoint}${query}`,
     )
-    return this.normalizeResponse(response.data, params)
+    const result = this.normalizeResponse(response.data, params)
+    return {
+      ...result,
+      data: result.data,
+    }
   }
 
   async getById(id: number): Promise<Proyecto> {

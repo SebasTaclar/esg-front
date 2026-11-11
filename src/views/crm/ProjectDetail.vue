@@ -27,11 +27,18 @@
         </span>
         <router-link :to="`/admin/crm/proyectos/${proyecto.id}/editar`" class="btn-outline">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0-2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
           Editar proyecto
         </router-link>
+        <button class="btn-outline btn-cert" @click="prepararCertificadoProyecto">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="7"/>
+            <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+          </svg>
+          Generar certificado
+        </button>
       </div>
     </div>
 
@@ -160,6 +167,36 @@
                 <span class="info-label">Valor total</span>
                 <span class="info-value highlight">{{ formatCurrency(proyecto.totalCost) }}</span>
               </div>
+              <div class="info-row">
+                <span class="info-label">Número de orden de compra (OC)</span>
+                <span class="info-value">{{ proyecto.purchaseOrderNumber || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha de emisión de la OC</span>
+                <span class="info-value">{{ proyecto.purchaseOrderDate ? formatDate(proyecto.purchaseOrderDate) : '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="proyecto.status.toLowerCase() === 'finalizado'" class="info-card billing-info-card">
+            <h3>Información de facturación</h3>
+            <div class="info-rows">
+              <div class="info-row">
+                <span class="info-label">Número de factura emitida</span>
+                <span class="info-value">{{ proyecto.invoiceNumber || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha de emisión</span>
+                <span class="info-value">{{ proyecto.invoiceIssueDate ? formatDate(proyecto.invoiceIssueDate) : '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha proyectada de pago</span>
+                <span class="info-value">{{ proyecto.projectedPaymentDate ? formatDate(proyecto.projectedPaymentDate) : '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Fecha efectiva de pago</span>
+                <span class="info-value">{{ proyecto.actualPaymentDate ? formatDate(proyecto.actualPaymentDate) : '-' }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -181,6 +218,7 @@
                 <th>Cantidad</th>
                 <th>Valor Unitario</th>
                 <th>Valor Total</th>
+                <th class="cert-actions-col">Certificado</th>
               </tr>
             </thead>
             <tbody>
@@ -191,11 +229,24 @@
                 <td>{{ servicio.quantity }}</td>
                 <td>{{ formatCurrency(servicio.unitPrice) }}</td>
                 <td class="value-cell">{{ formatCurrency(servicio.totalPrice) }}</td>
+                <td class="cert-actions-cell">
+                  <button
+                    class="btn-cert-service"
+                    title="Generar certificado de este servicio"
+                    @click="prepararCertificadoServicio(servicio, index)"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="8" r="7"/>
+                      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+                    </svg>
+                    Certificado
+                  </button>
+                </td>
               </tr>
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="5" class="total-label">Total</td>
+                <td colspan="6" class="total-label">Total</td>
                 <td class="total-value">{{ formatCurrency(totalServicios) }}</td>
               </tr>
             </tfoot>
@@ -269,22 +320,46 @@
 
       <!-- SEGUIMIENTO -->
       <div v-if="activeTab === 'seguimiento'" class="tab-panel">
-        <div class="section-header">
-          <h3>Seguimiento ({{ actividades.length }})</h3>
-        </div>
-        <div class="timeline">
-          <div v-for="actividad in actividades" :key="actividad.id" class="timeline-item">
-            <div class="timeline-dot" :class="getActivityColor(actividad.tipo)"></div>
-            <div class="timeline-content">
-              <span class="timeline-date">{{ formatDateTime(actividad.fecha) }}</span>
-              <span class="timeline-text">{{ actividad.descripcion }}</span>
-              <span class="timeline-user">{{ actividad.usuario }}</span>
+        <div v-if="proyecto && proyecto.status.toLowerCase() === 'finalizado'" class="billing-tracking">
+          <div class="section-header">
+            <h3>Seguimiento de factura</h3>
+            <span class="payment-status" :class="paymentStatus.class">{{ paymentStatus.label }}</span>
+          </div>
+          <div v-if="paymentAlert" class="payment-alert" :class="paymentAlert.class">
+            {{ paymentAlert.message }}
+          </div>
+          <div class="billing-tracking-grid">
+            <div class="billing-tracking-item">
+              <span class="info-label">Número de factura</span>
+              <span class="info-value">{{ proyecto.invoiceNumber || '-' }}</span>
+            </div>
+            <div class="billing-tracking-item">
+              <span class="info-label">Fecha de emisión</span>
+              <span class="info-value">{{ proyecto.invoiceIssueDate ? formatDate(proyecto.invoiceIssueDate) : '-' }}</span>
+            </div>
+            <div class="billing-tracking-item">
+              <span class="info-label">Fecha proyectada de pago</span>
+              <span class="info-value">{{ proyecto.projectedPaymentDate ? formatDate(proyecto.projectedPaymentDate) : '-' }}</span>
+            </div>
+            <div class="billing-tracking-item">
+              <span class="info-label">Fecha efectiva de pago</span>
+              <span class="info-value">{{ proyecto.actualPaymentDate ? formatDate(proyecto.actualPaymentDate) : '-' }}</span>
+            </div>
+            <div class="billing-tracking-item">
+              <span class="info-label">Días restantes / Mora</span>
+              <span class="info-value" :class="paymentTiming.class">{{ paymentTiming.label }}</span>
+            </div>
+            <div class="billing-tracking-item">
+              <span class="info-label">Estado</span>
+              <span class="info-value payment-state" :class="paymentStatus.class">{{ paymentStatus.label }}</span>
             </div>
           </div>
         </div>
-        <div v-if="actividades.length === 0" class="empty-tab">
-          <p>No hay actividades registradas para este proyecto.</p>
+
+        <div v-else class="empty-tab">
+          <p>El seguimiento de facturación estará disponible cuando el proyecto esté finalizado.</p>
         </div>
+
       </div>
     </div>
   </div>
@@ -300,6 +375,13 @@
     <h3>Proyecto no encontrado</h3>
     <router-link to="/admin/proyectos" class="btn-primary">Volver a Proyectos</router-link>
   </div>
+
+  <!-- Vista previa del certificado -->
+  <CertificatePreviewModal
+    v-if="certPreviewPayload"
+    :payload="certPreviewPayload"
+    @close="certPreviewPayload = null"
+  />
 </template>
 
 <script setup lang="ts">
@@ -309,8 +391,9 @@ import { useCRM } from '@/composables/useCRM'
 import { mockServicios } from '@/mock/services'
 import { mockContactosProyecto } from '@/mock/contacts'
 import { mockDocumentosProyecto } from '@/mock/documents'
-import { mockActividades } from '@/mock/activities'
-import type { Proyecto, Cliente, ServicioProyecto, ContactoProyecto, DocumentoProyecto, ActividadProyecto } from '@/types/crmTypes'
+import { type CertificatePayload } from '@/utils/certificatePdf'
+import CertificatePreviewModal from '@/components/CertificatePreviewModal.vue'
+import type { Proyecto, Cliente, ServicioProyecto, ContactoProyecto, DocumentoProyecto } from '@/types/crmTypes'
 
 const props = defineProps<{ projectId?: number }>()
 
@@ -322,19 +405,75 @@ const cliente = ref<Cliente | null>(null)
 const servicios = ref<ServicioProyecto[]>([])
 const contactos = ref<ContactoProyecto[]>([])
 const documentos = ref<DocumentoProyecto[]>([])
-const actividades = ref<ActividadProyecto[]>([])
 const activeTab = ref('informacion')
+const certPreviewPayload = ref<CertificatePayload | null>(null)
 
 const tabs = computed(() => [
   { id: 'informacion', label: 'Información', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' },
   { id: 'servicios', label: 'Servicios', count: servicios.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>' },
   { id: 'contactos', label: 'Contactos', count: contactos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>' },
   { id: 'documentos', label: 'Documentos', count: documentos.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' },
-  { id: 'seguimiento', label: 'Seguimiento', count: actividades.value.length, icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
+  { id: 'seguimiento', label: 'Seguimiento', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' },
 ])
 
 const totalServicios = computed(() => {
   return servicios.value.reduce((sum, s) => sum + s.totalPrice, 0)
+})
+
+const paymentStatus = computed(() => {
+  if (!proyecto.value?.invoiceNumber) return { label: 'Sin factura registrada', class: 'status-missing' }
+  if (proyecto.value.actualPaymentDate) return { label: 'Pagada', class: 'status-paid' }
+  if (
+    proyecto.value.projectedPaymentDate &&
+    new Date(proyecto.value.projectedPaymentDate).setHours(0, 0, 0, 0) <
+      new Date().setHours(0, 0, 0, 0)
+  ) {
+    return { label: 'Vencida', class: 'status-overdue' }
+  }
+  return { label: 'Pendiente de pago', class: 'status-pending' }
+})
+
+const paymentAlert = computed(() => {
+  const paymentDate = proyecto.value?.projectedPaymentDate
+  if (!proyecto.value || proyecto.value.actualPaymentDate || !paymentDate) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(paymentDate)
+  dueDate.setHours(0, 0, 0, 0)
+  const daysUntilPayment = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000)
+
+  if (daysUntilPayment < 0) {
+    return { class: 'alert-overdue', message: `Alerta: el pago está vencido hace ${Math.abs(daysUntilPayment)} día(s).` }
+  }
+  if (daysUntilPayment <= 7) {
+    return { class: 'alert-soon', message: `Alerta: la fecha proyectada de pago es en ${daysUntilPayment} día(s).` }
+  }
+  return { class: 'alert-info', message: 'Factura pendiente dentro de la fecha proyectada de pago.' }
+})
+
+const paymentTiming = computed(() => {
+  if (!proyecto.value?.invoiceNumber || proyecto.value.actualPaymentDate) {
+    return { label: '-', class: '' }
+  }
+
+  if (!proyecto.value.projectedPaymentDate) {
+    return { label: 'Sin fecha proyectada', class: 'timing-missing' }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(proyecto.value.projectedPaymentDate)
+  dueDate.setHours(0, 0, 0, 0)
+  const days = Math.ceil((dueDate.getTime() - today.getTime()) / 86400000)
+
+  if (days < 0) {
+    return { label: `${Math.abs(days)} día(s) de mora`, class: 'timing-overdue' }
+  }
+  if (days === 0) {
+    return { label: 'Vence hoy', class: 'timing-soon' }
+  }
+  return { label: `${days} día(s) restantes`, class: 'timing-ok' }
 })
 
 async function loadProjectData(projectId: number) {
@@ -345,20 +484,11 @@ async function loadProjectData(projectId: number) {
   servicios.value = proyecto.value.services || []
   contactos.value = []
   documentos.value = mockDocumentosProyecto.filter((d) => d.proyectoId === projectId)
-  actividades.value = mockActividades
-    .filter((a) => a.proyectoId === projectId)
-    .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
 }
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-
-function formatDateTime(dateStr: string): string {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function formatCurrency(value: number | undefined): string {
@@ -396,18 +526,82 @@ function getDocColor(tipo: string): string {
   return colors[tipo] || 'gray'
 }
 
-function getActivityColor(tipo: string): string {
-  const colors: Record<string, string> = {
-    proyecto_creado: 'green',
-    oferta_enviada: 'blue',
-    oferta_aprobada: 'green',
-    reunion: 'amber',
-    documento_agregado: 'teal',
-    visita: 'orange',
-    proyecto_finalizado: 'green',
-    proyecto_actualizado: 'blue',
+function buildCertificateBase() {
+  const proj = proyecto.value
+  if (!proj) return null
+  const raw = proj as unknown as Record<string, unknown>
+  const clientRaw = (cliente.value as unknown as Record<string, unknown>) || {}
+  const clientName =
+    (proj.client?.name as string | undefined) ||
+    (clientRaw.razonSocial as string | undefined) ||
+    (clientRaw.name as string | undefined) ||
+    (raw.clienteRazonSocial as string | undefined) ||
+    ''
+  const clientNit =
+    (proj.client?.nit as string | undefined) ||
+    (clientRaw.nit as string | undefined) ||
+    undefined
+  const projectCode =
+    proj.code ||
+    (raw.codigo as string | undefined) ||
+    proj.abbreviation ||
+    (raw.abreviatura as string | undefined) ||
+    'SIN-CODIGO'
+  const norm =
+    proj.norm ||
+    (raw.normaCodigo as string | undefined) ||
+    undefined
+  const serviceType =
+    proj.serviceType ||
+    (raw.tipoServicioNombre as string | undefined) ||
+    undefined
+  const startDate =
+    proj.startDate ||
+    (raw.fechaInicio as string | undefined) ||
+    undefined
+  const endDate =
+    proj.endDate ||
+    (raw.fechaFin as string | undefined) ||
+    undefined
+  const scopeProject =
+    proj.description ||
+    (raw.descripcion as string | undefined) ||
+    proj.projectType ||
+    (raw.tipoProyectoNombre as string | undefined) ||
+    ''
+  return {
+    clientName,
+    clientNit,
+    projectCode,
+    norm,
+    serviceType,
+    startDate,
+    endDate,
+    issueDate: endDate || undefined,
+    _scopeProject: scopeProject,
   }
-  return colors[tipo] || 'gray'
+}
+
+function prepararCertificadoProyecto() {
+  const base = buildCertificateBase()
+  if (!base) return
+  const { _scopeProject, ...rest } = base
+  certPreviewPayload.value = {
+    ...rest,
+    scope: _scopeProject || rest.serviceType || '',
+    certificateNumber: `CERT-${rest.projectCode}-${Date.now()}`,
+  }
+}
+
+function prepararCertificadoServicio(servicio: ServicioProyecto, index: number) {
+  const base = buildCertificateBase()
+  if (!base) return
+  const { _scopeProject, ...rest } = base
+  certPreviewPayload.value = {
+    ...rest,
+    scope: servicio.name || 'Servicio',
+    certificateNumber: `CERT-${rest.projectCode}-${index + 1}-${Date.now()}`,
+  }
 }
 
 onMounted(async () => {
@@ -559,6 +753,33 @@ watch(() => props.projectId, async (newId) => {
 }
 .btn-primary:hover { background: var(--c-primary-hover); }
 
+/* ===== CERTIFICADO (aditivo) ===== */
+.btn-cert {
+  border-color: rgba(200, 155, 45, 0.4);
+  color: var(--c-primary);
+}
+.btn-cert:hover:not(:disabled) { border-color: var(--c-primary); background: rgba(200, 155, 45, 0.06); }
+.btn-cert:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.cert-actions-col { width: 130px; }
+.cert-actions-cell { white-space: nowrap; }
+.btn-cert-service {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid rgba(200, 155, 45, 0.4);
+  background: rgba(200, 155, 45, 0.06);
+  color: var(--c-primary);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-cert-service:hover:not(:disabled) { background: rgba(200, 155, 45, 0.14); border-color: var(--c-primary); }
+.btn-cert-service:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* ===== SUMMARY CARDS ===== */
 .summary-cards {
   display: grid;
@@ -654,6 +875,37 @@ watch(() => props.projectId, async (newId) => {
   gap: 20px;
 }
 
+.billing-info-card {
+  grid-column: 1 / -1;
+}
+
+.billing-info-card .info-rows {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.billing-info-card .info-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+}
+
+.billing-info-card .info-label {
+  line-height: 1.35;
+}
+
+.billing-info-card .info-value {
+  line-height: 1.35;
+  white-space: normal;
+}
+
 .info-card {
   background: var(--c-light);
   border: 1px solid var(--c-border);
@@ -715,6 +967,63 @@ watch(() => props.projectId, async (newId) => {
   font-weight: 600;
   color: var(--c-primary);
 }
+
+.billing-tracking {
+  background: var(--c-light);
+  border: 1px solid var(--c-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.billing-tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.billing-tracking-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.payment-status {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-paid { background: #DCFCE7; color: #15803D; }
+.status-pending { background: #FEF3C7; color: #B45309; }
+.status-missing { background: #F3F4F6; color: #6B7280; }
+.status-overdue { background: #FEE2E2; color: #B91C1C; }
+
+.payment-state {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.timing-ok { color: #15803D; }
+.timing-soon { color: #B45309; }
+.timing-overdue { color: #B91C1C; }
+.timing-missing { color: #6B7280; }
+
+.payment-alert {
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.alert-info { background: #EFF6FF; color: #1D4ED8; }
+.alert-soon { background: #FEF3C7; color: #B45309; }
+.alert-overdue { background: #FEF2F2; color: #B91C1C; }
 
 /* ===== DATA TABLE ===== */
 .table-responsive { overflow-x: auto; }
@@ -921,6 +1230,8 @@ watch(() => props.projectId, async (newId) => {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .summary-cards { grid-template-columns: repeat(3, 1fr); }
+  .billing-info-card .info-rows { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .billing-tracking-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 768px) {
@@ -928,6 +1239,8 @@ watch(() => props.projectId, async (newId) => {
   .header-right { flex-direction: column; align-items: flex-start; }
   .summary-cards { grid-template-columns: repeat(2, 1fr); }
   .info-grid { grid-template-columns: 1fr; }
+  .billing-info-card .info-rows { grid-template-columns: 1fr; }
+  .billing-tracking-grid { grid-template-columns: 1fr; }
   .tabs-bar { overflow-x: auto; }
 }
 

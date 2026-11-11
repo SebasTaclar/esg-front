@@ -39,8 +39,11 @@ function mapTenderToLicitacion(t: Tender): Licitacion {
     fechaPublicacion: t.publicationDate || '',
     fechaCierre: t.closingDate,
     valorEstimado: t.estimatedValue,
+    presupuestoOficial: t.officialBudget,
+    valorEstimadoOferta: t.offerEstimatedValue,
+    fechaCierreProyecto: t.projectClosingDate,
     observaciones: t.observations,
-    servicios: t.services || [],
+    servicios: t.serviceItems || t.services || [],
     createdAt: t.createdAt,
   }
 }

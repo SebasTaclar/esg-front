@@ -88,7 +88,7 @@
             <input v-model="form.startDate" type="date" class="form-input" required />
           </div>
           <div class="form-group">
-            <label class="form-label">Fecha de Fin</label>
+            <label class="form-label">Fecha de Seguimiento</label>
             <input v-model="form.endDate" type="date" class="form-input" />
           </div>
           <div class="form-group">
@@ -99,16 +99,59 @@
             </select>
           </div>
           <div class="form-group">
+            <label class="form-label">Número de orden de compra (OC)</label>
+            <input v-model="form.purchaseOrderNumber" type="text" class="form-input" placeholder="Ej: OC-001" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de emisión de la orden de compra</label>
+            <input v-model="form.purchaseOrderDate" type="date" class="form-input" />
+          </div>
+          <div class="form-group">
             <label class="form-label">Descripción</label>
             <textarea v-model="form.description" class="form-input form-textarea" rows="2" placeholder="Descripción del servicio..."></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label">Observaciones</label>
+            <label class="form-label">Observaciones / Oportunidades comerciales</label>
             <textarea v-model="form.observations" class="form-input form-textarea" rows="2" placeholder="Notas adicionales..."></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Costo Total</label>
             <input :value="formatCurrency(computedTotalCost)" type="text" class="form-input" readonly />
+          </div>
+        </div>
+      </div>
+
+      <!-- Facturación de proyectos finalizados -->
+      <div v-if="form.status.toLowerCase() === 'finalizado'" class="form-card">
+        <h3 class="card-title">Información de facturación</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Número de factura emitida</label>
+            <div class="input-currency">
+              <span class="input-currency-prefix">F.</span>
+              <input :value="invoiceNumberSuffix" @input="onInvoiceNumberInput($event)" type="text" class="form-input" placeholder="Ej: 002" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha de emisión de la factura</label>
+            <input v-model="form.invoiceIssueDate" type="date" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha proyectada de pago</label>
+            <input v-model="form.projectedPaymentDate" type="date" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha efectiva de pago</label>
+            <input v-model="form.actualPaymentDate" type="date" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Estado factura</label>
+            <div class="estado-factura-row">
+              <span class="estado-factura-badge" :class="estadoFacturaBadge.value">{{ estadoFacturaBadge.label }}</span>
+              <button type="button" class="anular-link" @click="facturaAnulada = !facturaAnulada">
+                {{ facturaAnulada ? 'Quitar anulación' : 'Anular factura' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -266,13 +309,58 @@ const form = reactive({
   startDate: '',
   endDate: '',
   offer: '',
+  purchaseOrderNumber: '',
+  purchaseOrderDate: '',
   description: '',
   observations: '',
+  invoiceNumber: '',
+  invoiceIssueDate: '',
+  projectedPaymentDate: '',
+  actualPaymentDate: '',
   services: [] as ServicioProyecto[],
 })
 
 watch(() => form.clientId, () => {
   form.clientCodeId = ''
+})
+
+const loadedExtraData = ref<Record<string, unknown>>({})
+
+function parseExtraData(raw: unknown): Record<string, unknown> {
+  if (!raw) return {}
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) as Record<string, unknown> } catch { return {} }
+  }
+  if (typeof raw === 'object') return raw as Record<string, unknown>
+  return {}
+}
+
+function isPastDate(date: string): boolean {
+  if (!date) return false
+  const target = new Date(`${date}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return target.getTime() < today.getTime()
+}
+
+const estadoFactura = computed(() => {
+  if (form.actualPaymentDate) return { value: 'pagada', label: 'Pagada' }
+  if (form.projectedPaymentDate && isPastDate(form.projectedPaymentDate)) return { value: 'vencida', label: 'Vencida' }
+  return { value: 'pendiente', label: 'Pendiente de pago' }
+})
+
+const facturaAnulada = ref(false)
+
+const invoiceNumberSuffix = computed(() => (form.invoiceNumber || '').replace(/^F\./i, ''))
+
+function onInvoiceNumberInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
+  form.invoiceNumber = raw ? `F.${raw}` : ''
+}
+
+const estadoFacturaBadge = computed(() => {
+  if (facturaAnulada.value) return { value: 'anulada', label: 'Anulada' }
+  return estadoFactura.value
 })
 
 const usedOffers = computed(() => {
@@ -472,8 +560,15 @@ function resetForm() {
   form.startDate = ''
   form.endDate = ''
   form.offer = ''
+  form.purchaseOrderNumber = ''
+  form.purchaseOrderDate = ''
   form.description = ''
   form.observations = ''
+  form.invoiceNumber = ''
+  form.invoiceIssueDate = ''
+  form.projectedPaymentDate = ''
+  form.actualPaymentDate = ''
+  facturaAnulada.value = false
   form.services = []
 }
 
@@ -495,8 +590,17 @@ async function loadProject() {
     form.startDate = proyecto.startDate ? proyecto.startDate.split('T')[0] : ''
     form.endDate = proyecto.endDate ? proyecto.endDate.split('T')[0] : ''
     form.offer = proyecto.offer || ''
-    form.description = proyecto.description
+    form.purchaseOrderNumber = proyecto.purchaseOrderNumber || ''
+    form.purchaseOrderDate = proyecto.purchaseOrderDate ? proyecto.purchaseOrderDate.split('T')[0] : ''
+    form.description = proyecto.description || ''
     form.observations = proyecto.observations || ''
+    form.invoiceNumber = proyecto.invoiceNumber || ''
+    form.invoiceIssueDate = proyecto.invoiceIssueDate ? proyecto.invoiceIssueDate.split('T')[0] : ''
+    form.projectedPaymentDate = proyecto.projectedPaymentDate ? proyecto.projectedPaymentDate.split('T')[0] : ''
+    form.actualPaymentDate = proyecto.actualPaymentDate ? proyecto.actualPaymentDate.split('T')[0] : ''
+    const extra = parseExtraData(proyecto.extraData)
+    loadedExtraData.value = extra
+    facturaAnulada.value = extra['estadoFactura'] === 'anulada'
     form.services = (proyecto.services || []).map(s => ({ ...s }))
   } catch (e) {
     formError.value = e instanceof Error ? e.message : 'Error al cargar el proyecto'
@@ -509,11 +613,11 @@ async function handleSubmit() {
   formError.value = ''
 
   if (!form.clientId) { formError.value = 'Selecciona un cliente.'; return }
-  if (!form.norm.trim()) { formError.value = 'La norma es obligatoria.'; return }
+  if (!(form.norm || '').trim()) { formError.value = 'La norma es obligatoria.'; return }
   if (!form.status) { formError.value = 'El estado es obligatorio.'; return }
   if (!form.offer) { formError.value = 'La oferta es obligatoria.'; return }
-  if (!form.serviceType.trim()) { formError.value = 'El tipo de servicio es obligatorio.'; return }
-  if (!form.responsible.trim()) { formError.value = 'El responsable es obligatorio.'; return }
+  if (!(form.serviceType || '').trim()) { formError.value = 'El tipo de servicio es obligatorio.'; return }
+  if (!(form.responsible || '').trim()) { formError.value = 'El responsable es obligatorio.'; return }
   if (!form.startDate) { formError.value = 'La fecha de inicio es obligatoria.'; return }
 
   saving.value = true
@@ -533,19 +637,30 @@ async function handleSubmit() {
         collaborator: s.collaborator,
       }))
 
+    const mergedExtraData: Record<string, unknown> = { ...loadedExtraData.value }
+    if (form.status.toLowerCase() === 'finalizado') mergedExtraData['estadoFactura'] = facturaAnulada.value ? 'anulada' : estadoFactura.value.value
+    else delete mergedExtraData['estadoFactura']
+
     const payload = {
       clientId: Number(form.clientId),
-      projectType: form.projectType.trim() || 'General',
-      serviceType: form.serviceType.trim() || undefined,
-      norm: form.norm.trim(),
+      projectType: (form.projectType || '').trim() || 'General',
+      serviceType: (form.serviceType || '').trim() || undefined,
+      norm: (form.norm || '').trim(),
       status: form.status,
-      responsible: form.responsible.trim(),
+      responsible: (form.responsible || '').trim(),
       startDate: form.startDate,
-      endDate: form.endDate || undefined,
-      offer: form.offer.trim() || undefined,
+      endDate: form.endDate || null,
+      offer: (form.offer || '').trim() || undefined,
+      purchaseOrderNumber: (form.purchaseOrderNumber || '').trim() || null,
+      purchaseOrderDate: form.purchaseOrderDate || null,
       totalCost: computedTotalCost.value || undefined,
-      description: form.description.trim(),
-      observations: form.observations.trim() || undefined,
+      description: (form.description || '').trim(),
+      observations: (form.observations || '').trim() || null,
+      invoiceNumber: (form.invoiceNumber || '').trim() || null,
+      invoiceIssueDate: form.invoiceIssueDate || null,
+      projectedPaymentDate: form.projectedPaymentDate || null,
+      actualPaymentDate: form.actualPaymentDate || null,
+      extraData: Object.keys(mergedExtraData).length > 0 ? mergedExtraData : null,
       services: services.length > 0 ? services : undefined,
     }
 
@@ -632,6 +747,8 @@ onMounted(async () => {
   border: 1px solid var(--c-border);
   border-radius: 14px;
   padding: 24px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .card-title {
@@ -640,6 +757,40 @@ onMounted(async () => {
   color: var(--c-black);
   margin-bottom: 20px;
 }
+
+.estado-factura-badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.estado-factura-badge.pagada { background: #DCFCE7; color: #15803D; }
+.estado-factura-badge.pendiente { background: #FEF3C7; color: #B45309; }
+.estado-factura-badge.vencida { background: #FEE2E2; color: #B91C1C; }
+.estado-factura-badge.anulada { background: #F3F4F6; color: #6B7280; }
+
+.input-currency { position: relative; display: flex; align-items: center; }
+
+.input-currency .form-input { width: 100%; padding-left: 30px; }
+
+.input-currency-prefix { position: absolute; left: 12px; color: var(--c-gray); font-size: 0.85rem; pointer-events: none; }
+
+.estado-factura-row { display: flex; align-items: center; gap: 12px; }
+
+.anular-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #B91C1C;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.anular-link:hover { color: #7F1D1D; }
 
 .card-header-row {
   display: flex;
@@ -655,14 +806,16 @@ onMounted(async () => {
 /* ===== FORM GRID ===== */
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+  min-width: 0;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .form-group.full-width {
@@ -681,6 +834,9 @@ onMounted(async () => {
 }
 
 .form-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 10px 12px;
   border: 1px solid var(--c-border);
   border-radius: 8px;

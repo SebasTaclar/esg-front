@@ -230,7 +230,14 @@ export interface Proyecto {
   description: string
   observations?: string
   offer?: string
+  purchaseOrderNumber?: string
+  purchaseOrderDate?: string
   totalCost?: number
+  invoiceNumber?: string
+  invoiceIssueDate?: string
+  projectedPaymentDate?: string
+  actualPaymentDate?: string
+  extraData?: Record<string, unknown> | null
   services?: ServicioProyecto[]
   createdAt: string
   updatedAt: string
@@ -247,11 +254,18 @@ export interface CreateProyectoRequest {
   status?: string
   responsible: string
   startDate: string
-  endDate?: string
+  endDate?: string | null
   description: string
-  observations?: string
+  observations?: string | null
   offer?: string
+  purchaseOrderNumber?: string | null
+  purchaseOrderDate?: string | null
   totalCost?: number
+  invoiceNumber?: string | null
+  invoiceIssueDate?: string | null
+  projectedPaymentDate?: string | null
+  actualPaymentDate?: string | null
+  extraData?: Record<string, unknown> | null
   services?: ServicioProyecto[]
 }
 
@@ -396,8 +410,12 @@ export interface Tender {
   publicationDate: string
   closingDate?: string
   estimatedValue?: number
+  officialBudget?: number
+  offerEstimatedValue?: number
+  projectClosingDate?: string
   observations?: string
   services?: TenderServiceItem[]
+  serviceItems?: TenderServiceItem[] | null
   createdAt: string
   updatedAt?: string
 }
@@ -415,6 +433,9 @@ export interface Licitacion {
   fechaPublicacion: string
   fechaCierre?: string
   valorEstimado?: number
+  presupuestoOficial?: number
+  valorEstimadoOferta?: number
+  fechaCierreProyecto?: string
   observaciones?: string
   servicios?: TenderServiceItem[]
   createdAt: string
@@ -431,8 +452,12 @@ export interface CreateTenderRequest {
   publicationDate: string
   closingDate?: string
   estimatedValue?: number
+  officialBudget?: number
+  offerEstimatedValue?: number
+  projectClosingDate?: string
   observations?: string
   services?: TenderServiceItem[]
+  serviceItems?: TenderServiceItem[]
 }
 
 export type UpdateTenderRequest = Partial<CreateTenderRequest>
@@ -452,7 +477,7 @@ export interface CotizacionServicio {
 export interface Cotizacion {
   id: number
   code: string
-  clientId: number
+  clientId: number | null
   client?: { id: number; name: string; email?: string; phone?: string; nit?: string }
   clientName?: string
   projectId?: number
@@ -463,13 +488,17 @@ export interface Cotizacion {
   observations?: string
   services?: CotizacionServicio[]
   isVisible?: boolean
+  commercialTerms?: string
+  serviceTerms?: string
+  confidentialityTerms?: string
+  extraData?: Record<string, unknown> | null
   createdAt: string
   updatedAt: string
 }
 
 export interface CreateCotizacionRequest {
   code: string
-  clientId: number
+  clientId?: number | null
   clientName?: string
   projectId?: number
   status?: EstadoCotizacion
@@ -478,6 +507,9 @@ export interface CreateCotizacionRequest {
   observations?: string
   services?: CotizacionServicio[]
   isVisible?: boolean
+  commercialTerms?: string
+  serviceTerms?: string
+  confidentialityTerms?: string
 }
 
 export interface UpdateCotizacionRequest extends Partial<CreateCotizacionRequest> {}

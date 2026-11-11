@@ -59,6 +59,8 @@
               <col class="col-servicio" />
               <col class="col-norma" />
               <col class="col-valor" />
+              <col class="col-valor-oferta" />
+              <col class="col-fecha-cierre" />
               <col class="col-estado" />
               <col class="col-acciones" />
             </colgroup>
@@ -70,7 +72,9 @@
                 <th>Cliente</th>
                 <th>Servicio</th>
                 <th>Norma</th>
-                <th class="col-valor">Valor <br>Estimado</th>
+                <th class="col-valor">Valor Real <br>Contrato</th>
+                <th class="col-valor-oferta" title="Presupuesto proyectado de nuestra oferta">Presupuesto <br>Proyectado</th>
+                <th class="col-fecha-cierre">Fecha de <br>Cierre</th>
                 <th>Estado</th>
                 <th class="col-acciones">Acciones</th>
               </tr>
@@ -87,11 +91,25 @@
                   <td class="col-servicio"><span class="servicio-text">{{ l.servicio }}</span></td>
                   <td class="col-norma"><span class="norma-text">{{ l.norma }}</span></td>
                   <td class="col-valor"><span class="valor-text">{{ formatCurrency(l.valorEstimado) }}</span></td>
+                  <td class="col-valor-oferta"><span class="valor-text">{{ formatCurrency(l.valorEstimadoOferta) }}</span></td>
+                  <td class="col-fecha-cierre"><span class="fecha-text">{{ formatDate(l.fechaCierre) }}</span></td>
                   <td class="col-estado">
                     <span class="estado-badge" :class="l.estado">{{ formatEstado(l.estado) }}</span>
                   </td>
                   <td class="col-acciones">
                     <div class="actions-cell">
+                      <button
+                        class="action-btn"
+                        :class="{ active: expandedRows.has(l.id) }"
+                        :title="expandedRows.has(l.id) ? 'Ocultar detalles' : 'Ver detalles'"
+                        :aria-label="expandedRows.has(l.id) ? 'Ocultar detalles' : 'Ver detalles'"
+                        @click="openViewModal(l)"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
+                          <circle cx="12" cy="12" r="2.5"/>
+                        </svg>
+                      </button>
                       <button class="action-btn" title="Editar" @click="openEditModal(l)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -108,7 +126,7 @@
                   </td>
                 </tr>
                 <tr v-if="expandedRows.has(l.id) && l.servicios && l.servicios.length">
-                  <td colspan="10" class="services-row">
+                  <td colspan="11" class="services-row">
                     <div class="services-expand">
                       <table class="services-table">
                         <thead>
@@ -138,7 +156,7 @@
                             <td>{{ svc.discount }}%</td>
                             <td>{{ formatCurrency(svc.iva) }}</td>
                             <td><strong>{{ formatCurrency(svc.totalPrice) }}</strong></td>
-                            <td class="utilidad-cell">{{ formatCurrency(svc.netProfit) }}</td>
+                            <td class="utilidad-cell">{{ formatCurrency(calcNetProfitView(svc)) }}</td>
                           </tr>
                         </tbody>
                       </table>
@@ -244,10 +262,24 @@
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Valor Estimado</label>
+              <label class="form-label">Valor Real Contrato</label>
               <div class="input-currency">
                 <span class="input-currency-prefix">$</span>
                 <input :value="formatCurrencyValue(form.estimatedValue)" @input="onCurrencyInput($event)" type="text" class="form-input" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Presupuesto oficial del proceso</label>
+              <div class="input-currency">
+                <span class="input-currency-prefix">$</span>
+                <input :value="formatCurrencyValue(form.officialBudget)" @input="onAdditionalCurrencyInput($event, 'officialBudget')" type="text" class="form-input" placeholder="0" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Presupuesto proyectado de nuestra oferta</label>
+              <div class="input-currency">
+                <span class="input-currency-prefix">$</span>
+                <input :value="formatCurrencyValue(form.offerEstimatedValue)" @input="onAdditionalCurrencyInput($event, 'offerEstimatedValue')" type="text" class="form-input" placeholder="0" />
               </div>
             </div>
             <div class="form-group">
@@ -257,6 +289,10 @@
             <div class="form-group">
               <label class="form-label">Fecha de Cierre</label>
               <input v-model="form.closingDate" type="date" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de cierre del proyecto</label>
+              <input v-model="form.projectClosingDate" type="date" class="form-input" />
             </div>
             <div class="form-group form-group-full">
               <label class="form-label">Observaciones</label>
@@ -372,7 +408,7 @@
                       <input v-model="svc.billingAccountNumber" type="text" class="form-input-sm" placeholder="CC-001" />
                     </div>
                     <div class="form-group">
-                      <label class="form-label">Valor Colaborador</label>
+                      <label class="form-label">Valor Colaborador (total)</label>
                       <div class="input-currency-sm">
                         <span class="input-currency-prefix-sm">$</span>
                         <input :value="formatCurrencyValue(svc.collaboratorUnitPrice)" @input="onSvcCurrencyInput($event, svc, 'collaboratorUnitPrice')" type="text" class="form-input-sm" placeholder="0" />
@@ -392,6 +428,74 @@
             {{ saving ? (editingLicitacion ? 'Actualizando...' : 'Creando...') : (editingLicitacion ? 'Actualizar' : 'Crear Licitación') }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- View Tender Modal -->
+    <div v-if="viewingLicitacion" class="modal-overlay" @click.self="closeViewModal">
+      <div class="modal-content modal-lg" @click.stop>
+        <div class="modal-header">
+          <h3>Detalle de licitación</h3>
+          <button class="modal-close" title="Cerrar" @click="closeViewModal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body view-tender-body">
+          <div class="tender-detail-grid">
+            <div><span class="detail-label">Código de oferta</span><strong>{{ viewingLicitacion.oferta || '-' }}</strong></div>
+            <div><span class="detail-label">Tipo</span><strong>{{ viewingLicitacion.tipoLabel || '-' }}</strong></div>
+            <div><span class="detail-label">Número de proceso</span><strong>{{ viewingLicitacion.numeroProceso || '-' }}</strong></div>
+            <div><span class="detail-label">Cliente</span><strong>{{ viewingLicitacion.clienteNombre || '-' }}</strong></div>
+            <div><span class="detail-label">Servicio</span><strong>{{ viewingLicitacion.servicio || '-' }}</strong></div>
+            <div><span class="detail-label">Norma</span><strong>{{ viewingLicitacion.norma || '-' }}</strong></div>
+            <div><span class="detail-label">Valor estimado</span><strong>{{ formatCurrency(viewingLicitacion.valorEstimado) }}</strong></div>
+            <div><span class="detail-label">Presupuesto oficial</span><strong>{{ formatCurrency(viewingLicitacion.presupuestoOficial) }}</strong></div>
+            <div><span class="detail-label">Presupuesto proyectado de nuestra oferta</span><strong>{{ formatCurrency(viewingLicitacion.valorEstimadoOferta) }}</strong></div>
+            <div><span class="detail-label">Estado</span><strong>{{ formatEstado(viewingLicitacion.estado) }}</strong></div>
+            <div><span class="detail-label">Fecha de publicación</span><strong>{{ formatDate(viewingLicitacion.fechaPublicacion) }}</strong></div>
+            <div><span class="detail-label">Fecha de cierre</span><strong>{{ formatDate(viewingLicitacion.fechaCierre) }}</strong></div>
+            <div><span class="detail-label">Fecha de cierre del proyecto</span><strong>{{ formatDate(viewingLicitacion.fechaCierreProyecto) }}</strong></div>
+            <div class="detail-full"><span class="detail-label">Observaciones</span><strong>{{ viewingLicitacion.observaciones || '-' }}</strong></div>
+          </div>
+          <div class="services-section view-services">
+            <div class="services-header"><h3>Servicios ({{ viewingLicitacion.servicios?.length || 0 }})</h3></div>
+            <div v-if="!viewingLicitacion.servicios?.length" class="empty-services"><p>Sin servicios asociados.</p></div>
+            <div v-else class="table-responsive">
+              <table class="services-table">
+                <thead><tr><th>Servicio</th><th>Norma</th><th>Rol</th><th>Colaborador</th><th>Cant.</th><th>Valor unit.</th><th>Subtotal</th><th>Desc.</th><th>IVA</th><th>Total</th><th>Utilidad</th></tr></thead>
+                <tbody>
+                  <template v-for="(svc, idx) in viewingLicitacion.servicios" :key="idx">
+                    <tr>
+                      <td>{{ svc.name }}</td><td>{{ svc.norm }}</td><td>{{ svc.rol || '-' }}</td><td>{{ svc.collaborator || '-' }}</td>
+                      <td>{{ svc.quantity }}</td>
+                      <td>{{ formatCurrency(svc.unitPrice) }}</td>
+                      <td>{{ formatCurrency(svc.subtotal) }}</td>
+                      <td>{{ svc.discount || 0 }}%</td>
+                      <td>{{ formatCurrency(svc.iva) }}</td>
+                      <td><strong>{{ formatCurrency(svc.totalPrice) }}</strong></td>
+                      <td class="utilidad-cell">{{ formatCurrency(calcNetProfitView(svc)) }}</td>
+                    </tr>
+                    <tr class="service-extra-row">
+                      <td colspan="11">
+                        <div class="service-extra-grid">
+                          <span><b>Valor colab.:</b> {{ formatCurrency(svc.collaboratorUnitPrice) }}</span>
+                          <span><b>F. ingreso:</b> {{ formatDate(svc.entryDate) }}</span>
+                          <span><b>F. facturación:</b> {{ formatDate(svc.billingDate) }}</span>
+                          <span><b>F. orden compra:</b> {{ formatDate(svc.purchaseOrderDate) }}</span>
+                          <span><b>N° orden compra:</b> {{ svc.purchaseOrderNumber || '-' }}</span>
+                          <span><b>N° cuenta cobro:</b> {{ svc.billingAccountNumber || '-' }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer"><button class="btn-outline" @click="closeViewModal">Cerrar</button></div>
       </div>
     </div>
 
@@ -446,6 +550,7 @@ const frontPage = ref(1)
 const frontPageSize = 20
 
 const showModal = ref(false)
+const viewingLicitacion = ref<Licitacion | null>(null)
 const saving = ref(false)
 const formError = ref('')
 const editingLicitacion = ref<Licitacion | null>(null)
@@ -466,6 +571,9 @@ const form = reactive({
   publicationDate: '',
   closingDate: '',
   estimatedValue: 0,
+  officialBudget: 0,
+  offerEstimatedValue: 0,
+  projectClosingDate: '',
   observations: '',
   services: [] as ServiceForm[],
 })
@@ -558,6 +666,14 @@ function toggleExpand(id: number) {
   }
 }
 
+function openViewModal(licitacion: Licitacion) {
+  viewingLicitacion.value = licitacion
+}
+
+function closeViewModal() {
+  viewingLicitacion.value = null
+}
+
 function formatEstado(estado: string): string {
   const labels: Record<string, string> = {
     publicada: 'Publicada',
@@ -580,9 +696,19 @@ function formatCurrencyValue(value: number | undefined | null): string {
   return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
 }
 
+function formatDate(date: string | undefined): string {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
 function onCurrencyInput(event: Event) {
   const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
   form.estimatedValue = Number(raw) || 0
+}
+
+function onAdditionalCurrencyInput(event: Event, field: 'officialBudget' | 'offerEstimatedValue') {
+  const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
+  form[field] = Number(raw) || 0
 }
 
 function onSvcCurrencyInput(event: Event, svc: ServiceForm, field: 'unitPrice' | 'collaboratorUnitPrice') {
@@ -606,6 +732,13 @@ function calcTotal(svc: ServiceForm): number {
   return sub - discount + calcIVA(svc)
 }
 
+function calcNetProfitView(svc: TenderServiceItem): number {
+  const sub = (svc.quantity || 0) * (svc.unitPrice || 0)
+  const subWithDiscount = sub - (sub * (svc.discount || 0) / 100)
+  const totalWithIva = subWithDiscount * 1.19
+  return totalWithIva - (svc.collaboratorUnitPrice || 0)
+}
+
 function addService() {
   form.services.push(createEmptyService())
 }
@@ -626,6 +759,9 @@ function openCreateModal() {
   form.publicationDate = ''
   form.closingDate = ''
   form.estimatedValue = 0
+  form.officialBudget = 0
+  form.offerEstimatedValue = 0
+  form.projectClosingDate = ''
   form.observations = ''
   form.services = []
   formError.value = ''
@@ -644,6 +780,9 @@ function openEditModal(l: Licitacion) {
   form.publicationDate = l.fechaPublicacion ? l.fechaPublicacion.split('T')[0] : ''
   form.closingDate = l.fechaCierre ? l.fechaCierre.split('T')[0] : ''
   form.estimatedValue = l.valorEstimado || 0
+  form.officialBudget = l.presupuestoOficial || 0
+  form.offerEstimatedValue = l.valorEstimadoOferta || 0
+  form.projectClosingDate = l.fechaCierreProyecto ? l.fechaCierreProyecto.split('T')[0] : ''
   form.observations = l.observaciones || ''
   form.services = (l.servicios || []).map(s => ({ ...s, _collapsed: true }))
   formError.value = ''
@@ -676,30 +815,38 @@ async function handleSave() {
   try {
     const services = form.services
       .filter(s => s.name.trim())
-      .map(s => ({
-        name: s.name.trim(),
-        norm: s.norm.trim(),
-        rol: s.rol || '',
-        quantity: s.quantity,
-        unitPrice: s.unitPrice,
-        discount: s.discount,
-        subtotal: calcSubtotal(s),
-        subtotalWithDiscount: calcSubtotal(s) - (calcSubtotal(s) * s.discount / 100),
-        iva: calcIVA(s),
-        totalPrice: calcTotal(s),
-        collaborator: s.collaborator || '',
-        collaboratorUnitPrice: s.collaboratorUnitPrice || 0,
-        collaboratorTotalPrice: (s.collaboratorUnitPrice || 0) * s.quantity,
-        ica: 0,
-        simpleTax: 0,
-        netProfit: 0,
-        pretaxProfit: 0,
-        entryDate: s.entryDate || '',
-        billingDate: s.billingDate || '',
-        purchaseOrderDate: s.purchaseOrderDate || '',
-        purchaseOrderNumber: s.purchaseOrderNumber || '',
-        billingAccountNumber: s.billingAccountNumber || '',
-      }))
+      .map(s => {
+        const sub = calcSubtotal(s)
+        const subWithDiscount = sub - (sub * s.discount / 100)
+        const collabTotal = s.collaboratorUnitPrice || 0
+        const icaVal = subWithDiscount * 0.0115
+        const simpleTaxVal = subWithDiscount * 0.073
+        const pretaxVal = subWithDiscount - collabTotal
+        return {
+          name: s.name.trim(),
+          norm: s.norm.trim(),
+          rol: s.rol || '',
+          quantity: s.quantity,
+          unitPrice: s.unitPrice,
+          discount: s.discount,
+          subtotal: sub,
+          subtotalWithDiscount: subWithDiscount,
+          iva: calcIVA(s),
+          totalPrice: calcTotal(s),
+          collaborator: s.collaborator || '',
+          collaboratorUnitPrice: s.collaboratorUnitPrice || 0,
+          collaboratorTotalPrice: collabTotal,
+          ica: icaVal,
+          simpleTax: simpleTaxVal,
+          netProfit: calcTotal(s) - collabTotal,
+          pretaxProfit: pretaxVal,
+          entryDate: s.entryDate || '',
+          billingDate: s.billingDate || '',
+          purchaseOrderDate: s.purchaseOrderDate || '',
+          purchaseOrderNumber: s.purchaseOrderNumber || '',
+          billingAccountNumber: s.billingAccountNumber || '',
+        }
+      })
 
     const payload = {
       offerCode: form.offerCode.trim(),
@@ -712,8 +859,11 @@ async function handleSave() {
       publicationDate: form.publicationDate || new Date().toISOString().split('T')[0],
       closingDate: form.closingDate || undefined,
       estimatedValue: form.estimatedValue || undefined,
+      officialBudget: form.officialBudget || undefined,
+      offerEstimatedValue: form.offerEstimatedValue || undefined,
+      projectClosingDate: form.projectClosingDate || undefined,
       observations: form.observations.trim() || undefined,
-      services: services.length > 0 ? services : undefined,
+      serviceItems: services.length > 0 ? services : undefined,
     }
 
     if (editingLicitacion.value) {
@@ -806,13 +956,15 @@ onMounted(() => {
 .data-table td { padding: 8px 12px; font-size: 0.85rem; color: var(--c-black); border-bottom: 1px solid var(--c-border); vertical-align: middle; }
 .data-table colgroup .col-expand { width: 36px; }
 .data-table colgroup .col-oferta { width: 100px; }
-.data-table colgroup .col-tipo { width: 130px; }
-.data-table colgroup .col-proceso { width: 140px; }
-.data-table colgroup .col-cliente { width: 200px; }
-.data-table colgroup .col-servicio { width: 160px; }
-.data-table colgroup .col-norma { width: 120px; }
+.data-table colgroup .col-tipo { width: 90px; }
+.data-table colgroup .col-proceso { width: 105px; }
+.data-table colgroup .col-cliente { width: 115px; }
+.data-table colgroup .col-servicio { width: 120px; }
+.data-table colgroup .col-norma { width: 85px; }
 .data-table colgroup .col-estado { width: 85px; }
 .data-table colgroup .col-valor { width: 80px; }
+.data-table colgroup .col-valor-oferta { width: 95px; }
+.data-table colgroup .col-fecha-cierre { width: 90px; }
 .data-table colgroup .col-acciones { width: 80px; }
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover td { background: rgba(249, 250, 251, 0.5); }
@@ -825,6 +977,8 @@ onMounted(() => {
 .col-norma { }
 .col-estado { text-align: left; }
 .col-valor { text-align: right; }
+.col-valor-oferta { text-align: right; }
+.col-fecha-cierre { font-size: 0.75rem; }
 .col-acciones { text-align: center; }
 
 .oferta-badge {
@@ -867,10 +1021,20 @@ onMounted(() => {
 .estado-badge.desierta { background: #FEF2F2; color: #DC2626; }
 .estado-badge.cancelada { background: #FEF2F2; color: #991B1B; }
 
-.actions-cell { display: flex; gap: 4px; justify-content: center; }
+.actions-cell { display: flex; gap: 1px; justify-content: center; }
 .action-btn { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; background: none; color: var(--c-gray); border-radius: 6px; cursor: pointer; text-decoration: none; transition: all 0.15s; }
 .action-btn:hover { background: var(--c-light); color: var(--c-primary); }
+.action-btn.active { background: var(--c-light); color: var(--c-primary); }
 .action-btn.delete:hover { background: #FEF2F2; color: var(--c-danger); }
+
+/* Tender detail modal */
+.view-tender-body { display: flex; flex-direction: column; gap: 20px; }
+.tender-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tender-detail-grid > div { display: flex; flex-direction: column; gap: 4px; }
+.tender-detail-grid .detail-full { grid-column: 1 / -1; }
+.detail-label { color: var(--c-gray); font-size: 0.72rem; font-weight: 600; }
+.tender-detail-grid strong { color: var(--c-black); font-size: 0.88rem; font-weight: 500; }
+.view-services { margin-top: 4px; }
 
 /* Expanded Services Row */
 .services-row { padding: 0 !important; background: #FAFBFC; }
@@ -880,6 +1044,25 @@ onMounted(() => {
 .services-table td { padding: 8px 10px; color: var(--c-black); border-bottom: 1px solid var(--c-border); white-space: nowrap; }
 .services-table tr:last-child td { border-bottom: none; }
 .utilidad-cell { color: #15803D; font-weight: 600; }
+
+.service-extra-row td {
+  background: var(--c-light);
+  padding: 8px 10px !important;
+  white-space: normal !important;
+}
+
+.service-extra-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 0.72rem;
+  color: var(--c-gray);
+}
+
+.service-extra-grid b {
+  color: var(--c-black);
+  font-weight: 600;
+}
 
 .loading-state { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 20px; color: var(--c-gray); }
 .spinner { width: 32px; height: 32px; border: 3px solid var(--c-border); border-top-color: var(--c-primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
