@@ -1,9 +1,19 @@
 <template>
   <div class="projects-page">
     <div class="page-header">
-      <div>
-        <h1 class="page-title">Proyectos</h1>
-        <p class="page-subtitle">{{ filteredProjects.length }} proyectos registrados{{ totalPages > 1 ? ` — Página ${frontPage} de ${totalPages}` : '' }}</p>
+      <div class="page-header-top">
+        <div>
+          <h1 class="page-title">Proyectos</h1>
+          <p class="page-subtitle">{{ filteredProjects.length }} proyectos registrados{{ totalPages > 1 ? ` — Página ${frontPage} de ${totalPages}` : '' }}</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-primary" @click="openCreateModal">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Nuevo Proyecto
+          </button>
+        </div>
       </div>
       <div class="summary-cards">
         <div class="summary-card">
@@ -62,12 +72,6 @@
           </div>
         </div>
       </div>
-      <button class="btn-primary" @click="openCreateModal">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Nuevo Proyecto
-      </button>
     </div>
 
     <!-- Filters -->
@@ -90,6 +94,14 @@
           <option value="">Todas las ofertas</option>
           <option v-for="o in uniqueOffers" :key="o" :value="o">{{ o }}</option>
         </select>
+      </div>
+      <div class="invoice-action-row">
+        <router-link to="/admin/crm/facturas" class="btn-invoice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>
+          </svg>
+          Ver seguimiento de facturas
+        </router-link>
       </div>
     </div>
 
@@ -253,7 +265,7 @@
               <input v-model="form.startDate" type="date" class="form-input" :class="{ 'field-error': submitted && !form.startDate }" />
             </div>
             <div class="form-group">
-              <label class="form-label">Fecha de Fin</label>
+              <label class="form-label">Fecha de Seguimiento</label>
               <input v-model="form.endDate" type="date" class="form-input" />
             </div>
             <div class="form-group">
@@ -262,6 +274,14 @@
                 <option value="">Seleccionar oferta...</option>
                 <option v-for="o in availableOffers" :key="o" :value="o">{{ o }}</option>
               </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Número de orden de compra (OC)</label>
+              <input v-model="form.purchaseOrderNumber" type="text" class="form-input" placeholder="Ej: OC-001" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de emisión de la orden de compra</label>
+              <input v-model="form.purchaseOrderDate" type="date" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Descripción</label>
@@ -276,6 +296,40 @@
               <div class="input-currency input-total-green">
                 <span class="input-currency-prefix">$</span>
                 <input :value="formatCurrencyValue(totalNetProfit)" type="text" class="form-input-sm" readonly />
+              </div>
+            </div>
+          </div>
+
+          <div v-if="form.status.toLowerCase() === 'finalizado'" class="billing-form-section">
+            <h3 class="card-title">Información de facturación</h3>
+            <div class="form-grid-modal">
+              <div class="form-group">
+                <label class="form-label">Número de factura emitida</label>
+                <div class="input-currency">
+                  <span class="input-currency-prefix">F.</span>
+                  <input :value="invoiceNumberSuffix" @input="onInvoiceNumberInput($event)" type="text" class="form-input" placeholder="Ej: 002" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha de emisión de la factura</label>
+                <input v-model="form.invoiceIssueDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha proyectada de pago</label>
+                <input v-model="form.projectedPaymentDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Fecha efectiva de pago</label>
+                <input v-model="form.actualPaymentDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Estado factura</label>
+                <div class="estado-factura-row">
+                  <span class="estado-factura-badge" :class="estadoFacturaBadge.value">{{ estadoFacturaBadge.label }}</span>
+                  <button type="button" class="anular-link" @click="facturaAnulada = !facturaAnulada">
+                    {{ facturaAnulada ? 'Quitar anulación' : 'Anular factura' }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -616,14 +670,59 @@ const form = reactive({
   startDate: '',
   endDate: '',
   offer: '',
+  purchaseOrderNumber: '',
+  purchaseOrderDate: '',
   totalCost: 0,
   description: '',
   observations: '',
+  invoiceNumber: '',
+  invoiceIssueDate: '',
+  projectedPaymentDate: '',
+  actualPaymentDate: '',
   services: [] as ServicioProyecto[],
 })
 
 watch(() => form.clientId, () => {
   form.clientCodeId = ''
+})
+
+const loadedExtraData = ref<Record<string, unknown>>({})
+
+function parseExtraData(raw: unknown): Record<string, unknown> {
+  if (!raw) return {}
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) as Record<string, unknown> } catch { return {} }
+  }
+  if (typeof raw === 'object') return raw as Record<string, unknown>
+  return {}
+}
+
+function isPastDate(date: string): boolean {
+  if (!date) return false
+  const target = new Date(`${date}T00:00:00`)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return target.getTime() < today.getTime()
+}
+
+const estadoFactura = computed(() => {
+  if (form.actualPaymentDate) return { value: 'pagada', label: 'Pagada' }
+  if (form.projectedPaymentDate && isPastDate(form.projectedPaymentDate)) return { value: 'vencida', label: 'Vencida' }
+  return { value: 'pendiente', label: 'Pendiente de pago' }
+})
+
+const facturaAnulada = ref(false)
+
+const invoiceNumberSuffix = computed(() => (form.invoiceNumber || '').replace(/^F\./i, ''))
+
+function onInvoiceNumberInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
+  form.invoiceNumber = raw ? `F.${raw}` : ''
+}
+
+const estadoFacturaBadge = computed(() => {
+  if (facturaAnulada.value) return { value: 'anulada', label: 'Anulada' }
+  return estadoFactura.value
 })
 
 const usedOffers = computed(() => {
@@ -871,9 +970,17 @@ function openCreateModal() {
   form.startDate = ''
   form.endDate = ''
   form.offer = ''
+  form.purchaseOrderNumber = ''
+  form.purchaseOrderDate = ''
   form.totalCost = 0
   form.description = ''
   form.observations = ''
+  form.invoiceNumber = ''
+  form.invoiceIssueDate = ''
+  form.projectedPaymentDate = ''
+  form.actualPaymentDate = ''
+  loadedExtraData.value = {}
+  facturaAnulada.value = false
   form.services = []
   createError.value = ''
   showCreateModal.value = true
@@ -903,9 +1010,18 @@ function openEditModal(p: typeof proyectos.value[0]) {
   form.startDate = p.startDate ? p.startDate.split('T')[0] : ''
   form.endDate = p.endDate ? p.endDate.split('T')[0] : ''
   form.offer = p.offer || ''
+  form.purchaseOrderNumber = p.purchaseOrderNumber || ''
+  form.purchaseOrderDate = p.purchaseOrderDate ? p.purchaseOrderDate.split('T')[0] : ''
   form.totalCost = p.totalCost || 0
   form.description = p.description || ''
   form.observations = p.observations || ''
+  form.invoiceNumber = p.invoiceNumber || ''
+  form.invoiceIssueDate = p.invoiceIssueDate ? p.invoiceIssueDate.split('T')[0] : ''
+  form.projectedPaymentDate = p.projectedPaymentDate ? p.projectedPaymentDate.split('T')[0] : ''
+  form.actualPaymentDate = p.actualPaymentDate ? p.actualPaymentDate.split('T')[0] : ''
+  const extra = parseExtraData(p.extraData)
+  loadedExtraData.value = extra
+  facturaAnulada.value = extra['estadoFactura'] === 'anulada'
   form.services = (p.services || []).map(s => ({ ...s, applyIva: s.applyIva !== false, _collapsed: false, _showCost: false, _showProvider: false, _showTaxes: false, _showUtilities: false }))
   createError.value = ''
   showCreateModal.value = true
@@ -1113,11 +1229,23 @@ async function handleCreate() {
       status: form.status,
       responsible: form.responsible.trim(),
       startDate: form.startDate,
-      endDate: form.endDate || undefined,
+      endDate: form.endDate || null,
       offer: form.offer.trim() || undefined,
+      purchaseOrderNumber: (form.purchaseOrderNumber || '').trim() || null,
+      purchaseOrderDate: form.purchaseOrderDate || null,
       totalCost: totalCost || form.totalCost || undefined,
-      description: form.description.trim(),
-      observations: form.observations.trim() || undefined,
+      description: (form.description || '').trim(),
+      observations: (form.observations || '').trim() || null,
+      invoiceNumber: (form.invoiceNumber || '').trim() || null,
+      invoiceIssueDate: form.invoiceIssueDate || null,
+      projectedPaymentDate: form.projectedPaymentDate || null,
+      actualPaymentDate: form.actualPaymentDate || null,
+      extraData: (() => {
+        const merged: Record<string, unknown> = { ...loadedExtraData.value }
+        if (form.status.toLowerCase() === 'finalizado') merged['estadoFactura'] = facturaAnulada.value ? 'anulada' : estadoFactura.value.value
+        else delete merged['estadoFactura']
+        return Object.keys(merged).length > 0 ? merged : null
+      })(),
       services: services.length > 0 ? services : undefined,
     }
 
@@ -1145,7 +1273,10 @@ onMounted(() => {
 <style scoped>
 .projects-page { display: flex; flex-direction: column; gap: 24px; }
 
-.page-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.page-header { display: grid; grid-template-columns: minmax(180px, auto) 1fr; gap: 12px 20px; align-items: start; }
+.page-header-top { display: contents; }
+.page-header-top > div:first-child { grid-column: 1; grid-row: 1 / span 2; }
+.page-actions { grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-left: auto; }
 .page-title { font-size: 1.4rem; font-weight: 700; color: var(--c-black); }
 .page-subtitle { font-size: 0.85rem; color: var(--c-gray); margin-top: 4px; }
 
@@ -1164,7 +1295,60 @@ onMounted(() => {
 .btn-primary { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; background: var(--c-primary); color: white; border: none; border-radius: 10px; font-size: 0.88rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: background 0.2s; margin-left: auto; white-space: nowrap; }
 .btn-primary:hover { background: var(--c-primary-hover); }
 
-.filters-bar { display: flex; flex-direction: column; gap: 10px; }
+.btn-invoice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  color: #2563EB;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.btn-invoice:hover {
+  color: #1D4ED8;
+  background: #DBEAFE;
+  border-color: #93C5FD;
+  transform: translateY(-1px);
+}
+
+.filters-bar { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; }
+
+.estado-factura-badge {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.estado-factura-badge.pagada { background: #DCFCE7; color: #15803D; }
+.estado-factura-badge.pendiente { background: #FEF3C7; color: #B45309; }
+.estado-factura-badge.vencida { background: #FEE2E2; color: #B91C1C; }
+.estado-factura-badge.anulada { background: #F3F4F6; color: #6B7280; }
+
+.estado-factura-row { display: flex; align-items: center; gap: 12px; }
+
+.anular-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.78rem;
+  color: #B91C1C;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.anular-link:hover { color: #7F1D1D; }
+.search-box { grid-column: 1; grid-row: 1; }
+.filter-group { grid-column: 1; grid-row: 2; }
+.invoice-action-row { grid-column: 2; grid-row: 2; display: flex; align-items: flex-end; }
 .search-box { position: relative; max-width: 400px; }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-gray-light); pointer-events: none; }
 .search-input { width: 100%; padding: 10px 14px 10px 42px; border: 1px solid var(--c-border); border-radius: 10px; font-size: 0.88rem; font-family: inherit; background: var(--c-white); color: var(--c-black); outline: none; transition: border-color 0.2s; }
@@ -1317,7 +1501,7 @@ onMounted(() => {
 }
 .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-@media (max-width: 768px) { .page-header { flex-direction: column; align-items: flex-start; } .filters-bar { flex-direction: column; align-items: stretch; } .search-box { min-width: 100%; } .filter-chips { overflow-x: auto; flex-wrap: nowrap; } .pagination-bar { flex-direction: column; gap: 12px; } }
+@media (max-width: 768px) { .page-header { display: flex; flex-direction: column; } .page-header-top { display: flex; flex-direction: column; width: 100%; } .summary-cards { width: 100%; overflow-x: auto; } .page-actions { width: 100%; margin-left: 0; justify-content: flex-start; flex-wrap: wrap; } .filters-bar { display: flex; flex-direction: column; align-items: stretch; } .search-box { min-width: 100%; } .invoice-action-row { justify-content: flex-end; } .filter-chips { overflow-x: auto; flex-wrap: nowrap; } .pagination-bar { flex-direction: column; gap: 12px; } }
 
 /* ===== MODAL ===== */
 .modal-overlay {

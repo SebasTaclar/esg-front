@@ -142,6 +142,11 @@ const router = createRouter({
           component: () => import('../views/crm/forms/ProjectForm.vue'),
         },
         {
+          path: 'facturas',
+          name: 'crm-invoice-tracking',
+          component: () => import('../views/crm/InvoiceTracking.vue'),
+        },
+        {
           path: 'proyectos/:id',
           name: 'crm-project-detail',
           component: () => import('../views/crm/ProjectDetail.vue'),

@@ -196,6 +196,141 @@
             </div>
           </div>
 
+          <!-- Economic Summary -->
+          <div class="card economic-summary-card">
+            <div class="card-header">
+              <h3>Resumen económico</h3>
+              <span class="summary-period">{{ selectedMonth === 'todos' ? 'Todos los registros' : 'Mes seleccionado' }}</span>
+            </div>
+            <div class="economic-summary-grid">
+              <div v-for="item in economicSummary" :key="item.label" class="economic-summary-item">
+                <div class="economic-summary-heading">
+                  <span class="economic-summary-label">{{ item.label }}</span>
+                  <span class="economic-summary-count">{{ item.count }} registros</span>
+                </div>
+                <span class="economic-summary-value">{{ formatCurrency(item.total) }}</span>
+                <span v-if="item.subtitle" class="economic-summary-subtitle">{{ item.subtitle }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ofertas en cotización -->
+          <div class="card billing-alerts-card cotizacion-card">
+            <div class="card-header">
+              <div class="billing-alerts-title">
+                <span class="billing-alerts-icon cotizacion-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3>Ofertas en cotización</h3>
+                  <span class="billing-alerts-subtitle">{{ ofertasCotizacion.length }} ofertas con más de 8 días hábiles</span>
+                </div>
+              </div>
+              <button class="link-btn" @click="router.push('/admin/crm/proyectos')">Ver proyectos</button>
+            </div>
+            <div v-if="ofertasCotizacion.length > 0" class="billing-alerts-list">
+              <button
+                v-for="offer in paginatedOfertasCotizacion"
+                :key="offer.project.id"
+                class="billing-alert-item cotizacion"
+                @click="router.push(`/admin/crm/proyectos/${offer.project.id}`)"
+              >
+                <span class="billing-alert-status">Cotización</span>
+                <span class="billing-alert-info">
+                  <strong>{{ offer.project.offer || offer.project.code || 'Oferta sin código' }}</strong>
+                  <span>{{ offer.project.client?.name || 'Cliente sin nombre' }}</span>
+                  <span class="cotizacion-dates">Inicio: {{ formatDashDate(offer.project.startDate) }} · Seguimiento: {{ formatDashDate(offer.project.endDate) }}</span>
+                  <span v-if="offer.project.observations" class="cotizacion-obs">Obs: {{ offer.project.observations }}</span>
+                </span>
+                <span class="billing-alert-timing">{{ offer.daysHabil }} días hábiles</span>
+              </button>
+              <div v-if="ofertasCotizacion.length > cotizacionPageSize" class="billing-alerts-pagination">
+                <button
+                  class="pagination-btn"
+                  :disabled="cotizacionPage === 0"
+                  @click.stop="cotizacionPage--"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="pagination-info">Página {{ cotizacionPage + 1 }} de {{ cotizacionPages }}</span>
+                <button
+                  class="pagination-btn"
+                  :disabled="cotizacionPage >= cotizacionPages - 1"
+                  @click.stop="cotizacionPage++"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div v-else class="billing-alerts-empty">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+              No hay ofertas con más de 8 días hábiles sin definición.
+            </div>
+          </div>
+
+          <!-- Alertas de facturación -->
+          <div class="card billing-alerts-card">
+            <div class="card-header">
+              <div class="billing-alerts-title">
+                <span class="billing-alerts-icon" :class="{ 'has-alerts': billingAlerts.length > 0 }">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                </span>
+                <div>
+                  <h3>Alertas de facturación</h3>
+                  <span class="billing-alerts-subtitle">Vencidas o próximas a vencer</span>
+                </div>
+              </div>
+              <button class="link-btn" @click="router.push('/admin/crm/facturas')">Ver seguimiento</button>
+            </div>
+            <div v-if="billingAlerts.length > 0" class="billing-alerts-list">
+              <button
+                v-for="alert in paginatedBillingAlerts"
+                :key="alert.id"
+                class="billing-alert-item"
+                :class="alert.type"
+                @click="router.push('/admin/crm/facturas')"
+              >
+                <span class="billing-alert-status">{{ alert.type === 'overdue' ? 'Vencida' : 'Próxima' }}</span>
+                <span class="billing-alert-info">
+                  <strong>{{ alert.invoiceNumber }}</strong>
+                  <span>{{ alert.offer || alert.code || 'Proyecto sin código' }} · {{ alert.clientName || 'Cliente sin nombre' }}</span>
+                </span>
+                <span class="billing-alert-timing">{{ alert.timing }}</span>
+              </button>
+              <div v-if="billingAlerts.length > billingAlertsPageSize" class="billing-alerts-pagination">
+                <button
+                  class="pagination-btn"
+                  :disabled="billingAlertsPage === 0"
+                  @click.stop="billingAlertsPage--"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <span class="pagination-info">Página {{ billingAlertsPage + 1 }} de {{ billingAlertsPages }}</span>
+                <button
+                  class="pagination-btn"
+                  :disabled="billingAlertsPage >= billingAlertsPages - 1"
+                  @click.stop="billingAlertsPage++"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div v-else class="billing-alerts-empty">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+              No hay facturas vencidas ni próximas a vencer.
+            </div>
+          </div>
+
           <!-- Middle Row: Activity, Calendar, Upcoming -->
           <div class="dashboard-middle">
             <!-- Actividad Reciente -->
@@ -323,27 +458,37 @@
                   <div class="legend-row">
                     <span class="legend-dot-rect amber"></span>
                     <span class="legend-text">En Ejecucion</span>
-                    <span class="legend-count">{{ proyectosEnEjecucion }} ({{ porcentajeEjecucion }}%)</span>
+                    <span class="legend-count">{{ proyectosEnEjecucion }}</span>
+                    <span class="legend-percent">({{ porcentajeEjecucion }}%)</span>
+                    <span class="legend-amount">{{ formatCurrency(valorProyectosEnEjecucion) }}</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect blue"></span>
                     <span class="legend-text">Finalizados</span>
-                    <span class="legend-count">{{ proyectosFinalizadosCount }} ({{ porcentajeFinalizados }}%)</span>
+                    <span class="legend-count">{{ proyectosFinalizadosCount }}</span>
+                    <span class="legend-percent">({{ porcentajeFinalizados }}%)</span>
+                    <span class="legend-amount">{{ formatCurrency(valorProyectosFinalizados) }}</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect green"></span>
                     <span class="legend-text">Cotizacion</span>
-                    <span class="legend-count">{{ proyectosCotizacion }} ({{ porcentajeCotizacion }}%)</span>
+                    <span class="legend-count">{{ proyectosCotizacion }}</span>
+                    <span class="legend-percent">({{ porcentajeCotizacion }}%)</span>
+                    <span class="legend-amount">{{ formatCurrency(valorProyectosCotizacion) }}</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect purple"></span>
                     <span class="legend-text">Aprobados</span>
-                    <span class="legend-count">{{ proyectosAprobados }} ({{ porcentajeAprobados }}%)</span>
+                    <span class="legend-count">{{ proyectosAprobados }}</span>
+                    <span class="legend-percent">({{ porcentajeAprobados }}%)</span>
+                    <span class="legend-amount">{{ formatCurrency(valorProyectosAprobados) }}</span>
                   </div>
                   <div class="legend-row">
                     <span class="legend-dot-rect red"></span>
                     <span class="legend-text">Suspendidos</span>
-                    <span class="legend-count">{{ proyectosCancelados }} ({{ porcentajeCancelados }}%)</span>
+                    <span class="legend-count">{{ proyectosCancelados }}</span>
+                    <span class="legend-percent">({{ porcentajeCancelados }}%)</span>
+                    <span class="legend-amount">{{ formatCurrency(valorProyectosCancelados) }}</span>
                   </div>
                 </div>
               </div>
@@ -1322,6 +1467,16 @@ const filteredCotizaciones = computed(() => {
   return cotizaciones.value.filter(c => {
     if (!c.createdAt) return false
     const d = new Date(c.createdAt)
+    return d.getFullYear() === year && d.getMonth() === month - 1
+  })
+})
+
+const filteredLicitaciones = computed(() => {
+  if (selectedMonth.value === 'todos') return licitaciones.value
+  const [year, month] = selectedMonth.value.split('-').map(Number)
+  return licitaciones.value.filter(l => {
+    if (!l.createdAt) return false
+    const d = new Date(l.createdAt)
     return d.getFullYear() === year && d.getMonth() === month - 1
   })
 })
@@ -2306,7 +2461,7 @@ const handleLogout = () => {
 
 const totalClientes = computed(() => clientes.value.length)
 
-const totalProyectos = computed(() => proyectos.value.length)
+const totalProyectos = computed(() => filteredProyectos.value.length)
 
 function normalizeStr(s: string): string {
   return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
@@ -2316,11 +2471,138 @@ function matchStatus(status: string, target: string): boolean {
   return normalizeStr(status).includes(normalizeStr(target))
 }
 
-const proyectosEnEjecucion = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'ejecucion')).length)
-const proyectosFinalizadosCount = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'finalizad')).length)
-const proyectosCotizacion = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'cotizacion')).length)
-const proyectosAprobados = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'aprobad')).length)
-const proyectosCancelados = computed(() => proyectos.value.filter(p => matchStatus(p.status, 'suspendid')).length)
+const proyectosEnEjecucion = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'ejecucion')).length)
+const proyectosFinalizadosCount = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'finalizad')).length)
+const proyectosCotizacion = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'cotizacion')).length)
+const proyectosAprobados = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'aprobad')).length)
+const proyectosCancelados = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'suspendid')).length)
+
+function getProjectAmount(project: any): number {
+  if (typeof project.totalCost === 'number' && Number.isFinite(project.totalCost)) return project.totalCost
+  return (project.services || []).reduce((sum: number, service: any) => sum + (Number(service.totalPrice) || 0), 0)
+}
+
+function totalProjectAmountByStatus(target: string): number {
+  return filteredProyectos.value
+    .filter(project => matchStatus(project.status, target))
+    .reduce((sum, project) => sum + getProjectAmount(project), 0)
+}
+
+const valorProyectosEnEjecucion = computed(() => totalProjectAmountByStatus('ejecucion'))
+const valorProyectosFinalizados = computed(() => totalProjectAmountByStatus('finalizad'))
+const valorProyectosCotizacion = computed(() => totalProjectAmountByStatus('cotizacion'))
+const valorProyectosAprobados = computed(() => totalProjectAmountByStatus('aprobad'))
+const valorProyectosCancelados = computed(() => totalProjectAmountByStatus('suspendid'))
+
+const cotizacionesAprobadasResumen = computed(() => filteredCotizaciones.value.filter(q => matchStatus(q.status, 'aprobada')))
+const totalCotizaciones = computed(() => cotizacionesAprobadasResumen.value.reduce((sum, quote) => sum + (Number(quote.totalAmount) || 0), 0))
+const proyectosEconomicoResumen = computed(() => filteredProyectos.value.filter(p => matchStatus(p.status, 'finalizad') || matchStatus(p.status, 'aprobad')))
+const totalProyectosEconomico = computed(() => proyectosEconomicoResumen.value.reduce((sum, project) => sum + getProjectAmount(project), 0))
+const licitacionesEconomicoResumen = computed(() => filteredLicitaciones.value.filter(l => matchStatus(l.estado, 'en_curso') || matchStatus(l.estado, 'adjudicada')))
+const totalLicitaciones = computed(() => licitacionesEconomicoResumen.value.reduce((sum, tender) => sum + (Number(tender.valorEstimado) || 0), 0))
+
+const economicSummary = computed(() => [
+  { label: 'Cotizaciones', count: cotizacionesAprobadasResumen.value.length, total: totalCotizaciones.value, subtitle: 'Aprobadas' },
+  { label: 'Proyectos', count: proyectosEconomicoResumen.value.length, total: totalProyectosEconomico.value, subtitle: 'Finalizados y aprobados' },
+  { label: 'Proyectos en cotización', count: proyectosCotizacion.value, total: valorProyectosCotizacion.value, subtitle: 'En cotización' },
+  { label: 'Licitaciones', count: licitacionesEconomicoResumen.value.length, total: totalLicitaciones.value, subtitle: 'En curso y adjudicadas' },
+])
+
+function parseDashDate(dateStr?: string): Date | null {
+  if (!dateStr) return null
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr)
+  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+  const d = new Date(dateStr)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function businessDaysSince(dateStr?: string): number {
+  const start = parseDashDate(dateStr)
+  if (!start) return 0
+  start.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  if (start >= today) return 0
+  let count = 0
+  const cursor = new Date(start)
+  while (cursor < today) {
+    cursor.setDate(cursor.getDate() + 1)
+    const day = cursor.getDay()
+    if (day !== 0 && day !== 6) count++
+  }
+  return count
+}
+
+function formatDashDate(dateStr?: string): string {
+  const d = parseDashDate(dateStr)
+  if (!d) return '-'
+  return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+// Alerta: ofertas en cotización con más de 8 días hábiles desde la fecha de inicio
+// (o desde la fecha de seguimiento/endDate si existe, la cual reemplaza a la de inicio)
+const ofertasCotizacion = computed(() =>
+  filteredProyectos.value
+    .filter(p => matchStatus(p.status, 'cotizacion'))
+    .map(p => ({ project: p, daysHabil: businessDaysSince(p.endDate || p.startDate) }))
+    .filter(o => o.daysHabil >= 8)
+    .sort((a, b) => b.daysHabil - a.daysHabil)
+)
+
+const cotizacionPage = ref(0)
+const cotizacionPageSize = 3
+const cotizacionPages = computed(() => Math.max(1, Math.ceil(ofertasCotizacion.value.length / cotizacionPageSize)))
+const paginatedOfertasCotizacion = computed(() => {
+  const start = cotizacionPage.value * cotizacionPageSize
+  return ofertasCotizacion.value.slice(start, start + cotizacionPageSize)
+})
+watch(() => ofertasCotizacion.value.length, () => {
+  if (cotizacionPage.value >= cotizacionPages.value) cotizacionPage.value = 0
+})
+
+const billingAlerts = computed(() => {
+  const alerts = proyectos.value
+    .filter(project => project.invoiceNumber && !project.actualPaymentDate && project.projectedPaymentDate)
+    .map(project => {
+      const days = paymentDifferenceInDays(project.projectedPaymentDate as string)
+      const isOverdue = days < 0
+      return {
+        id: project.id,
+        invoiceNumber: project.invoiceNumber as string,
+        offer: project.offer,
+        code: project.code,
+        clientName: project.client?.name,
+        type: isOverdue ? 'overdue' : 'upcoming',
+        timing: isOverdue
+          ? `${Math.abs(days)} día(s) de mora`
+          : days === 0 ? 'Vence hoy' : `Vence en ${days} día(s)`,
+        days,
+      }
+    })
+    .filter(alert => alert.type === 'overdue' || alert.days <= 7)
+    .sort((a, b) => a.days - b.days)
+
+  return alerts
+})
+
+const billingAlertsPage = ref(0)
+const billingAlertsPageSize = 3
+const billingAlertsPages = computed(() => Math.max(1, Math.ceil(billingAlerts.value.length / billingAlertsPageSize)))
+const paginatedBillingAlerts = computed(() => {
+  const start = billingAlertsPage.value * billingAlertsPageSize
+  return billingAlerts.value.slice(start, start + billingAlertsPageSize)
+})
+watch(() => billingAlerts.value.length, () => {
+  if (billingAlertsPage.value >= billingAlertsPages.value) billingAlertsPage.value = 0
+})
+
+function paymentDifferenceInDays(date: string): number {
+  const today = new Date()
+  const dueDate = new Date(date)
+  today.setHours(0, 0, 0, 0)
+  dueDate.setHours(0, 0, 0, 0)
+  return Math.ceil((dueDate.getTime() - today.getTime()) / 86400000)
+}
 
 function donutPercent(count: number): string {
   if (totalProyectos.value === 0) return '0'
@@ -2942,6 +3224,241 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
+.economic-summary-card {
+  margin-bottom: 24px;
+}
+
+.summary-period {
+  font-size: 0.72rem;
+  color: var(--c-gray);
+}
+
+.economic-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--c-border);
+}
+
+.economic-summary-item {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.economic-summary-item + .economic-summary-item {
+  border-left: 1px solid var(--c-border);
+}
+
+.economic-summary-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.economic-summary-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--c-black);
+}
+
+.economic-summary-count {
+  font-size: 0.7rem;
+  color: var(--c-gray);
+}
+
+.economic-summary-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--c-primary);
+}
+
+.economic-summary-subtitle {
+  font-size: 0.7rem;
+  color: var(--c-gray);
+}
+
+.billing-alerts-card {
+  margin-bottom: 24px;
+}
+
+.billing-alerts-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.billing-alerts-title h3 {
+  margin: 0;
+}
+
+.billing-alerts-subtitle {
+  display: block;
+  margin-top: 2px;
+  color: var(--c-gray);
+  font-size: 0.72rem;
+}
+
+.billing-alerts-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10B981;
+}
+
+.billing-alerts-icon.has-alerts {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+
+.billing-alerts-icon.cotizacion-icon {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563EB;
+}
+
+.billing-alert-item.cotizacion .billing-alert-status {
+  color: #2563EB;
+}
+
+.billing-alert-item.cotizacion .billing-alert-timing {
+  color: #2563EB;
+}
+
+.cotizacion-dates {
+  font-size: 0.7rem;
+}
+
+.cotizacion-obs {
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+.billing-alerts-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--c-border);
+}
+
+.billing-alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 20px;
+  border: 0;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-white);
+  color: var(--c-black);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.billing-alert-item:last-child {
+  border-bottom: 0;
+}
+
+.billing-alert-item:hover {
+  background: var(--c-light);
+}
+
+.billing-alert-status {
+  min-width: 62px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.billing-alert-item.overdue .billing-alert-status {
+  color: #DC2626;
+}
+
+.billing-alert-item.upcoming .billing-alert-status {
+  color: #D97706;
+}
+
+.billing-alert-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.billing-alert-info strong {
+  font-size: 0.82rem;
+}
+
+.billing-alert-info span {
+  overflow: hidden;
+  color: var(--c-gray);
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.billing-alert-timing {
+  flex-shrink: 0;
+  color: var(--c-gray);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.billing-alert-item.overdue .billing-alert-timing {
+  color: #DC2626;
+}
+
+.billing-alert-item.upcoming .billing-alert-timing {
+  color: #D97706;
+}
+
+.billing-alerts-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 20px;
+  border-top: 1px solid var(--c-border);
+  color: #059669;
+  font-size: 0.82rem;
+}
+
+.billing-alerts-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 10px 20px;
+  border-top: 1px solid var(--c-border);
+}
+
+.billing-alerts-pagination .pagination-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  background: var(--c-white);
+  color: var(--c-text);
+  cursor: pointer;
+}
+
+.billing-alerts-pagination .pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.billing-alerts-pagination .pagination-info {
+  font-size: 0.72rem;
+  color: var(--c-gray);
+}
+
 .stat-card {
   background: var(--c-white);
   border: 1px solid var(--c-border);
@@ -3379,14 +3896,17 @@ onMounted(() => {
 }
 
 .legend-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 8px auto auto;
+  grid-template-rows: auto auto;
   align-items: center;
-  gap: 6px;
+  column-gap: 3px;
+  row-gap: 1px;
 }
 
 .legend-dot-rect {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 2px;
   flex-shrink: 0;
 }
@@ -3398,15 +3918,36 @@ onMounted(() => {
 .legend-dot-rect.red { background: #EF4444; }
 
 .legend-text {
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   color: var(--c-black);
-  flex: 1;
+  grid-column: 2;
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+.legend-amount {
+  font-size: 0.56rem;
+  font-weight: 600;
+  color: var(--c-gray);
+  white-space: nowrap;
+  grid-column: 3;
+  grid-row: 2;
 }
 
 .legend-count {
-  font-size: 0.72rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: var(--c-black);
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.legend-percent {
+  font-size: 0.56rem;
+  color: var(--c-gray);
+  white-space: nowrap;
+  grid-column: 2;
+  grid-row: 2;
 }
 
 /* ===== BAR CHART ===== */

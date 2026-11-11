@@ -114,10 +114,10 @@
               <tr>
                 <th>Código COT</th>
                 <th>Cliente</th>
-                <th>Proyecto</th>
+                <th>Parametros de Oferta</th>
                 <th>Valor Total</th>
                 <th>Estado</th>
-                <th>Vigencia</th>
+                <th>Fecha <br>Cotización</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -133,7 +133,10 @@
                   </div>
                 </td>
                 <td>
-                  <span class="project-text" v-if="cot.project">{{ cot.project.code }} - {{ cot.project.description }}</span>
+                  <template v-if="cot.observations">
+                    <div class="obs-cell" :class="{ clamped: isLongObservation(cot.observations) }">{{ cot.observations }}</div>
+                    <button v-if="isLongObservation(cot.observations)" class="obs-more-btn" @click="openObservationsModal(cot)">Ver más</button>
+                  </template>
                   <span class="no-data" v-else>-</span>
                 </td>
                 <td class="amount-cell">{{ formatCurrency(cot.totalAmount) }}</td>
@@ -157,7 +160,7 @@
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
-                    <button class="action-btn download" title="Descargar PDF" @click="downloadPDF(cot)">
+                    <button class="action-btn download" title="Previsualizar PDF" @click="downloadPDF(cot)">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>
@@ -250,7 +253,7 @@
               <span class="amount-cell">{{ formatCurrency(selectedQuote.totalAmount) }}</span>
             </div>
             <div class="detail-field">
-              <label>Vigencia</label>
+              <label>Fecha de cotización</label>
               <span>{{ selectedQuote.validUntil ? formatDate(selectedQuote.validUntil) : '-' }}</span>
             </div>
             <div class="detail-field full-width">
@@ -274,6 +277,7 @@
                   <th>Tiempo (Días)</th>
                   <th>Tipo</th>
                   <th>VALOR * DÍA (COP)</th>
+                  <th>TOTAL (COP)</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,9 +286,41 @@
                   <td>{{ svc.quantity }}</td>
                   <td>{{ svc.billingType === 'ONETIME' ? 'Único' : 'Mensual' }}</td>
                   <td class="amount-cell">{{ formatCurrency(svc.value) }}</td>
+                  <td class="amount-cell">{{ formatCurrency((svc.value || 0) * (svc.quantity || 0)) }}</td>
+                </tr>
+                <tr class="summary-row">
+                  <td colspan="4">SUB TOTAL</td>
+                  <td class="amount-cell summary-amount">{{ formatCurrency(servicesSubtotal) }}</td>
+                </tr>
+                <tr class="summary-row">
+                  <td colspan="4">Descuento {{ selectedQuoteDescuento }} %</td>
+                  <td class="amount-cell summary-amount">- {{ formatCurrency(selectedQuoteDiscountAmount) }}</td>
+                </tr>
+                <tr class="summary-row">
+                  <td colspan="4">IVA {{ selectedQuoteIva }} %</td>
+                  <td class="amount-cell summary-amount">{{ formatCurrency(selectedQuoteIvaAmount) }}</td>
+                </tr>
+                <tr class="summary-row total">
+                  <td colspan="4">VALOR TOTAL</td>
+                  <td class="amount-cell summary-amount">{{ formatCurrency(selectedQuoteTotal) }}</td>
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <div class="terms-section">
+            <h4>Términos comerciales</h4>
+            <div class="terms-body" v-html="termsTextToHtml(selectedQuote.commercialTerms || DEFAULT_COMMERCIAL_TERMS)"></div>
+          </div>
+
+          <div class="terms-section">
+            <h4>Términos del servicio</h4>
+            <div class="terms-body" v-html="termsTextToHtml(selectedQuote.serviceTerms || DEFAULT_SERVICE_TERMS)"></div>
+          </div>
+
+          <div class="terms-section">
+            <h4>Confidencialidad y protección de la información</h4>
+            <div class="terms-body" v-html="termsTextToHtml(selectedQuote.confidentialityTerms || DEFAULT_CONFIDENTIALITY_TERMS)"></div>
           </div>
         </div>
         <div class="modal-footer">
@@ -295,7 +331,7 @@
               <polyline points="7 10 12 15 17 10"/>
               <line x1="12" y1="15" x2="12" y2="3"/>
             </svg>
-            Generar PDF
+            Previsualizar PDF
           </button>
           <button class="btn-outline" @click="toggleIsVisible(selectedQuote!)">
             {{ selectedQuote?.isVisible ? 'Ocultar para clientes' : 'Mostrar para clientes' }}
@@ -330,7 +366,10 @@
           <div class="form-grid">
             <div class="form-group">
               <label>Código *</label>
-              <input v-model="form.code" type="text" placeholder="Ej: COT-2025-001" class="form-input" />
+              <select v-model="form.code" class="form-input" :disabled="!!editingQuote">
+                <option value="">Seleccionar código...</option>
+                <option v-for="c in availableCodes" :key="c" :value="c">{{ c }}</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Estado *</label>
@@ -343,7 +382,7 @@
               </select>
             </div>
             <div class="form-group">
-              <label>Cliente *</label>
+              <label>Cliente</label>
               <div class="client-dropdown-wrapper">
                 <div class="client-dropdown-trigger" @click="toggleClientDropdown">
                   <span :class="{ placeholder: form.clientId === 0 }">
@@ -395,22 +434,85 @@
               <label>Cliente / Entidad (No registrada)</label>
               <input v-model="form.clientName" type="text" placeholder="Nombre del cliente o entidad" class="form-input" />
             </div>
+            <div v-if="form.clientId === 0" class="form-group">
+              <label>NIT / CC (No registrado)</label>
+              <input v-model="form.nitCC" type="text" placeholder="NIT o cédula de la entidad" class="form-input" />
+            </div>
             <div class="form-group">
               <label>Proyecto</label>
-              <select v-model="form.projectId" class="form-input">
-                <option :value="0">Sin proyecto</option>
-                <option v-for="p in proyectos" :key="p.id" :value="p.id">{{ p.code }} - {{ p.description }}</option>
-              </select>
+              <div class="client-dropdown-wrapper">
+                <div class="client-dropdown-trigger" @click="toggleProjectDropdown">
+                  <span :class="{ placeholder: form.projectId === 0 }">
+                    {{ form.projectId === 0 ? 'Sin proyecto' : getSelectedProjectName() }}
+                  </span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+                <div v-if="showProjectDropdown" class="client-dropdown-list">
+                  <div class="client-dropdown-search">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input
+                      v-model="projectSearch"
+                      type="text"
+                      placeholder="Buscar proyecto..."
+                      class="client-search-input"
+                      @click.stop
+                    />
+                  </div>
+                  <div class="client-dropdown-items">
+                    <div
+                      class="client-dropdown-item"
+                      :class="{ selected: form.projectId === 0 }"
+                      @click="selectProject(0)"
+                    >
+                      Sin proyecto
+                    </div>
+                    <div
+                      v-for="p in sortedProyectos"
+                      :key="p.id"
+                      class="client-dropdown-item"
+                      :class="{ selected: form.projectId === p.id }"
+                      @click="selectProject(p.id)"
+                    >
+                      {{ p.code }} - {{ p.description }}
+                    </div>
+                    <div v-if="sortedProyectos.length === 0" class="client-dropdown-empty">
+                      No se encontraron proyectos
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="form-group">
               <label>Valor Total</label>
               <div class="currency-input-wrap">
                 <span class="currency-prefix">$</span>
-                <input :value="formatCurrencyInput(form.totalAmount)" @input="onTotalAmountInput($event)" type="text" class="form-input currency-input" placeholder="0" />
+                <input :value="formatCurrencyInput(quoteTotal)" type="text" class="form-input currency-input" readonly />
               </div>
             </div>
             <div class="form-group">
-              <label>Fecha</label>
+              <label>Descuento (%)</label>
+              <input v-model.number="form.descuento" type="number" min="0" max="100" class="form-input" placeholder="0" />
+            </div>
+            <div class="form-group">
+              <label>IVA (%)</label>
+              <input v-model.number="form.iva" type="number" min="0" max="100" class="form-input" placeholder="19" />
+            </div>
+            <div class="form-group">
+              <label>Modalidad de trabajo</label>
+              <select v-model="form.modalidad" class="form-input">
+                <option value="Sin definir">Sin definir</option>
+                <option value="Presencial">Presencial</option>
+                <option value="Virtual">Virtual</option>
+                <option value="Mixta">Mixta</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Fecha Cotización</label>
               <input v-model="form.validUntil" type="date" class="form-input" />
             </div>
             <div class="form-group">
@@ -421,8 +523,20 @@
               </label>
             </div>
             <div class="form-group full-width">
-              <label>Observaciones</label>
-              <textarea v-model="form.observations" rows="2" placeholder="Observaciones de la cotización..." class="form-input"></textarea>
+              <label>Parametros de Oferta</label>
+              <textarea v-model="form.observations" rows="2" placeholder="Parametros de la oferta..." class="form-input"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Términos comerciales (PDF)</label>
+              <textarea v-model="form.commercialTerms" rows="5" placeholder="Términos comerciales..." class="form-input"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Términos del servicio (PDF)</label>
+              <textarea v-model="form.serviceTerms" rows="3" placeholder="Términos del servicio..." class="form-input"></textarea>
+            </div>
+            <div class="form-group full-width">
+              <label>Confidencialidad (PDF)</label>
+              <textarea v-model="form.confidentialityTerms" rows="6" placeholder="Confidencialidad y protección de la información..." class="form-input"></textarea>
             </div>
           </div>
 
@@ -520,6 +634,21 @@
         </div>
       </div>
     </div>
+
+    <!-- Observaciones Modal -->
+    <div v-if="showObsModal && obsModalQuote" class="modal-overlay" @click.self="showObsModal = false">
+      <div class="modal-card obs-modal">
+        <div class="obs-modal-header">
+          <h3>Observaciones — {{ obsModalQuote.code }}</h3>
+          <button class="modal-close" title="Cerrar" @click="showObsModal = false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div class="obs-modal-body">{{ obsModalQuote.observations }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -527,6 +656,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCRM } from '@/composables/useCRM'
 import type { Cotizacion, CotizacionServicio, EstadoCotizacion } from '@/types/crmTypes'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 
 const {
   clientes,
@@ -548,6 +679,8 @@ const frontPage = ref(1)
 const frontPageSize = 20
 const clientSearch = ref('')
 const showClientDropdown = ref(false)
+const projectSearch = ref('')
+const showProjectDropdown = ref(false)
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -585,12 +718,65 @@ function toggleClientDropdown() {
   showClientDropdown.value = !showClientDropdown.value
   if (showClientDropdown.value) {
     clientSearch.value = ''
+    showProjectDropdown.value = false
   }
 }
 
 function closeClientDropdown() {
   showClientDropdown.value = false
   clientSearch.value = ''
+}
+
+const sortedProyectos = computed(() => {
+  const list = [...proyectos.value].sort((a, b) =>
+    (a.code || '').localeCompare(b.code || '', 'es', { sensitivity: 'base' })
+  )
+  if (!projectSearch.value) return list
+  const term = projectSearch.value.toLowerCase()
+  return list.filter(
+    (p) =>
+      (p.code || '').toLowerCase().includes(term) ||
+      (p.description || '').toLowerCase().includes(term)
+  )
+})
+
+function selectProject(id: number) {
+  form.value.projectId = id
+  showProjectDropdown.value = false
+  projectSearch.value = ''
+}
+
+function getSelectedProjectName(): string {
+  if (form.value.projectId === 0) return ''
+  const p = proyectos.value.find((pr) => pr.id === form.value.projectId)
+  return p ? `${p.code} - ${p.description}` : ''
+}
+
+const usedCodes = computed(() => new Set(cotizaciones.value.map((c) => c.code).filter(Boolean)))
+
+const availableCodes = computed(() => {
+  const codes: string[] = []
+  if (editingQuote.value?.code) {
+    codes.push(editingQuote.value.code)
+  }
+  let i = 258
+  while (i < 100000) {
+    const code = `OE-${String(i).padStart(4, '0')}`
+    if (!usedCodes.value.has(code) && !codes.includes(code)) {
+      codes.push(code)
+      break
+    }
+    i++
+  }
+  return codes
+})
+
+function toggleProjectDropdown() {
+  showProjectDropdown.value = !showProjectDropdown.value
+  if (showProjectDropdown.value) {
+    projectSearch.value = ''
+    showClientDropdown.value = false
+  }
 }
 
 const filteredCotizaciones = computed(() => {
@@ -677,6 +863,18 @@ function getClientName(cot: Cotizacion): string {
   return '-'
 }
 
+function isLongObservation(text: string): boolean {
+  return text.length > 120 || text.split('\n').length > 3
+}
+
+const showObsModal = ref(false)
+const obsModalQuote = ref<Cotizacion | null>(null)
+
+function openObservationsModal(cot: Cotizacion) {
+  obsModalQuote.value = cot
+  showObsModal.value = true
+}
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
@@ -691,10 +889,16 @@ function formatCurrencyInput(value: number | undefined | null): string {
   return new Intl.NumberFormat('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
 }
 
-function onTotalAmountInput(event: Event) {
-  const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
-  form.value.totalAmount = Number(raw) || 0
-}
+const formSubtotal = computed(() =>
+  form.value.services.reduce(
+    (sum, s) => sum + (Number(s.value) || 0) * (Number(s.quantity) || 0),
+    0
+  )
+)
+const formDiscountAmount = computed(() => formSubtotal.value * ((form.value.descuento || 0) / 100))
+const formBase = computed(() => formSubtotal.value - formDiscountAmount.value)
+const formIvaAmount = computed(() => formBase.value * ((form.value.iva || 0) / 100))
+const quoteTotal = computed(() => formBase.value + formIvaAmount.value)
 
 function onSvcValueInput(event: Event, idx: number) {
   const raw = (event.target as HTMLInputElement).value.replace(/[^0-9]/g, '')
@@ -732,6 +936,20 @@ function goToPage(page: number) {
 const showDetailModal = ref(false)
 const selectedQuote = ref<Cotizacion | null>(null)
 
+const servicesSubtotal = computed(() =>
+  (selectedQuote.value?.services || []).reduce(
+    (sum, s) => sum + (Number(s.value) || 0) * (Number(s.quantity) || 0),
+    0
+  )
+)
+const selectedQuoteExtra = computed(() => parseExtraData(selectedQuote.value?.extraData))
+const selectedQuoteIva = computed(() => (typeof selectedQuoteExtra.value['iva'] === 'number' ? selectedQuoteExtra.value['iva'] : 19))
+const selectedQuoteDescuento = computed(() => (typeof selectedQuoteExtra.value['descuento'] === 'number' ? selectedQuoteExtra.value['descuento'] : 0))
+const selectedQuoteDiscountAmount = computed(() => servicesSubtotal.value * (selectedQuoteDescuento.value / 100))
+const selectedQuoteBase = computed(() => servicesSubtotal.value - selectedQuoteDiscountAmount.value)
+const selectedQuoteIvaAmount = computed(() => selectedQuoteBase.value * (selectedQuoteIva.value / 100))
+const selectedQuoteTotal = computed(() => selectedQuoteBase.value + selectedQuoteIvaAmount.value)
+
 function viewQuote(cot: Cotizacion) {
   selectedQuote.value = cot
   showDetailModal.value = true
@@ -745,90 +963,377 @@ async function toggleIsVisible(cot: Cotizacion) {
   }
 }
 
-function downloadPDF(cot: Cotizacion) {
-  const win = window.open('', '_blank')
-  if (!win) return
+// Textos por defecto de los términos del PDF (editables por cotización)
+const DEFAULT_COMMERCIAL_TERMS = `**Vigencia de la cotización:** Treinta (30) días calendario.
+**Tiempos de entregables:** 5 días.
+**Aprobación de la Oferta:** En caso de aprobación de esta oferta, por favor enviar Orden de Compra o esta oferta firmada al correo: **administrativo@esgestionempresarial.com**
+**Términos de Pago:** 50% anticipado - 50% al finalizar la actividad (sujeto a negociación con el cliente).
+* Transferencia electrónica a la cuenta de ahorros No. **1089-044-3160** del **BANCO DE DAVIVIENDA** a nombre de ES GESTIÓN EMPRESARIAL SAS NIT 901.790.027-5`
 
-  const servicesRows = (cot.services || []).map(s => `
+const DEFAULT_SERVICE_TERMS = `* Se dará por terminado el servicio cuando se realice el envío de los entregables
+**Nota 1:** Las fechas serán acordadas según la disponibilidad de las dos partes.`
+
+const DEFAULT_CONFIDENTIALITY_TERMS = `La información obtenida durante la prestación de los servicios contratados será confidencial y ninguna de las partes podrá hacerla pública. En caso de que sea necesario divulgarla por razones legales, la parte que deba revelarla deberá obtener el consentimiento previo y por escrito de la otra parte. Si se requiere acceso a documentos, éste podrá realizarse de forma física en las instalaciones permanentes, cumpliendo con los procedimientos internos establecidos para tal fin.
+Ambas partes se comprometen a cumplir con la legislación vigente en materia de protección de datos personales y garantizarán que los datos personales intercambiados entre ellas, incluidos los datos personales de sus empleados y/o representantes (los Datos Personales), serán tratados de manera confidencial. Asimismo, ambas partes se comprometen a informar a los titulares de los datos personales sobre los procedimientos, alcance y finalidades de la recolección, tratamiento y administración de privacidad e implementar medidas de seguridad administrativas, técnicas y físicas para proteger dichos datos, pérdida, alteración, destrucción o tratamiento no autorizado.
+Además, las partes se obligan a no transferir, ceder ni compartir los datos personales, salvo que sea de forma gratuita u onerosa, sin el consentimiento previo y por escrito de la otra parte. En caso de cualquier pérdida, fuga o divulgación no autorizada de los datos personales, ya sea por negligencia, dolo o mala fe, por parte de sus empleados, usuarios, clientes o asesores, la parte responsable deberá notificar por escrito a la otra parte dentro de los cinco (5) días siguientes a la ocurrencia del incidente.`
+
+function escapeTermsHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+// Firma del PDF: imagen cargada desde link (Cloudinary permite CORS por defecto).
+// - Si la imagen no carga, se muestra el texto "FIRMA" automáticamente.
+const SIGNATURE_URL = 'https://res.cloudinary.com/dlwzazojt/image/upload/v1794375726/camila_wptonv.png'
+
+function termsTextToHtml(text: string, cssClass = ''): string {
+  const classAttr = cssClass ? ` class="${cssClass}"` : ''
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => `<p${classAttr}>${escapeTermsHtml(line).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`)
+    .join('')
+}
+
+async function downloadPDF(cot: Cotizacion) {
+  const previewWindow = window.open('', '_blank')
+  if (!previewWindow) {
+    window.alert('Permite las ventanas emergentes para previsualizar el PDF.')
+    return
+  }
+  previewWindow.document.write('<p style="font-family:Arial,sans-serif;padding:24px;">Preparando previsualización...</p>')
+
+  const servicesRows = (cot.services || []).map((s, index) => `
     <tr>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;">${s.name}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:center;">${s.quantity}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;">${s.billingType === 'ONETIME' ? 'Único' : 'Mensual'}</td>
-      <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:13px;text-align:right;">$ ${(s.value || 0).toLocaleString('es-CO')}</td>
+      <td>${index + 1}</td>
+      <td>${s.name}</td>
+      <td>${s.description || '-'}</td>
+      <td>${s.quantity}</td>
+      <td>$ ${(s.value || 0).toLocaleString('es-CO')}</td>
+      <td>$ ${((s.value || 0) * (s.quantity || 0)).toLocaleString('es-CO')}</td>
     </tr>
   `).join('')
 
-  const statusLabels: Record<string, string> = {
-    pendiente: 'Pendiente', enviada: 'Enviada', aprobada: 'Aprobada',
-    rechazada: 'Rechazada', vencida: 'Vencida'
-  }
+  const quoteDate = cot.createdAt ? cot.createdAt.slice(0, 10) : '-'
+  const pdfExtra = parseExtraData(cot.extraData)
+  const pdfIvaPct = typeof pdfExtra['iva'] === 'number' ? pdfExtra['iva'] : 19
+  const pdfDescuentoPct = typeof pdfExtra['descuento'] === 'number' ? pdfExtra['descuento'] : 0
+  const pdfModalidadRaw = (pdfExtra['modalidad'] as string) || 'Presencial'
+  const pdfModalidad = pdfModalidadRaw === 'Sin definir' ? '' : pdfModalidadRaw
+  const subtotalAmount = (cot.services || []).reduce((sum, s) => sum + (Number(s.value) || 0) * (Number(s.quantity) || 0), 0)
+  const discountAmount = subtotalAmount * (pdfDescuentoPct / 100)
+  const baseAmount = subtotalAmount - discountAmount
+  const ivaAmount = baseAmount * (pdfIvaPct / 100)
+  const totalAmount = baseAmount + ivaAmount
+  const formatPdfCurrency = (value: number) => `$ ${Math.round(value).toLocaleString('es-CO')}`
 
-  const statusColors: Record<string, { bg: string; fg: string }> = {
-    pendiente: { bg: '#fef3c7', fg: '#92400e' },
-    enviada: { bg: '#dbeafe', fg: '#1e40af' },
-    aprobada: { bg: '#d1fae5', fg: '#065f46' },
-    rechazada: { bg: '#fee2e2', fg: '#991b1b' },
-    vencida: { bg: '#f3f4f6', fg: '#374151' },
-  }
-  const sc = statusColors[cot.status] || statusColors.pendiente
+  const commercialTermsHtml = termsTextToHtml(cot.commercialTerms || DEFAULT_COMMERCIAL_TERMS)
+  const serviceTermsHtml = termsTextToHtml(cot.serviceTerms || DEFAULT_SERVICE_TERMS)
+  const confidentialityHtml = termsTextToHtml(cot.confidentialityTerms || DEFAULT_CONFIDENTIALITY_TERMS)
 
-  win.document.write(`
+  const htmlHead = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Cotizacion ${cot.code}</title>
+      <title> </title>
       <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #1a1a1a; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; border-bottom: 3px solid #C89B2D; padding-bottom: 20px; }
-        .company-name { font-size: 22px; font-weight: 700; color: #C89B2D; }
-        .doc-title { font-size: 28px; font-weight: 700; color: #1a1a1a; margin-top: 4px; }
-        .doc-code { font-size: 14px; color: #6b7280; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 32px; margin-bottom: 28px; }
-        .info-item label { display: block; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .info-item span { font-size: 14px; font-weight: 500; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
-        th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #e5e7eb; }
-        th:nth-child(2), th:nth-child(4) { text-align: right; }
-        .total-row td { font-weight: 700; font-size: 16px; border-top: 2px solid #C89B2D; padding-top: 12px; }
-        .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #9ca3af; text-align: center; }
+        .header-table { width: 100%; table-layout: fixed; border-collapse: collapse; margin-bottom: 32px; }
+        .header-table col:first-child { width: 34%; }
+        .header-table col:nth-child(2) { width: 50%; }
+        .header-table col:nth-child(3) { width: 16%; }
+        .header-table, .header-table td { border: 1px solid #000; border-collapse: collapse; }
+        .header-table td { height: 42px; padding: 0; vertical-align: middle; }
+        .header-logo { height: 84px !important; text-align: center; }
+        .header-logo img { max-width: 150px; max-height: 68px; object-fit: contain; }
+        .header-center { height: 42px; text-align: center; }
+        .company-name { height: 42px; text-align: center; font-size: 20px; font-weight: 700; line-height: 1.1; }
+        .company-nit { margin-top: 4px; font-size: 9px; font-weight: 400; }
+        .doc-title { height: 28px !important; text-align: center; font-size: 13px; font-weight: 700; }
+        .header-meta { text-align: center; font-size: 8px; font-weight: 700; }
+        .header-meta-top { height: 42px !important; }
+        .header-meta-bottom { height: 42px !important; font-size: 7px; }
+        .header-meta-bottom span + span { margin-left: 7px; }
+        .quote-details { margin: 0 0 18px; font-size: 11px; line-height: 1.45; }
+        .quote-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; margin-bottom: 14px; }
+        .quote-details strong { font-weight: 700; }
+        .greeting { margin: 12px 0 10px; font-size: 12px; }
+        .intro { margin: 0 0 8px; font-size: 10px; line-height: 1.5; }
+        .scope-title { margin: 8px 0 4px; font-size: 11px;   }
+        .scope-list { margin: 0 0 12px 18px; padding: 0; font-size: 10px; line-height: 1.5; }
+        .services-title { margin: 14px 0 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .services-intro { margin: 0 0 8px; font-size: 10px; }
+        .services-table { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 24px; }
+        .services-table th, .services-table td { border: 1px solid #000; padding: 6px 5px; font-size: 9px; vertical-align: middle; text-align: center; }
+        .services-table th { background: #B49538; color: #fff; font-weight: 700; }
+        .services-table th:nth-child(1) { width: 4%; }
+        .services-table th:nth-child(2) { width: 31%; }
+        .services-table th:nth-child(3) { width: 29%; }
+        .services-table th:nth-child(4) { width: 10%; }
+        .services-table th:nth-child(5), .services-table th:nth-child(6) { width: 13%; }
+        .services-table td { white-space: nowrap; }
+        .total-row td { font-weight: 700; font-size: 11px; }
+        .commercial-summary { display: flex; justify-content: flex-end; margin: -12px 0 14px; }
+        .commercial-summary table { width: 240px; margin: 0; border-collapse: collapse; }
+        .commercial-summary td { border: 1px solid #000; padding: 3px 7px; font-size: 9px; }
+        .commercial-summary td:first-child { width: 60%; }
+        .commercial-summary td:last-child { width: 40%; text-align: right; white-space: nowrap; }
+        .commercial-summary .summary-total td { font-weight: 700; }
+        .commercial-terms { border: 1px solid #000; margin-top: 86px; font-size: 9px; line-height: 1.45; }
+        .commercial-terms-title { padding: 2px 6px; background: #B49538; color: #fff; text-align: center; font-weight: 700; }
+        .commercial-terms-body { padding: 7px 8px; }
+        .commercial-terms-body p { margin: 0 0 3px; }
+        .commercial-terms-body p:last-child { margin-bottom: 0; }
+        .service-terms { margin-top: 14px; }
+        .service-terms-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .service-terms-table th, .service-terms-table td { border: 1px solid #000; }
+        .service-terms-table th { background: #B49538; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 6px; text-align: center; }
+        .service-terms-table td { padding: 8px 10px; font-size: 9px; line-height: 1.6; vertical-align: top; }
+        .terms-left { width: 62%; }
+        .terms-right { width: 38%; }
+        .special-conditions-label { text-align: center; font-weight: 700; font-size: 10px; border-bottom: 1px solid #000; padding-bottom: 3px; margin-bottom: 4px; }
+        .confidentiality { border: 1px solid #000; margin-top: 14px; }
+        .confidentiality-title { padding: 3px 6px; background: #B49538; color: #fff; text-align: center; font-weight: 700; font-size: 10px; }
+        .confidentiality-body { padding: 7px 8px; font-size: 9px; line-height: 1.5; }
+        .confidentiality-body p { margin: 0 0 6px; }
+        .confidentiality-body p:last-child { margin-bottom: 0; }
+        .closing { margin-top: 36px; }
+        .closing-text { font-size: 11px; font-style: italic; font-weight: 700; margin: 0 0 24px; }
+        .signature-block { display: flex; justify-content: space-between; align-items: flex-start; font-size: 10px; line-height: 1.5; }
+        .signature-img { display: block; height: 50px; max-width: 200px; object-fit: contain; object-position: left bottom; margin-bottom: 2px; }
+        .signature-firma { display: flex; align-items: flex-end; height: 50px; font-weight: 700; color: #9ca3af; }
+        .doc-banner { display: flex; align-items: stretch; background: #595959; margin-top: 22px; min-height: 88px; }
+        .banner-spacer { flex: 1; }
+        .banner-spacer-end { flex: 0 0 24px; }
+        .banner-logo { background: #fff; display: flex; align-items: center; justify-content: center; padding: 8px 14px; }
+        .banner-logo img { max-height: 64px; max-width: 130px; object-fit: contain; }
+        .banner-photo { flex: 0 0 200px; background: #4b4b4b; }
+        .banner-quote { flex: 0 0 210px; background: #3f3f3f; color: #fff; padding: 10px 14px; display: flex; flex-direction: column; justify-content: center; }
+        .quote-mark { font-size: 34px; font-weight: 700; line-height: 0.8; }
+        .quote-text { font-size: 11px; font-weight: 700; line-height: 1.35; margin-top: 4px; }
+        .doc-contact { text-align: center; font-size: 8px; color: #6b7280; margin-top: 8px; }
+        .doc-contact p { margin: 2px 0; }
+        .doc-contact a { color: #2563eb; text-decoration: underline; }
         .observations { background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 24px; font-size: 13px; color: #374151; }
-        @media print { body { margin: 20px; } }
+        @media print {
+          /* Oculta los encabezados y pies de página del navegador (about:blank, fecha, paginación) */
+          @page {
+            margin: 0;
+            size: letter portrait;
+          }
+
+          /* Le da un margen interno al cuerpo para que el contenido no quede pegado al borde del papel */
+          body {
+            margin: 15mm 10mm 15mm 10mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
       </style>
     </head>
     <body>
-      <div class="header">
-        <div>
-          <div class="company-name">ESG Consultoria</div>
-          <div class="doc-title">Cotizacion</div>
+  `
+
+  const headerDetailsHtml = `
+      <table class="header-table">
+        <colgroup><col><col><col></colgroup>
+        <tbody>
+          <tr>
+            <td class="header-logo" rowspan="2">
+              <img src="${window.location.origin}/images/LOGO.PNG" alt="ES Gestión Empresarial">
+            </td>
+            <td class="header-center company-name">
+              ES GESTIÓN EMPRESARIAL<br>
+              <span class="company-nit">NIT 901.790.027-5</span>
+            </td>
+            <td class="header-meta header-meta-top">CO-F-001-02</td>
+          </tr>
+          <tr>
+            <td class="header-center doc-title">OFERTA ECONÓMICA</td>
+            <td class="header-meta header-meta-bottom"><span>VERSIÓN 01</span><span>2025-03-07</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="quote-details">
+        <div class="quote-details-grid">
+          <div><strong>SEÑORES</strong><br><strong>${getClientName(cot)}</strong><br>${cot.client?.nit || pdfExtra['nitCC'] || 'NIT no registrado'}</div>
+          <div>
+            <div><strong>Fecha:</strong> ${quoteDate}</div>
+            <div><strong>Nº de Oferta Económica:</strong> ${cot.code}</div>
+          </div>
+          ${cot.project ? `<div style="grid-column: 1 / -1;"><strong>Proyecto:</strong> ${cot.project.code} - ${cot.project.description}</div>` : ''}
         </div>
-        <div style="text-align:right;">
-          <div class="doc-code">${cot.code}</div>
-          <div style="margin-top:4px;"><span style="display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600;background:${sc.bg};color:${sc.fg};">${statusLabels[cot.status] || cot.status}</span></div>
+        <div class="greeting"><strong>Cordial saludo,</strong></div>
+        <p class="intro">Para ES Gestión Empresarial es un gusto hacer parte de su proceso de mejora continua, apoyándoles con excelencia y dedicación en cada paso hacia el éxito.</p>
+        <div class="scope-title">Nuestra oferta comprende:</div>
+        ${cot.observations ? termsTextToHtml(cot.observations, 'intro') : ''}
+      </section>
+  `
+
+  const hasServices = Boolean(cot.services && cot.services.length > 0)
+
+  const servicesHtml = hasServices ? '<div class="services-title">Descripción de la oferta:</div>' + (pdfModalidad ? '<div class="services-intro"><strong>Modalidad de trabajo:</strong> ' + pdfModalidad + '</div>' : '') + '<div class="services-intro">De acuerdo a su solicitud, a continuación encontrará la descripción y costos del servicio:</div><table class="services-table"><thead><tr><th>No.</th><th>ACTIVIDAD</th><th>NORMA</th><th>TIEMPO<br>(Días)</th><th>VALOR * DÍA<br>(COP)</th><th>VALOR TOTAL<br>(COP)</th></tr></thead><tbody>' + servicesRows + '</tbody></table><div class="commercial-summary"><table><tbody><tr><td>SUB TOTAL</td><td>' + formatPdfCurrency(subtotalAmount) + '</td></tr>' + (pdfDescuentoPct > 0 ? '<tr><td>DESCUENTO ' + pdfDescuentoPct + ' %</td><td>' + formatPdfCurrency(discountAmount) + '</td></tr>' : '') + (pdfIvaPct > 0 ? '<tr><td>IVA ' + pdfIvaPct + ' %</td><td>' + formatPdfCurrency(ivaAmount) + '</td></tr>' : '') + '<tr class="summary-total"><td>VALOR TOTAL</td><td>' + formatPdfCurrency(totalAmount) + '</td></tr></tbody></table></div><div class="commercial-terms"><div class="commercial-terms-title">TÉRMINOS COMERCIALES</div><div class="commercial-terms-body">' + commercialTermsHtml + '</div></div>' : ''
+
+  const termsHtml = hasServices ? '<div class="service-terms"><table class="service-terms-table"><thead><tr><th colspan="2">TÉRMINOS DEL SERVICIO</th></tr></thead><tbody><tr><td class="terms-left">' + serviceTermsHtml + '</td><td class="terms-right"><div class="special-conditions-label">CONDICIONES ESPECIALES</div></td></tr></tbody></table></div><div class="confidentiality"><div class="confidentiality-title">CONFIDENCIALIDAD Y PROTECCIÓN DE LA INFORMACIÓN</div><div class="confidentiality-body">' + confidentialityHtml + '</div></div>' : ''
+
+  const closingHtml = `
+      <div class="closing">
+        <p class="closing-text">Atentamente,</p>
+        <div class="signature-block">
+          <div class="signature-left">
+            ${SIGNATURE_URL ? `<img class="signature-img" src="${SIGNATURE_URL}" alt="Firma" onerror="this.style.display='none';this.parentElement.querySelector('.signature-firma').style.display='flex'" /><div class="signature-firma" style="display:none">FIRMA</div>` : '<div class="signature-firma">FIRMA</div>'}
+            <div><strong>Camila Escobar</strong><br><strong>Gerente Comercial</strong></div>
+          </div>
         </div>
       </div>
-
-      <div class="info-grid">
-        <div class="info-item"><label>Cliente</label><span>${getClientName(cot)}</span></div>
-        <div class="info-item"><label>NIT</label><span>${cot.client?.nit || '-'}</span></div>
-        <div class="info-item"><label>Proyecto</label><span>${cot.project ? cot.project.code + ' - ' + cot.project.description : '-'}</span></div>
-        <div class="info-item"><label>Valor Total</label><span style="font-size:18px;font-weight:700;">$ ${(cot.totalAmount || 0).toLocaleString('es-CO')}</span></div>
-        <div class="info-item"><label>Vigencia</label><span>${cot.validUntil ? new Date(cot.validUntil).toLocaleDateString('es-CO') : '-'}</span></div>
-        <div class="info-item"><label>Fecha de creacion</label><span>${cot.createdAt ? new Date(cot.createdAt).toLocaleDateString('es-CO') : '-'}</span></div>
       </div>
 
-      ${cot.observations ? '<div class="observations"><strong>Observaciones:</strong> ' + cot.observations + '</div>' : ''}
-
-      ${cot.services && cot.services.length > 0 ? '<h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Servicios</h3><table><thead><tr><th>Actividad</th><th style="text-align:center;">Tiempo (Días)</th><th>Tipo</th><th style="text-align:right;">VALOR * DÍA (COP)</th></tr></thead><tbody>' + servicesRows + '<tr class="total-row"><td colspan="3" style="text-align:right;padding-right:12px;">Total:</td><td style="text-align:right;">$ ' + (cot.totalAmount || 0).toLocaleString('es-CO') + '</td></tr></tbody></table>' : ''}
-
-      <div class="footer">
-        Documento generado el ${new Date().toLocaleDateString('es-CO')} a las ${new Date().toLocaleTimeString('es-CO')} &mdash; ESG Consultoria
+      <div class="doc-banner">
+        <div class="banner-spacer"></div>
+        <div class="banner-logo"><img src="${window.location.origin}/images/LOGO.PNG" alt="ESG"></div>
+        <div class="banner-photo"></div>
+        <div class="banner-quote">
+          <div class="quote-mark">&ldquo;</div>
+          <div class="quote-text">NOS DEDICAMOS A AYUDARTE EN EL AUMENTO DE LAS CAPACIDADES DE TU ORGANIZACIÓN</div>
+        </div>
+        <div class="banner-spacer banner-spacer-end"></div>
       </div>
+      <div class="doc-contact">
+        <p>ESG ES GESTIÓN EMPRESARIAL S.A.S. | Carrera 76 60-09 | Medellín, Colombia | Cel. 318 388 66 99 - 301 253 60 65</p>
+        <p><a href="https://www.esgestionempresarial.com">www.esgestionempresarial.com</a></p>
+      </div>
+  `
 
-      <script>window.onload = function() { window.print(); }<\/script>
+  const page1Html = htmlHead + headerDetailsHtml + (hasServices ? servicesHtml : closingHtml) + `
     </body>
     </html>
-  `)
-  win.document.close()
+  `
+
+  const page2Html = hasServices ? htmlHead + termsHtml + closingHtml + `
+    </body>
+    </html>
+  ` : ''
+
+  const renderPageCanvas = async (pageHtml: string): Promise<HTMLCanvasElement> => {
+    const iframe = document.createElement('iframe')
+    iframe.setAttribute('aria-hidden', 'true')
+    iframe.style.position = 'fixed'
+    iframe.style.left = '-10000px'
+    iframe.style.top = '0'
+    iframe.style.width = '816px'
+    iframe.style.height = '1056px'
+    iframe.style.border = '0'
+    document.body.appendChild(iframe)
+
+    try {
+      const iframeDocument = iframe.contentDocument
+      if (!iframeDocument) throw new Error('No se pudo preparar el documento PDF')
+      iframeDocument.open()
+      iframeDocument.write(pageHtml)
+      iframeDocument.close()
+
+      await new Promise<void>(resolve => {
+        if (iframeDocument.readyState === 'complete') {
+          resolve()
+          return
+        }
+        iframe.onload = () => resolve()
+      })
+
+      await Promise.all(Array.from(iframeDocument.images).map(image => {
+        if (image.complete) return Promise.resolve()
+        return new Promise<void>(resolve => {
+          image.onload = () => resolve()
+          image.onerror = () => resolve()
+        })
+      }))
+
+      return await html2canvas(iframeDocument.body, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true,
+      })
+    } finally {
+      iframe.remove()
+    }
+  }
+
+  const canvas1 = await renderPageCanvas(page1Html)
+  const canvas2 = page2Html ? await renderPageCanvas(page2Html) : null
+
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'letter' })
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+    const margin = 10
+    const footerHeight = 8
+    const contentWidth = pageWidth - margin * 2
+    const contentHeight = pageHeight - margin * 2 - footerHeight
+    const totalPageCount = (canvas1 ? 1 : 0) + (canvas2 ? 1 : 0)
+
+    let pageIndex = 0
+    const appendFittedPage = (canvas: HTMLCanvasElement) => {
+      if (pageIndex > 0) pdf.addPage()
+      const drawHeight = Math.min(contentHeight, canvas.height * contentWidth / canvas.width)
+      const drawWidth = canvas.width * drawHeight / canvas.height
+      const x = (pageWidth - drawWidth) / 2
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', x, margin, drawWidth, drawHeight)
+      pdf.setFontSize(8)
+      pdf.setTextColor(107, 114, 128)
+      pageIndex += 1
+      pdf.text(`Página ${pageIndex} de ${totalPageCount}`, pageWidth / 2, pageHeight - 5, { align: 'center' })
+    }
+
+    appendFittedPage(canvas1)
+    if (canvas2) appendFittedPage(canvas2)
+
+    const pdfBlob = pdf.output('blob')
+    const downloadUrl = URL.createObjectURL(pdfBlob)
+    const clientRaw = getClientName(cot)
+    const safeClient = (clientRaw === '-' ? 'cliente' : clientRaw)
+      .replace(/[\\/:*?"<>|.]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 40)
+    const fileName = `${cot.code || 'cotizacion'} ${safeClient}.pdf`
+
+    previewWindow.document.open()
+    previewWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${fileName}</title>
+          <style>
+            body { margin: 0; background: #525659; font-family: Arial, sans-serif; }
+            .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #f9fafb; border-bottom: 1px solid #d1d5db; }
+            .toolbar-title { font-size: 13px; font-weight: 700; color: #111827; }
+            .toolbar-btn { padding: 7px 14px; border: none; border-radius: 6px; background: #B49538; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
+            .toolbar-btn:hover { background: #9a7e2e; }
+            embed { display: block; width: 100%; height: calc(100vh - 45px); }
+          </style>
+        </head>
+        <body>
+          <div class="toolbar">
+            <span class="toolbar-title">${fileName}</span>
+            <button class="toolbar-btn" onclick="window.downloadPdf()">Descargar PDF</button>
+          </div>
+          <embed src="${downloadUrl}" type="application/pdf" />
+          <script>
+            window.downloadPdf = function () {
+              var a = document.createElement('a')
+              a.href = '${downloadUrl}'
+              a.download = '${fileName}'
+              document.body.appendChild(a)
+              a.click()
+              a.remove()
+            }
+          <\/script>
+        </body>
+      </html>
+    `)
+    previewWindow.document.close()
+
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 600000)
 }
 
 // Form modal
@@ -841,50 +1346,85 @@ interface QuoteForm {
   code: string
   clientId: number
   clientName: string
+  nitCC: string
   projectId: number
   status: EstadoCotizacion
   totalAmount: number
+  iva: number
+  descuento: number
+  modalidad: string
   validUntil: string
   observations: string
   services: CotizacionServicio[]
   isVisible: boolean
+  commercialTerms: string
+  serviceTerms: string
+  confidentialityTerms: string
 }
 
 const defaultForm: QuoteForm = {
   code: '',
   clientId: 0,
   clientName: '',
+  nitCC: '',
   projectId: 0,
   status: 'pendiente',
   totalAmount: 0,
+  iva: 19,
+  descuento: 0,
+  modalidad: 'Presencial',
   validUntil: '',
   observations: '',
   services: [],
   isVisible: false,
+  commercialTerms: DEFAULT_COMMERCIAL_TERMS,
+  serviceTerms: DEFAULT_SERVICE_TERMS,
+  confidentialityTerms: DEFAULT_CONFIDENTIALITY_TERMS,
 }
 
 const form = ref<QuoteForm>({ ...defaultForm })
 
+const loadedExtraData = ref<Record<string, unknown>>({})
+
+function parseExtraData(raw: unknown): Record<string, unknown> {
+  if (!raw) return {}
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw) as Record<string, unknown> } catch { return {} }
+  }
+  if (typeof raw === 'object') return raw as Record<string, unknown>
+  return {}
+}
+
 function openCreateModal() {
   editingQuote.value = null
   form.value = { ...defaultForm, services: [] }
+  form.value.code = availableCodes.value[0] || ''
   formError.value = null
   showFormModal.value = true
 }
 
 function openEditModal(cot: Cotizacion) {
   editingQuote.value = cot
+  const extra = parseExtraData(cot.extraData)
+  loadedExtraData.value = extra
   form.value = {
     code: cot.code,
-    clientId: cot.clientId,
-    clientName: cot.clientName || '',
+    clientId: cot.clientId ?? 0,
+    clientName: cot.clientName || (extra['clientName'] as string) || '',
+    nitCC: (extra['nitCC'] as string) || '',
     projectId: cot.projectId || 0,
     status: cot.status,
     totalAmount: cot.totalAmount,
+    iva: typeof extra['iva'] === 'number' ? extra['iva'] : 19,
+    descuento: typeof extra['descuento'] === 'number' ? extra['descuento'] : 0,
+    modalidad: (extra['modalidad'] as string) || 'Presencial',
     validUntil: cot.validUntil ? cot.validUntil.split('T')[0] : '',
     observations: cot.observations || '',
     services: cot.services ? [...cot.services.map((s) => ({ ...s }))] : [],
     isVisible: cot.isVisible || false,
+    commercialTerms: cot.commercialTerms || DEFAULT_COMMERCIAL_TERMS,
+    serviceTerms: cot.serviceTerms || DEFAULT_SERVICE_TERMS,
+    confidentialityTerms: cot.confidentialityTerms || DEFAULT_CONFIDENTIALITY_TERMS,
   }
   formError.value = null
   showFormModal.value = true
@@ -917,21 +1457,41 @@ async function handleSave() {
     formError.value = 'Selecciona un cliente o ingresa el nombre de la entidad'
     return
   }
+  const validServices = form.value.services.filter((s) => s.name.trim())
+  if (validServices.length === 0) {
+    formError.value = 'Agrega al menos un servicio'
+    return
+  }
 
   saving.value = true
   formError.value = null
 
+  const mergedExtraData: Record<string, unknown> = { ...loadedExtraData.value }
+  mergedExtraData['iva'] = form.value.iva
+  mergedExtraData['descuento'] = form.value.descuento
+  mergedExtraData['modalidad'] = form.value.modalidad
+  const trimmedName = form.value.clientName.trim()
+  if (trimmedName) mergedExtraData['clientName'] = trimmedName
+  else delete mergedExtraData['clientName']
+  const trimmedNit = form.value.nitCC.trim()
+  if (trimmedNit) mergedExtraData['nitCC'] = trimmedNit
+  else delete mergedExtraData['nitCC']
+
   const payload = {
     code: form.value.code.trim(),
-    clientId: form.value.clientId || 0,
-    clientName: form.value.clientName.trim() || undefined,
+    clientId: form.value.clientId || null,
+    clientName: trimmedName || undefined,
     projectId: form.value.projectId || undefined,
     status: form.value.status,
-    totalAmount: form.value.totalAmount,
+    totalAmount: quoteTotal.value,
     validUntil: form.value.validUntil || undefined,
     observations: form.value.observations.trim() || undefined,
-    services: form.value.services.filter((s) => s.name.trim()),
+    services: validServices,
     isVisible: form.value.isVisible,
+    commercialTerms: form.value.commercialTerms.trim(),
+    serviceTerms: form.value.serviceTerms.trim(),
+    confidentialityTerms: form.value.confidentialityTerms.trim(),
+    extraData: mergedExtraData,
   }
 
   let result: Cotizacion | null = null
@@ -945,7 +1505,10 @@ async function handleSave() {
   if (result) {
     showFormModal.value = false
   } else {
-    formError.value = error.value || 'No se pudo guardar la cotización'
+    const msg = error.value || 'No se pudo guardar la cotización'
+    formError.value = msg.toLowerCase().includes('services array')
+      ? 'Agrega al menos un servicio'
+      : msg
   }
 }
 
@@ -997,6 +1560,8 @@ function handleClickOutside(e: MouseEvent) {
   if (!target.closest('.client-dropdown-wrapper')) {
     showClientDropdown.value = false
     clientSearch.value = ''
+    showProjectDropdown.value = false
+    projectSearch.value = ''
   }
 }
 
@@ -1463,6 +2028,65 @@ onUnmounted(() => {
   text-align: left;
 }
 
+.obs-modal {
+  max-width: 560px;
+  text-align: left;
+  padding: 24px;
+}
+
+.obs-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.obs-modal-header h3 {
+  margin: 0;
+}
+
+.obs-modal .modal-close {
+  position: static;
+  color: var(--c-gray);
+}
+
+.obs-modal-body {
+  white-space: pre-line;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--c-black);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.obs-cell {
+  white-space: pre-line;
+  font-size: 0.8rem;
+  color: var(--c-black);
+}
+
+.obs-cell.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.obs-more-btn {
+  display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  margin-top: 2px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--c-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -1862,6 +2486,38 @@ textarea.form-input {
   padding-top: 20px;
 }
 
+.terms-section {
+  border-top: 1px solid var(--c-border);
+  padding-top: 16px;
+  margin-top: 20px;
+}
+
+.terms-section h4 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--c-black);
+  margin: 0 0 8px;
+}
+
+.terms-body {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--c-gray);
+}
+
+.terms-body p {
+  margin: 0 0 8px;
+}
+
+.terms-body p:last-child {
+  margin-bottom: 0;
+}
+
+.terms-body strong {
+  color: var(--c-black);
+  font-weight: 600;
+}
+
 .services-header {
   display: flex;
   align-items: center;
@@ -1997,6 +2653,29 @@ textarea.form-input {
 }
 
 .services-table tr:last-child td { border-bottom: none; }
+
+.services-table .summary-row td {
+  background: var(--c-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+}
+
+.services-table .summary-row.total td {
+  background: var(--c-primary);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.services-table .summary-row td:first-child {
+  text-align: right;
+}
+
+.services-table .summary-amount {
+  text-align: right;
+}
 
 /* ===== DETAIL ===== */
 .detail-grid {
