@@ -243,7 +243,7 @@
                   <strong>{{ offer.project.offer || offer.project.code || 'Oferta sin código' }}</strong>
                   <span>{{ offer.project.client?.name || 'Cliente sin nombre' }}</span>
                   <span class="cotizacion-dates">Inicio: {{ formatDashDate(offer.project.startDate) }} · Seguimiento: {{ formatDashDate(offer.project.endDate) }}</span>
-                  <span v-if="offer.project.observations" class="cotizacion-obs">Obs: {{ offer.project.observations }}</span>
+                  <span v-if="offer.project.observations" class="cotizacion-obs">Obs / Oportunidad Comercial: {{ offer.project.observations }}</span>
                 </span>
                 <span class="billing-alert-timing">{{ offer.daysHabil }} días hábiles</span>
               </button>
